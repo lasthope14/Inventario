@@ -1,20 +1,61 @@
-/.phpunit.cache
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/vendor
+# #############################################################
+# Archivos que AÚN DEBEN SER IGNORADOS
+# #############################################################
+
+# Entorno y credenciales - ¡NUNCA SUBIR ESTOS ARCHIVOS!
+# El archivo .env debe ser creado y configurado manualmente en tu hosting.
 .env
 .env.backup
 .env.production
-.phpactor.json
+
+# Archivos de logs y caché de herramientas de desarrollo
+/.phpunit.cache
 .phpunit.result.cache
-Homestead.json
-Homestead.yaml
-auth.json
 npm-debug.log
 yarn-error.log
-/.fleet
-/.idea
-/.vscode
+
+# Archivos de configuración de entornos de desarrollo locales
+Homestead.json
+Homestead.yaml
+
+# Archivo de autenticación de Composer
+# Contiene tokens privados, no debe estar en el repositorio.
+auth.json
+
+# Carpetas de configuración de Editores de Código (IDE)
+/.fleet/
+/.idea/
+/.vscode/
+
+# Archivos de herramientas específicas de desarrollo
+.phpactor.json
+
+# El enlace simbólico de storage en la carpeta public
+# Este enlace debes crearlo manualmente en tu hosting si es posible,
+# o ajustar tu configuración para acceder a los archivos de storage.
+/public/storage
+
+# Archivo "hot" de Vite para desarrollo en local
+/public/hot
+
+# Claves de encriptación de Laravel en la carpeta storage
+/storage/*.key
+
+# Carpeta de dependencias de desarrollo de NodeJS.
+# No es necesaria en el servidor porque los assets ya están compilados en /public/build
+/node_modules
+
+
+# #############################################################
+# Archivos que ANTES se ignoraban y AHORA SE INCLUYEN
+# #############################################################
+# Se han eliminado las siguientes líneas del .gitignore original:
+#
+# /vendor
+#     -> La eliminamos para que Git SUBA la carpeta con todas las
+#        dependencias de PHP (Composer).
+#
+# /public/build
+#     -> La eliminamos para que Git SUBA los archivos CSS y JS ya
+#        compilados y minificados por Vite/Mix.
+#
