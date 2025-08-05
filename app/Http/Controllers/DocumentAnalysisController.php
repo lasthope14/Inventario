@@ -1490,4 +1490,326 @@ class DocumentAnalysisController extends Controller
             'timestamp' => now()
         ]);
     }
-} 
+
+    public function importImages(Request $request)
+    {
+        \Log::info('=== INICIANDO IMPORTACIÓN DE IMÁGENES ===', [
+            'timestamp' => now(),
+            'user_id' => auth()->id(),
+            'request_method' => request()->method()
+        ]);
+
+        try {
+            // Validación de archivos
+            $request->validate([
+                'images_file' => [
+                    'required',
+                    'file',
+                    'max:500000', // 500MB max
+                    function ($attribute, $value, $fail) {
+                        if (!$value instanceof \Illuminate\Http\UploadedFile) {
+                            $fail('El archivo de imágenes debe ser un archivo válido.');
+                            return;
+                        }
+                        
+                        // Verificar extensión
+                        $extension = strtolower($value->getClientOriginalExtension());
+                        if ($extension !== 'zip') {
+                            $fail('El archivo de imágenes debe ser un archivo ZIP.');
+                            return;
+                        }
+                        
+                        // Verificar tipos MIME válidos para ZIP
+                        $validMimeTypes = [
+                            'application/zip',
+                            'application/x-zip-compressed',
+                            'application/x-zip',
+                            'multipart/x-zip',
+                            'application/octet-stream'
+                        ];
+                        
+                        $mimeType = $value->getMimeType();
+                        if (!in_array($mimeType, $validMimeTypes)) {
+                            $fail('El archivo debe ser un ZIP válido.');
+                            return;
+                        }
+                    }
+                ],
+                'excel_file' => [
+                    'required',
+                    'file',
+                    'max:10240', // 10MB max
+                    function ($attribute, $value, $fail) {
+                        if (!$value instanceof \Illuminate\Http\UploadedFile) {
+                            $fail('El archivo Excel debe ser un archivo válido.');
+                            return;
+                        }
+                        
+                        $extension = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($extension, ['xlsx', 'xls'])) {
+                            $fail('El archivo debe ser un Excel válido (.xlsx o .xls).');
+                            return;
+                        }
+                    }
+                ]
+            ]);
+
+            // Crear directorio temporal único
+            $tempDir = 'temp/images_import_' . uniqid();
+            $tempPath = storage_path('app/' . $tempDir);
+            
+            if (!Storage::exists($tempDir)) {
+                Storage::makeDirectory($tempDir);
+            }
+
+            \Log::info('Directorio temporal creado', ['temp_path' => $tempPath]);
+
+            // Guardar archivo ZIP
+            $zipFile = $request->file('images_file');
+            $zipPath = $zipFile->storeAs($tempDir, 'images.zip');
+            $zipFullPath = storage_path('app/' . $zipPath);
+
+            // Guardar archivo Excel
+            $excelFile = $request->file('excel_file');
+            $excelPath = $excelFile->storeAs($tempDir, 'mapping.xlsx');
+            $excelFullPath = storage_path('app/' . $excelPath);
+
+            \Log::info('Archivos guardados', [
+                'zip_path' => $zipFullPath,
+                'excel_path' => $excelFullPath
+            ]);
+
+            // Extraer ZIP
+            $extractPath = $tempPath . '/extracted';
+            $zip = new ZipArchive;
+            
+            if ($zip->open($zipFullPath) === TRUE) {
+                $zip->extractTo($extractPath);
+                $zip->close();
+                \Log::info('ZIP extraído exitosamente', ['extract_path' => $extractPath]);
+            } else {
+                throw new \Exception('No se pudo abrir el archivo ZIP');
+            }
+
+            // Procesar importación de imágenes
+            $results = $this->processImageImport($excelFullPath, $extractPath);
+
+            // Limpiar archivos temporales
+            Storage::deleteDirectory($tempDir);
+
+            $successCount = count(array_filter($results, fn($r) => in_array($r['status'], ['created', 'updated'])));
+            $errorCount = count(array_filter($results, fn($r) => $r['status'] === 'error'));
+            $createdCount = count(array_filter($results, fn($r) => $r['status'] === 'created'));
+            $updatedCount = count(array_filter($results, fn($r) => $r['status'] === 'updated'));
+            
+            \Log::info('=== RESUMEN FINAL DE IMPORTACIÓN DE IMÁGENES ===', [
+                'total_procesados' => count($results),
+                'exitosos' => $successCount,
+                'errores' => $errorCount,
+                'creados' => $createdCount,
+                'actualizados' => $updatedCount
+            ]);
+
+            $message = "Importación de imágenes completada. ";
+            $message .= "Imágenes procesadas: {$successCount}, ";
+            $message .= "Errores: {$errorCount}";
+
+            return redirect()->route('admin.documents.analysis')->with('success', $message)
+                ->with('import_details', $results)
+                ->with('import_stats', [
+                    'total' => count($results),
+                    'created' => $createdCount,
+                    'updated' => $updatedCount,
+                    'errors' => $errorCount
+                ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error crítico en importación de imágenes', [
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString()
+            ]);
+            
+            // Limpiar en caso de error
+            if (isset($tempDir)) {
+                try {
+                    Storage::deleteDirectory($tempDir);
+                } catch (\Exception $cleanupException) {
+                    \Log::error('Error al limpiar directorio temporal', [
+                        'temp_dir' => $tempDir,
+                        'error' => $cleanupException->getMessage()
+                    ]);
+                }
+            }
+
+            return redirect()->route('admin.documents.analysis')
+                ->with('error', 'Error en la importación de imágenes: ' . $e->getMessage());
+        }
+    }
+
+    private function processImageImport($excelPath, $extractPath)
+    {
+        $results = [];
+        
+        try {
+            // Cargar archivo Excel
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($excelPath);
+            $worksheet = $spreadsheet->getActiveSheet();
+            $rows = $worksheet->toArray();
+            
+            // Obtener headers
+            $headers = array_map('strtolower', array_map('trim', array_shift($rows)));
+            
+            \Log::info('Headers encontrados en Excel', ['headers' => $headers]);
+            
+            foreach ($rows as $rowIndex => $row) {
+                if (empty(array_filter($row))) {
+                    continue;
+                }
+                
+                $data = array_combine($headers, $row);
+                
+                // Verificar que tengamos los campos necesarios
+                if (empty($data['codigo_elemento']) || empty($data['archivo_imagen'])) {
+                    $results[] = [
+                        'row' => $rowIndex + 2,
+                        'codigo' => $data['codigo_elemento'] ?? 'N/A',
+                        'archivo' => $data['archivo_imagen'] ?? 'N/A',
+                        'status' => 'error',
+                        'message' => 'Código de elemento o archivo de imagen faltante'
+                    ];
+                    continue;
+                }
+                
+                // Buscar elemento por código
+                $inventario = Inventario::where('codigo_unico', $data['codigo_elemento'])->first();
+                if (!$inventario) {
+                    $results[] = [
+                        'row' => $rowIndex + 2,
+                        'codigo' => $data['codigo_elemento'],
+                        'archivo' => $data['archivo_imagen'],
+                        'status' => 'error',
+                        'message' => 'Elemento no encontrado'
+                    ];
+                    continue;
+                }
+                
+                // Buscar archivo de imagen
+                $imagePath = $this->findImageFile($extractPath, $data['archivo_imagen']);
+                if (!$imagePath) {
+                    $results[] = [
+                        'row' => $rowIndex + 2,
+                        'codigo' => $data['codigo_elemento'],
+                        'archivo' => $data['archivo_imagen'],
+                        'status' => 'error',
+                        'message' => 'Archivo de imagen no encontrado en el ZIP'
+                    ];
+                    continue;
+                }
+                
+                // Procesar imagen
+                try {
+                    $this->processImageFile($inventario, $imagePath, $data);
+                    
+                    $results[] = [
+                        'row' => $rowIndex + 2,
+                        'codigo' => $data['codigo_elemento'],
+                        'archivo' => $data['archivo_imagen'],
+                        'status' => 'updated',
+                        'message' => 'Imagen procesada exitosamente'
+                    ];
+                    
+                } catch (\Exception $e) {
+                    $results[] = [
+                        'row' => $rowIndex + 2,
+                        'codigo' => $data['codigo_elemento'],
+                        'archivo' => $data['archivo_imagen'],
+                        'status' => 'error',
+                        'message' => 'Error al procesar imagen: ' . $e->getMessage()
+                    ];
+                }
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Error procesando Excel de imágenes', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+        
+        return $results;
+    }
+    
+    private function findImageFile($basePath, $fileName)
+    {
+        // Buscar archivo exacto
+        $fullPath = $basePath . '/' . $fileName;
+        if (file_exists($fullPath)) {
+            return $fullPath;
+        }
+        
+        // Buscar recursivamente en subdirectorios
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($basePath, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+        
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getFilename() === $fileName) {
+                return $file->getPathname();
+            }
+        }
+        
+        return null;
+    }
+    
+    private function processImageFile($inventario, $imagePath, $data)
+    {
+        // Validar que sea una imagen
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $extension = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION));
+        
+        if (!in_array($extension, $allowedExtensions)) {
+            throw new \Exception('Tipo de archivo no permitido: ' . $extension);
+        }
+        
+        // Determinar tipo de imagen (principal o secundaria)
+        $tipoImagen = isset($data['tipo_imagen']) ? strtolower($data['tipo_imagen']) : 'principal';
+        
+        // Crear nombre único para la imagen
+        $imageHash = hash_file('md5', $imagePath);
+        $fileName = $inventario->codigo_unico . '_' . $tipoImagen . '_' . $imageHash . '.' . $extension;
+        
+        // Asegurar que existe el directorio de imágenes
+        $imageDir = 'inventario_imagenes';
+        if (!Storage::disk('public')->exists($imageDir)) {
+            Storage::disk('public')->makeDirectory($imageDir);
+        }
+        
+        $destinationPath = $imageDir . '/' . $fileName;
+        $fullDestinationPath = storage_path('app/public/' . $destinationPath);
+        
+        // Copiar imagen
+        if (!copy($imagePath, $fullDestinationPath)) {
+            throw new \Exception('No se pudo copiar la imagen al destino');
+        }
+        
+        // Establecer permisos
+        chmod($fullDestinationPath, 0644);
+        
+        // Actualizar registro del inventario
+        if ($tipoImagen === 'principal') {
+            $inventario->imagen_principal = $destinationPath;
+        } else {
+            $inventario->imagen_secundaria = $destinationPath;
+        }
+        
+        $inventario->save();
+        
+        \Log::info('Imagen procesada exitosamente', [
+            'inventario_codigo' => $inventario->codigo_unico,
+            'tipo_imagen' => $tipoImagen,
+            'archivo_origen' => basename($imagePath),
+            'archivo_destino' => $fileName
+        ]);
+    }
+}
