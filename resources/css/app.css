@@ -1,0 +1,198 @@
+/* ===== ESTILOS GLOBALES PARA AUMENTAR TAMAÑO DE INTERFAZ ===== */
+
+/* Aumentar tamaño base de fuente - esto afecta todo el sitio */
+html {
+    font-size: 16.5px; /* Por defecto es 16px, aumentamos solo a 16.5px (3% más grande) */
+}
+
+/* Para pantallas grandes, aumentar un poco más */
+@media (min-width: 1200px) {
+    html {
+        font-size: 17px; /* En pantallas grandes, 6% más grande que el default */
+    }
+}
+
+/* Ajustar elementos específicos que pueden necesitar más espacio */
+.container, .container-fluid {
+    padding-left: 1.2rem;
+    padding-right: 1.2rem;
+}
+
+/* Aumentar padding de tarjetas y elementos principales */
+.card {
+    padding: 0.5rem;
+}
+
+.card-body {
+    padding: 1.2rem;
+}
+
+/* Aumentar tamaño de botones */
+.btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 1.05rem;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.95rem;
+}
+
+.btn-lg {
+    padding: 0.8rem 1.6rem;
+    font-size: 1.15rem;
+}
+
+/* Aumentar tamaño de inputs y formularios */
+.form-control, .form-select {
+    padding: 0.6rem 0.8rem;
+    font-size: 1.02rem;
+}
+
+/* Aumentar tamaño de tablas */
+.table {
+    font-size: 1.02rem;
+}
+
+.table td, .table th {
+    padding: 0.8rem 0.6rem;
+}
+
+/* Aumentar tamaño de navegación */
+.navbar-nav .nav-link {
+    font-size: 1.05rem;
+    padding: 0.6rem 1rem;
+}
+
+/* Aumentar tamaño de badges y elementos pequeños */
+.badge {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+}
+
+/* Aumentar espaciado general (sutil) */
+.mb-3 {
+    margin-bottom: 1.2rem !important;
+}
+
+.mb-4 {
+    margin-bottom: 1.6rem !important;
+}
+
+.p-3 {
+    padding: 1.2rem !important;
+}
+
+.p-4 {
+    padding: 1.6rem !important;
+}
+
+/* Aumentar tamaño de iconos */
+.fas, .far, .fab {
+    font-size: 1.1em;
+}
+
+/* Ajustar dropdowns */
+.dropdown-item {
+    padding: 0.6rem 1.2rem;
+    font-size: 1.02rem;
+}
+
+/* Aumentar altura de línea para mejor legibilidad */
+body {
+    line-height: 1.5;
+}
+
+/* Ajustar modales */
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-header {
+    padding: 1.2rem 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.2rem 1.5rem;
+}
+
+/* Aumentar tamaño de alerts */
+.alert {
+    padding: 1rem 1.2rem;
+    font-size: 1.02rem;
+}
+
+/* Ajustar breadcrumbs */
+.breadcrumb {
+    font-size: 1.05rem;
+    padding: 0.8rem 1.2rem;
+}
+
+/* Aumentar tamaño de paginación */
+.pagination .page-link {
+    padding: 0.6rem 0.8rem;
+    font-size: 1.02rem;
+}
+
+/* ===== RESPONSIVE - AJUSTES PARA MÓVILES ===== */
+@media (max-width: 768px) {
+    html {
+        font-size: 16.2px; /* Ligeramente más pequeño en móviles pero aún más grande que el default */
+    }
+    
+    .container, .container-fluid {
+        padding-left: 1.2rem;
+        padding-right: 1.2rem;
+    }
+    
+    .card-body {
+        padding: 1.1rem;
+    }
+}
+
+/* ===== AJUSTES ESPECÍFICOS PARA ELEMENTOS DE LA APLICACIÓN ===== */
+
+/* Aumentar tamaño de elementos de inventario */
+.inventory-card {
+    font-size: 1.05rem;
+}
+
+.inventory-card .card-title {
+    font-size: 1.15rem;
+}
+
+/* Aumentar tamaño de estadísticas en dashboard */
+.stat-card {
+    padding: 1.5rem;
+}
+
+.stat-card .display-4 {
+    font-size: 2.5rem;
+}
+
+/* Mejorar legibilidad de tablas de datos */
+.data-table {
+    font-size: 1.05rem;
+}
+
+.data-table th {
+    font-size: 1.08rem;
+    font-weight: 600;
+}
+
+/* Aumentar tamaño de filtros y búsqueda */
+.search-form .form-control {
+    font-size: 1.05rem;
+    padding: 0.8rem 1rem;
+}
+
+/* Ajustar acordeones */
+.accordion-button {
+    font-size: 1.08rem;
+    padding: 1rem 1.2rem;
+}
+
+.accordion-body {
+    padding: 1.2rem;
+    font-size: 1.02rem;
+}
