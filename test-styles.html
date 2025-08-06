@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Estilos - Diagnóstico de Conflictos CSS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Estilos de diagnóstico */
+        .debug-section {
+            border: 2px solid red !important;
+            margin: 10px 0;
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid #007bff;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .style-test {
+            background: yellow;
+            padding: 20px;
+            margin: 10px;
+            border: 1px solid black;
+        }
+        
+        /* Simulación de estilos del proyecto */
+        .row.mb-4 .card-body {
+            padding: 1.5rem !important;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Diagnóstico de Conflictos CSS</h1>
+        
+        <!-- Test 1: Sección con clases Bootstrap estándar -->
+        <div class="debug-section">
+            <h3>Test 1: Bootstrap Estándar</h3>
+            <div class="debug-info">Clases: row mb-4</div>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Sección Test Bootstrap</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <p>Contenido de prueba con clases Bootstrap estándar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Test 2: Sección con nuestros estilos CSS -->
+        <div class="debug-section">
+            <h3>Test 2: Con Nuestros Estilos CSS</h3>
+            <div class="debug-info">Clases: row mb-4 + CSS personalizado</div>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Sección Test CSS Personalizado</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <p>Contenido de prueba con nuestros estilos CSS aplicados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Test 3: Sección con estilo inline -->
+        <div class="debug-section">
+            <h3>Test 3: Con Estilo Inline</h3>
+            <div class="debug-info">Clases: row mb-4 + style inline</div>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Sección Test Estilo Inline</h5>
+                        </div>
+                        <div class="card-body p-4" style="padding: 2rem !important; background: #f0f0f0;">
+                            <p>Contenido de prueba con estilo inline que sobrescribe</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Test 4: Múltiples clases conflictivas -->
+        <div class="debug-section">
+            <h3>Test 4: Clases Conflictivas</h3>
+            <div class="debug-info">Clases: row mb-4 + p-4 + p-3 + px-5</div>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Sección Test Clases Conflictivas</h5>
+                        </div>
+                        <div class="card-body p-4 p-3 px-5">
+                            <p>Contenido con múltiples clases de padding que pueden conflictuarse</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información de diagnóstico -->
+        <div class="mt-5">
+            <h3>Información de Diagnóstico</h3>
+            <div class="debug-info">
+                <strong>Instrucciones:</strong><br>
+                1. Inspecciona cada sección con las herramientas de desarrollador<br>
+                2. Verifica qué estilos se están aplicando y cuáles se están sobrescribiendo<br>
+                3. Observa las diferencias de padding entre las secciones<br>
+                4. Identifica la jerarquía CSS y especificidad de los selectores
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Script para mostrar información de estilos computados
+        document.addEventListener('DOMContentLoaded', function() {
+            const cardBodies = document.querySelectorAll('.card-body');
+            
+            cardBodies.forEach((element, index) => {
+                const computedStyle = window.getComputedStyle(element);
+                const padding = computedStyle.getPropertyValue('padding');
+                const paddingTop = computedStyle.getPropertyValue('padding-top');
+                const paddingRight = computedStyle.getPropertyValue('padding-right');
+                const paddingBottom = computedStyle.getPropertyValue('padding-bottom');
+                const paddingLeft = computedStyle.getPropertyValue('padding-left');
+                
+                console.log(`Card Body ${index + 1}:`);
+                console.log(`  Padding: ${padding}`);
+                console.log(`  Padding Top: ${paddingTop}`);
+                console.log(`  Padding Right: ${paddingRight}`);
+                console.log(`  Padding Bottom: ${paddingBottom}`);
+                console.log(`  Padding Left: ${paddingLeft}`);
+                console.log('---');
+                
+                // Agregar información visual
+                const info = document.createElement('div');
+                info.className = 'debug-info';
+                info.innerHTML = `
+                    <strong>Estilos Computados:</strong><br>
+                    Padding: ${padding}<br>
+                    Padding específicos: ${paddingTop} ${paddingRight} ${paddingBottom} ${paddingLeft}
+                `;
+                element.parentNode.insertBefore(info, element.nextSibling);
+            });
+        });
+    </script>
+</body>
+</html>

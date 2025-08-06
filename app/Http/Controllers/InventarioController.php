@@ -503,6 +503,13 @@ class InventarioController extends Controller
         // Calcular la cantidad total
         $cantidadTotal = $ubicaciones->sum('cantidad');
         
+        // Obtener el último responsable del equipo desde los movimientos
+        $ultimoResponsable = $inventario->movimientos()
+            ->with(['usuarioDestino'])
+            ->whereNotNull('usuario_destino_id')
+            ->orderBy('fecha_movimiento', 'desc')
+            ->first();
+        
         // Cargar los movimientos paginados con las relaciones necesarias
         $movimientos = $inventario->movimientos()
             ->with(['realizadoPor'])
@@ -515,7 +522,7 @@ class InventarioController extends Controller
         // Obtener los documentos usando Spatie Media Library
         $documentos = $inventario->getMedia('documentos');
         
-        return view('inventarios.show', compact('inventario', 'movimientos', 'ubicaciones', 'cantidadTotal', 'imagenes', 'documentos'));
+        return view('inventarios.show', compact('inventario', 'movimientos', 'ubicaciones', 'cantidadTotal', 'imagenes', 'documentos', 'ultimoResponsable'));
     }
 
     public function create()
@@ -853,6 +860,21 @@ class InventarioController extends Controller
                 Storage::disk('public')->delete($inventario->imagen_secundaria);
             }
 
+            // Eliminar documentos asociados primero
+            $documentos = $inventario->documentos;
+            foreach ($documentos as $documento) {
+                // Eliminar archivo físico si existe
+                if ($documento->ruta && Storage::disk('public')->exists($documento->ruta)) {
+                    Storage::disk('public')->delete($documento->ruta);
+                }
+                // Eliminar registro de la base de datos
+                $documento->delete();
+            }
+
+            // Eliminar archivos de media library asociados
+            $inventario->clearMediaCollection('documentos');
+            $inventario->clearMediaCollection('imagenes');
+
             // Eliminar elementos asociados
             $inventario->elementos()->delete();
 
@@ -863,6 +885,7 @@ class InventarioController extends Controller
                 'id_inventario' => $inventario->id,
                 'codigo_unico' => $inventario->codigo_unico,
                 'nombre' => $inventario->nombre,
+                'documentos_eliminados' => $documentos->count(),
                 'fecha_eliminacion' => now()->toDateTimeString()
             ]);
 

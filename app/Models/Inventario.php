@@ -157,7 +157,7 @@ class Inventario extends Model implements HasMedia
     protected function cantidad(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->elementos()->count(),
+            get: fn () => $this->ubicaciones()->sum('cantidad') ?: 1,
         );
     }
 
