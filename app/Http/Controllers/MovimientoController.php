@@ -61,19 +61,51 @@ class MovimientoController extends Controller
             'request_data' => $request->all()
         ]);
 
-        $this->authorize('create', Movimiento::class);
-        
-        $validatedData = $request->validate([
-            'inventario_id' => 'required|exists:inventarios,id',
-            'ubicacion_origen' => 'required|exists:ubicaciones,id',
-            'ubicacion_destino' => 'required|exists:ubicaciones,id',
-            'usuario_origen_id' => 'required|exists:empleados,id',
-            'usuario_destino_id' => 'required|exists:empleados,id',
-            'fecha_movimiento' => 'required',
-            'motivo' => 'nullable|string',
-            'cantidad' => 'required|integer|min:1',
-            'nuevo_estado' => 'required|in:disponible,en uso,en mantenimiento,dado de baja,robado'
+        Log::info("Verificando autorización para crear movimiento", [
+            'request_id' => $requestId,
+            'user_id' => Auth::id()
         ]);
+
+        try {
+            $this->authorize('create', Movimiento::class);
+            Log::info("Autorización exitosa", ['request_id' => $requestId]);
+        } catch (\Exception $e) {
+            Log::error("Error de autorización", [
+                'request_id' => $requestId,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+        
+        Log::info("Iniciando validación de datos", [
+            'request_id' => $requestId,
+            'fecha_recibida' => $request->input('fecha_movimiento')
+        ]);
+
+        try {
+            $validatedData = $request->validate([
+                'inventario_id' => 'required|exists:inventarios,id',
+                'ubicacion_origen' => 'required|exists:ubicaciones,id',
+                'ubicacion_destino' => 'required|exists:ubicaciones,id',
+                'usuario_origen_id' => 'required|exists:empleados,id',
+                'usuario_destino_id' => 'required|exists:empleados,id',
+                'fecha_movimiento' => 'required',
+                'motivo' => 'nullable|string',
+                'cantidad' => 'required|integer|min:1',
+                'nuevo_estado' => 'required|in:disponible,en uso,en mantenimiento,dado de baja,robado'
+            ]);
+            Log::info("Validación de datos exitosa", [
+                'request_id' => $requestId,
+                'validated_data' => $validatedData
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error en validación de datos", [
+                'request_id' => $requestId,
+                'error' => $e->getMessage(),
+                'validation_errors' => $e instanceof \Illuminate\Validation\ValidationException ? $e->errors() : null
+            ]);
+            throw $e;
+        }
 
         $inventario = Inventario::findOrFail($request->inventario_id);
         $inventarioUbicacionOrigen = $inventario->ubicaciones()
@@ -92,17 +124,49 @@ class MovimientoController extends Controller
 
         $estadoActual = $inventarioUbicacionOrigen->estado;
 
+        Log::info("Procesando fecha de movimiento", [
+            'request_id' => $requestId,
+            'fecha_original' => $validatedData['fecha_movimiento'],
+            'tipo_fecha' => gettype($validatedData['fecha_movimiento'])
+        ]);
+
         if (!empty($validatedData['fecha_movimiento'])) {
             try {
-                $validatedData['fecha_movimiento'] = Carbon::createFromFormat('d/m/Y H:i', $validatedData['fecha_movimiento'])
-                    ->format('Y-m-d H:i:s');
-            } catch (\Exception $e) {
-                Log::error('Error al convertir fecha: ' . $e->getMessage(), [
-                    'request_id' => $requestId
+                $fechaOriginal = $validatedData['fecha_movimiento'];
+                Log::info("Intentando convertir fecha", [
+                    'request_id' => $requestId,
+                    'fecha_input' => $fechaOriginal,
+                    'formato_esperado' => 'd/m/Y H:i'
                 ]);
-                return back()->withErrors(['fecha_movimiento' => 'El formato de fecha y hora no es válido']);
+
+                $fechaCarbon = Carbon::createFromFormat('d/m/Y H:i', $fechaOriginal);
+                Log::info("Fecha convertida a Carbon", [
+                    'request_id' => $requestId,
+                    'fecha_carbon' => $fechaCarbon->toDateTimeString(),
+                    'fecha_carbon_iso' => $fechaCarbon->toISOString()
+                ]);
+
+                $validatedData['fecha_movimiento'] = $fechaCarbon->format('Y-m-d H:i:s');
+                Log::info("Fecha formateada para base de datos", [
+                    'request_id' => $requestId,
+                    'fecha_final' => $validatedData['fecha_movimiento']
+                ]);
+
+            } catch (\Exception $e) {
+                Log::error('Error al convertir fecha', [
+                    'request_id' => $requestId,
+                    'fecha_input' => $validatedData['fecha_movimiento'],
+                    'error_message' => $e->getMessage(),
+                    'error_trace' => $e->getTraceAsString()
+                ]);
+                return back()->withErrors(['fecha_movimiento' => 'El formato de fecha y hora no es válido: ' . $e->getMessage()]);
             }
         }
+
+        Log::info("Iniciando transacción de base de datos", [
+            'request_id' => $requestId,
+            'datos_finales' => $validatedData
+        ]);
 
         try {
             DB::transaction(function () use ($request, $inventario, $inventarioUbicacionOrigen, $validatedData, $estadoActual, $requestId) {
@@ -110,8 +174,19 @@ class MovimientoController extends Controller
                     'request_id' => $requestId
                 ]);
 
+                Log::info('Creando objeto Movimiento', [
+                    'request_id' => $requestId,
+                    'datos_movimiento' => $validatedData
+                ]);
+
                 $movimiento = new Movimiento($validatedData);
                 $movimiento->realizado_por_id = Auth::id();
+                
+                Log::info('Guardando movimiento en base de datos', [
+                    'request_id' => $requestId,
+                    'movimiento_data' => $movimiento->toArray()
+                ]);
+                
                 $movimiento->save();
 
                 Log::info('Movimiento creado', [
@@ -167,12 +242,17 @@ class MovimientoController extends Controller
 
         } catch (\Exception $e) {
             Log::error("Error en petición store movimiento {$requestId}", [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
+                'validated_data' => $validatedData ?? null
             ]);
 
             return back()
-                ->withErrors(['error' => 'Error al crear el movimiento. Por favor, intente nuevamente.'])
+                ->withErrors(['error' => 'Error al crear el movimiento: ' . $e->getMessage()])
                 ->withInput();
         }
     }

@@ -176,6 +176,19 @@ document.addEventListener('DOMContentLoaded', function() {
             },
         },
         onChange: function(selectedDates, dateStr, instance) {
+            console.log('=== FLATPICKR FECHA SELECCIONADA ===');
+            console.log('Fechas seleccionadas:', selectedDates);
+            console.log('String de fecha:', dateStr);
+            console.log('Fecha como objeto:', selectedDates[0]);
+            if (selectedDates[0]) {
+                console.log('Año:', selectedDates[0].getFullYear());
+                console.log('Mes:', selectedDates[0].getMonth() + 1);
+                console.log('Día:', selectedDates[0].getDate());
+                console.log('Hora:', selectedDates[0].getHours());
+                console.log('Minutos:', selectedDates[0].getMinutes());
+                console.log('Timestamp:', selectedDates[0].getTime());
+            }
+            console.log('=== FIN FLATPICKR ===');
             instance.input.value = dateStr;
         }
     };
@@ -193,6 +206,20 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             return false;
         }
+
+        // Log detallado antes del envío
+        const fechaInput = document.getElementById('fecha_movimiento');
+        const formData = new FormData(form);
+        
+        console.log('=== DATOS DEL FORMULARIO ANTES DEL ENVÍO ===');
+        console.log('Fecha seleccionada:', fechaInput.value);
+        console.log('Tipo de dato fecha:', typeof fechaInput.value);
+        console.log('Longitud fecha:', fechaInput.value.length);
+        console.log('Todos los datos del formulario:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}: ${value}`);
+        }
+        console.log('=== FIN DATOS DEL FORMULARIO ===');
 
         submitButton.disabled = true;
         form.setAttribute('data-submitting', 'true');

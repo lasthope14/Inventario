@@ -66,6 +66,22 @@ class Movimiento extends Model
             ]);
     }
 
+    public function ubicacionOrigen()
+    {
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_origen')
+            ->withDefault([
+                'nombre' => 'N/A'
+            ]);
+    }
+
+    public function ubicacionDestino()
+    {
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_destino')
+            ->withDefault([
+                'nombre' => 'N/A'
+            ]);
+    }
+
     public function usuario()
     {
         return $this->belongsTo(User::class, 'usuario_origen_id');

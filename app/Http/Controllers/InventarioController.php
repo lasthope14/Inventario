@@ -495,7 +495,7 @@ class InventarioController extends Controller
     
     public function show(Inventario $inventario)
     {
-        $inventario->load(['categoria', 'proveedor', 'ubicacion', 'mantenimientos', 'documentos']);
+        $inventario->load(['categoria', 'proveedor', 'ubicacion', 'mantenimientos', 'documentos', 'media']);
         
         // Cargar las ubicaciones con sus cantidades
         $ubicaciones = $inventario->ubicaciones()->with('ubicacion')->get();
@@ -509,7 +509,13 @@ class InventarioController extends Controller
             ->orderBy('fecha_movimiento', 'desc')
             ->paginate(10);
         
-        return view('inventarios.show', compact('inventario', 'movimientos', 'ubicaciones', 'cantidadTotal'));
+        // Obtener las imágenes usando Spatie Media Library
+        $imagenes = $inventario->getMedia('imagenes');
+        
+        // Obtener los documentos usando Spatie Media Library
+        $documentos = $inventario->getMedia('documentos');
+        
+        return view('inventarios.show', compact('inventario', 'movimientos', 'ubicaciones', 'cantidadTotal', 'imagenes', 'documentos'));
     }
 
     public function create()

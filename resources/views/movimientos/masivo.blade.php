@@ -1882,7 +1882,7 @@ document.addEventListener('DOMContentLoaded', function() {
             time_24hr: true,
             locale: "es",
             defaultDate: new Date(),
-            minDate: "today",
+            // minDate: "today", // Comentado para permitir fechas anteriores
             minuteIncrement: 15,
             allowInput: true,
             clickOpens: true,
@@ -3024,4 +3024,4 @@ document.getElementById('revertirMovimientosModal').addEventListener('shown.bs.m
 </script>
 @endpush
 
-@endsection 
+@endsection
