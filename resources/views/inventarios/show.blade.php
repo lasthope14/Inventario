@@ -13,12 +13,20 @@
                     <div class="equipment-image">
                         @php
                             $imageUrl = null;
-                            if($inventario->getFirstMediaUrl('imagenes')) {
-                                $imageUrl = $inventario->getFirstMediaUrl('imagenes');
-                            } elseif($inventario->imagen && file_exists(storage_path('app/public/inventario_imagenes/' . $inventario->imagen))) {
+                            // Prioridad 1: Campo imagen_principal (ruta correcta)
+                            if($inventario->imagen_principal && file_exists(storage_path('app/public/' . $inventario->imagen_principal))) {
+                                $imageUrl = asset('storage/' . $inventario->imagen_principal);
+                            }
+                            // Prioridad 2: Spatie Media Library - colección 'imagenes' (verificar si archivo existe)
+                            elseif($inventario->getFirstMediaUrl('imagenes') && $inventario->getMedia('imagenes')->count() > 0) {
+                                $media = $inventario->getMedia('imagenes')->first();
+                                if(file_exists($media->getPath())) {
+                                    $imageUrl = $inventario->getFirstMediaUrl('imagenes');
+                                }
+                            }
+                            // Prioridad 3: Campo imagen (legacy)
+                            elseif($inventario->imagen && file_exists(storage_path('app/public/inventario_imagenes/' . $inventario->imagen))) {
                                 $imageUrl = asset('storage/inventario_imagenes/' . $inventario->imagen);
-                            } elseif($inventario->imagen && file_exists(public_path('storage/' . $inventario->imagen))) {
-                                $imageUrl = asset('storage/' . $inventario->imagen);
                             }
                         @endphp
                         @if($imageUrl)
@@ -324,14 +332,20 @@
                                 </div>
                                 @php
                                     $mainImageUrl = null;
-                                    if($inventario->getMedia('imagenes')->count() > 0) {
-                                        $mainImageUrl = $inventario->getMedia('imagenes')->first()->getUrl();
-                                    } elseif($inventario->getFirstMediaUrl('imagenes')) {
-                                        $mainImageUrl = $inventario->getFirstMediaUrl('imagenes');
-                                    } elseif($inventario->imagen && file_exists(storage_path('app/public/inventario_imagenes/' . $inventario->imagen))) {
+                                    // Prioridad 1: Campo imagen_principal (ruta correcta)
+                                    if($inventario->imagen_principal && file_exists(storage_path('app/public/' . $inventario->imagen_principal))) {
+                                        $mainImageUrl = asset('storage/' . $inventario->imagen_principal);
+                                    }
+                                    // Prioridad 2: Spatie Media Library - colección 'imagenes' (verificar si archivo existe)
+                                    elseif($inventario->getFirstMediaUrl('imagenes') && $inventario->getMedia('imagenes')->count() > 0) {
+                                        $media = $inventario->getMedia('imagenes')->first();
+                                        if(file_exists($media->getPath())) {
+                                            $mainImageUrl = $inventario->getFirstMediaUrl('imagenes');
+                                        }
+                                    }
+                                    // Prioridad 3: Campo imagen (legacy)
+                                    elseif($inventario->imagen && file_exists(storage_path('app/public/inventario_imagenes/' . $inventario->imagen))) {
                                         $mainImageUrl = asset('storage/inventario_imagenes/' . $inventario->imagen);
-                                    } elseif($inventario->imagen && file_exists(public_path('storage/' . $inventario->imagen))) {
-                                        $mainImageUrl = asset('storage/' . $inventario->imagen);
                                     }
                                 @endphp
                                 @if($mainImageUrl)
@@ -373,37 +387,65 @@
                                     <h4 class="mb-0" style="color: #495057; font-size: 1.1rem;">Galería Adicional</h4>
                                 </div>
                                 <div class="space-y-3">
+                                    <!-- Imagen Secundaria (Campo Legacy) -->
                                     <div class="mb-3">
-                                        @if($inventario->getMedia('imagenes')->count() > 1)
+                                        @php
+                                            $secondaryImageUrl = null;
+                                            // Prioridad 1: Campo imagen_secundaria (ruta correcta)
+                                            if($inventario->imagen_secundaria && file_exists(storage_path('app/public/' . $inventario->imagen_secundaria))) {
+                                                $secondaryImageUrl = asset('storage/' . $inventario->imagen_secundaria);
+                                            }
+                                            // Prioridad 2: Segunda imagen de Spatie Media Library
+                                            elseif($inventario->getMedia('imagenes')->count() > 1) {
+                                                $media = $inventario->getMedia('imagenes')->skip(1)->first();
+                                                if(file_exists($media->getPath())) {
+                                                    $secondaryImageUrl = $media->getUrl();
+                                                }
+                                            }
+                                        @endphp
+                                        @if($secondaryImageUrl)
                                             <div class="position-relative">
-                                                <img src="{{ $inventario->getMedia('imagenes')->skip(1)->first()->getUrl() }}" 
+                                                <img src="{{ $secondaryImageUrl }}" 
                                                      class="img-fluid w-100" 
                                                      style="height: 140px; object-fit: cover; cursor: pointer; border: 1px solid #e9ecef; border-radius: 8px;"
-                                                     onclick="openImageModal('{{ $inventario->getMedia('imagenes')->skip(1)->first()->getUrl() }}')">
+                                                     onclick="openImageModal('{{ $secondaryImageUrl }}', '{{ $inventario->nombre }} - Vista Secundaria')">
                                                 <div class="position-absolute top-0 end-0 m-1">
-                                                    <span class="badge" style="background-color: #6c757d; color: white; font-size: 0.7rem;">Vista 2</span>
+                                                    <span class="badge" style="background-color: #17a2b8; color: white; font-size: 0.7rem;">Secundaria</span>
                                                 </div>
                                             </div>
                                         @else
                                             <div class="d-flex align-items-center justify-content-center" style="height: 140px; border: 1px dashed #dee2e6; border-radius: 8px; background-color: #ffffff;">
                                                 <div class="text-center">
                                                     <i class="fas fa-plus-circle" style="color: #dee2e6; font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
-                                                    <p class="mb-0 small text-muted">Vista lateral</p>
+                                                    <p class="mb-0 small text-muted">Imagen Secundaria</p>
                                                 </div>
                                             </div>
                                         @endif
                                     </div>
+                                    <!-- Tercera imagen adicional -->
                                     <div>
                                         @if($inventario->getMedia('imagenes')->count() > 2)
-                                            <div class="position-relative">
-                                                <img src="{{ $inventario->getMedia('imagenes')->skip(2)->first()->getUrl() }}" 
-                                                     class="img-fluid w-100" 
-                                                     style="height: 140px; object-fit: cover; cursor: pointer; border: 1px solid #e9ecef; border-radius: 8px;"
-                                                     onclick="openImageModal('{{ $inventario->getMedia('imagenes')->skip(2)->first()->getUrl() }}')">
-                                                <div class="position-absolute top-0 end-0 m-1">
-                                                    <span class="badge" style="background-color: #6c757d; color: white; font-size: 0.7rem;">Detalles</span>
+                                            @php
+                                                $media = $inventario->getMedia('imagenes')->skip(2)->first();
+                                            @endphp
+                                            @if(file_exists($media->getPath()))
+                                                <div class="position-relative">
+                                                    <img src="{{ $media->getUrl() }}" 
+                                                         class="img-fluid w-100" 
+                                                         style="height: 140px; object-fit: cover; cursor: pointer; border: 1px solid #e9ecef; border-radius: 8px;"
+                                                         onclick="openImageModal('{{ $media->getUrl() }}', '{{ $inventario->nombre }} - Vista Adicional')">
+                                                    <div class="position-absolute top-0 end-0 m-1">
+                                                        <span class="badge" style="background-color: #6c757d; color: white; font-size: 0.7rem;">Detalles</span>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            @else
+                                                <div class="d-flex align-items-center justify-content-center" style="height: 140px; border: 1px dashed #dee2e6; border-radius: 8px; background-color: #ffffff;">
+                                                    <div class="text-center">
+                                                        <i class="fas fa-plus-circle" style="color: #dee2e6; font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                                                        <p class="mb-0 small text-muted">Vista Adicional</p>
+                                                    </div>
+                                                </div>
+                                            @endif
                                         @else
                                             <div class="d-flex align-items-center justify-content-center" style="height: 140px; border: 1px dashed #dee2e6; border-radius: 8px; background-color: #ffffff;">
                                                 <div class="text-center">

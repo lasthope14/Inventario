@@ -76,6 +76,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     ]);
 
     // Rutas específicas de movimientos (DEBEN IR ANTES del resource)
+    Route::get('/movimientos/export-pdf', [MovimientoController::class, 'exportPdf'])->name('movimientos.export-pdf');
     Route::get('/movimientos/revertibles', [MovimientoMasivoController::class, 'movimientosRevertibles'])->name('movimientos.revertibles');
     Route::get('/movimientos/masivo/inventario-data', [MovimientoMasivoController::class, 'getInventarioData'])->name('movimientos.masivo.inventario-data');
     Route::post('/movimientos/{movimiento}/revertir', [MovimientoMasivoController::class, 'revertir'])->name('movimientos.revertir');

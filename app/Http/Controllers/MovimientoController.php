@@ -19,6 +19,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class MovimientoController extends Controller
 {
@@ -32,12 +33,83 @@ class MovimientoController extends Controller
         if ($request->has('inventario_id')) {
             $query->where('inventario_id', $request->inventario_id);
         }
+        
+        // Filtro por ubicación origen
+        if ($request->has('ubicacion_origen') && $request->ubicacion_origen) {
+            $query->where('ubicacion_origen', $request->ubicacion_origen);
+        }
+        
+        // Filtro por ubicación destino
+        if ($request->has('ubicacion_destino') && $request->ubicacion_destino) {
+            $query->where('ubicacion_destino', $request->ubicacion_destino);
+        }
+        
+        // Filtro por cualquier ubicación (origen o destino)
+        if ($request->has('ubicacion_id') && $request->ubicacion_id) {
+            $query->where(function($q) use ($request) {
+                $q->where('ubicacion_origen', $request->ubicacion_id)
+                  ->orWhere('ubicacion_destino', $request->ubicacion_id);
+            });
+        }
     
         $movimientos = $query->with(['inventario', 'usuario', 'usuarioOrigen', 'usuarioDestino', 'realizadoPor'])
                              ->orderBy('fecha_movimiento', 'desc')
                              ->paginate(15);
+        
+        // Obtener todas las ubicaciones para los filtros
+        $ubicaciones = Ubicacion::orderBy('nombre')->get();
     
-        return view('movimientos.index', compact('movimientos'));
+        return view('movimientos.index', compact('movimientos', 'ubicaciones'));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $this->authorize('viewAny', Movimiento::class);
+        $query = Movimiento::query();
+    
+        if ($request->has('inventario_id')) {
+            $query->where('inventario_id', $request->inventario_id);
+        }
+        
+        // Filtro por ubicación origen
+        if ($request->has('ubicacion_origen') && $request->ubicacion_origen) {
+            $query->where('ubicacion_origen', $request->ubicacion_origen);
+        }
+        
+        // Filtro por ubicación destino
+        if ($request->has('ubicacion_destino') && $request->ubicacion_destino) {
+            $query->where('ubicacion_destino', $request->ubicacion_destino);
+        }
+        
+        // Filtro por cualquier ubicación (origen o destino)
+        if ($request->has('ubicacion_id') && $request->ubicacion_id) {
+            $query->where(function($q) use ($request) {
+                $q->where('ubicacion_origen', $request->ubicacion_id)
+                  ->orWhere('ubicacion_destino', $request->ubicacion_id);
+            });
+        }
+    
+        $movimientos = $query->with(['inventario', 'usuario', 'usuarioOrigen', 'usuarioDestino', 'realizadoPor'])
+                             ->orderBy('fecha_movimiento', 'desc')
+                             ->get();
+        
+        // Obtener todas las ubicaciones para mostrar nombres
+        $ubicaciones = Ubicacion::orderBy('nombre')->get();
+        
+        // Preparar datos para el PDF
+        $data = [
+            'movimientos' => $movimientos,
+            'ubicaciones' => $ubicaciones,
+            'filtros' => $request->all(),
+            'fecha_generacion' => now()->format('d/m/Y H:i:s')
+        ];
+        
+        $pdf = PDF::loadView('movimientos.pdf', $data);
+        $pdf->setPaper('A4', 'landscape');
+        
+        $filename = 'movimientos_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+        
+        return $pdf->download($filename);
     }
 
     public function create(Request $request)
