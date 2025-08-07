@@ -74,6 +74,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('inventarios', InventarioController::class)->parameters([
         'inventarios' => 'inventario'
     ]);
+    
+    // Ruta de prueba para contenedores
+    Route::get('/inventarios/{inventario}/test-containers', [InventarioController::class, 'testContainers'])->name('inventarios.test-containers');
 
     // Rutas específicas de movimientos (DEBEN IR ANTES del resource)
     Route::get('/movimientos/export-pdf', [MovimientoController::class, 'exportPdf'])->name('movimientos.export-pdf');

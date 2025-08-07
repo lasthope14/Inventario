@@ -510,6 +510,38 @@ class InventarioController extends Controller
             ->orderBy('fecha_movimiento', 'desc')
             ->first();
         
+        // Cargar todos los movimientos con las relaciones necesarias (sin paginación para la vista)
+        $movimientos = $inventario->movimientos()
+            ->with(['realizadoPor', 'usuarioOrigen', 'usuarioDestino'])
+            ->orderBy('fecha_movimiento', 'desc')
+            ->get();
+        
+        // Obtener las imágenes usando Spatie Media Library
+        $imagenes = $inventario->getMedia('imagenes');
+        
+        // Obtener los documentos usando Spatie Media Library
+        $documentos = $inventario->getMedia('documentos');
+        
+        return view('inventarios.show', compact('inventario', 'movimientos', 'ubicaciones', 'cantidadTotal', 'imagenes', 'documentos', 'ultimoResponsable'));
+    }
+
+    public function testContainers(Inventario $inventario)
+    {
+        $inventario->load(['categoria', 'proveedor', 'ubicacion', 'mantenimientos', 'documentos', 'media']);
+        
+        // Cargar las ubicaciones con sus cantidades
+        $ubicaciones = $inventario->ubicaciones()->with('ubicacion')->get();
+        
+        // Calcular la cantidad total
+        $cantidadTotal = $ubicaciones->sum('cantidad');
+        
+        // Obtener el último responsable del equipo desde los movimientos
+        $ultimoResponsable = $inventario->movimientos()
+            ->with(['usuarioDestino'])
+            ->whereNotNull('usuario_destino_id')
+            ->orderBy('fecha_movimiento', 'desc')
+            ->first();
+        
         // Cargar los movimientos paginados con las relaciones necesarias
         $movimientos = $inventario->movimientos()
             ->with(['realizadoPor'])
@@ -522,7 +554,7 @@ class InventarioController extends Controller
         // Obtener los documentos usando Spatie Media Library
         $documentos = $inventario->getMedia('documentos');
         
-        return view('inventarios.show', compact('inventario', 'movimientos', 'ubicaciones', 'cantidadTotal', 'imagenes', 'documentos', 'ultimoResponsable'));
+        return view('inventarios.test-containers', compact('inventario', 'movimientos', 'ubicaciones', 'cantidadTotal', 'imagenes', 'documentos', 'ultimoResponsable'));
     }
 
     public function create()
