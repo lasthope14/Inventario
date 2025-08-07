@@ -528,21 +528,70 @@
                     <div class="card-body p-4">
                         @php
                             $imagenes = $inventario->getMedia('imagenes');
-                            $totalImagenes = $imagenes->count();
+                            $todasLasImagenes = collect();
+                            
+                            // Determinar imagen principal
+                            $imagenPrincipalUrl = null;
+                            $imagenPrincipalFileName = null;
+                            
+                            if($inventario->imagen_principal && file_exists(storage_path('app/public/' . $inventario->imagen_principal))) {
+                                $imagenPrincipalUrl = asset('storage/' . $inventario->imagen_principal);
+                                $imagenPrincipalFileName = basename($inventario->imagen_principal);
+                            }
+                            elseif($inventario->getFirstMediaUrl('imagenes') && $inventario->getMedia('imagenes')->count() > 0) {
+                                $media = $inventario->getMedia('imagenes')->first();
+                                if(file_exists($media->getPath())) {
+                                    $imagenPrincipalUrl = asset('storage/inventario_imagenes/' . $media->file_name);
+                                    $imagenPrincipalFileName = $media->file_name;
+                                }
+                            }
+                            elseif($inventario->imagen && file_exists(storage_path('app/public/inventario_imagenes/' . $inventario->imagen))) {
+                                $imagenPrincipalUrl = asset('storage/inventario_imagenes/' . $inventario->imagen);
+                                $imagenPrincipalFileName = $inventario->imagen;
+                            }
+                            
+                            // Agregar imagen principal a la colección si existe
+                            if($imagenPrincipalUrl) {
+                                $todasLasImagenes->push((object)[
+                                    'url' => $imagenPrincipalUrl,
+                                    'file_name' => $imagenPrincipalFileName,
+                                    'es_principal' => true,
+                                    'titulo' => 'Imagen Principal'
+                                ]);
+                            }
+                            
+                            // Agregar imágenes adicionales (excluyendo la principal si ya está en media)
+                            foreach($imagenes as $imagen) {
+                                if($imagen->file_name !== $imagenPrincipalFileName) {
+                                    $todasLasImagenes->push((object)[
+                                        'url' => asset('storage/inventario_imagenes/' . $imagen->file_name),
+                                        'file_name' => $imagen->file_name,
+                                        'es_principal' => false,
+                                        'titulo' => 'Imagen Secundaria'
+                                    ]);
+                                }
+                            }
+                            
+                            $totalImagenes = $todasLasImagenes->count();
                         @endphp
                         
                         @if($totalImagenes > 0)
                             <div class="row g-3">
-                                @foreach($imagenes as $index => $imagen)
+                                @foreach($todasLasImagenes as $index => $imagen)
                                     <div class="col-md-6 col-sm-6">
-                                        <div class="position-relative image-container info-card" style="border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; background-color: #f8f9fa; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                                            <img src="{{ asset('storage/inventario_imagenes/' . $imagen->file_name) }}" alt="Imagen {{ $index + 1 }}" class="img-fluid" style="width: 100%; height: 200px; object-fit: cover; cursor: pointer;" onclick="openImageModal('{{ asset('storage/inventario_imagenes/' . $imagen->file_name) }}', '{{ $inventario->nombre }} - Imagen {{ $index + 1 }}')">
+                                        <div class="position-relative image-container info-card" style="border: {{ $imagen->es_principal ? '3px solid #007bff' : '1px solid #e9ecef' }}; border-radius: 8px; overflow: hidden; background-color: #f8f9fa; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
+                                            <img src="{{ $imagen->url }}" alt="{{ $imagen->titulo }}" class="img-fluid" style="width: 100%; height: 200px; object-fit: cover; cursor: pointer;" onclick="openImageModal('{{ $imagen->url }}', '{{ $inventario->nombre }} - {{ $imagen->titulo }}')">
                                             <div class="position-absolute top-0 end-0 m-2">
-                                                <span class="badge bg-primary" style="font-size: 0.7rem;">{{ $index + 1 }}/{{ $totalImagenes }}</span>
+                                                <span class="badge {{ $imagen->es_principal ? 'bg-primary' : 'bg-success' }}" style="font-size: 0.7rem;">{{ $index + 1 }}/{{ $totalImagenes }}</span>
                                             </div>
+                                            @if($imagen->es_principal)
+                                                <div class="position-absolute top-0 start-0 m-2">
+                                                    <span class="badge bg-primary" style="font-size: 0.75rem; font-weight: bold;">PRINCIPAL</span>
+                                                </div>
+                                            @endif
                                             <div class="position-absolute bottom-0 start-0 end-0 p-2" style="background: linear-gradient(transparent, rgba(0,0,0,0.7)); color: white;">
                                                 <small class="d-block text-truncate">{{ $inventario->nombre }}</small>
-                                                <small class="text-muted">Clic para ampliar</small>
+                                                <small class="text-muted">{{ $imagen->titulo }} - Clic para ampliar</small>
                                             </div>
                                         </div>
                                     </div>
