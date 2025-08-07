@@ -489,7 +489,16 @@
                                         <div class="p-2">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <span class="info-value" style="color: #212529; font-size: 0.8rem; text-transform: uppercase;">Estado Financiero</span>
-                                                <span class="badge" style="background-color: {{ $inventario->valor_unitario > 0 ? '#28a745' : '#6c757d' }}; color: white; font-size: 0.8rem;">{{ $inventario->valor_unitario > 0 ? 'Valorizado' : 'Sin valorizar' }}</span>
+                                                @if($inventario->estado_financiero)
+                                                    <span class="badge" style="background-color: 
+                                                        @if($inventario->estado_financiero == 'activo') #28a745
+                                                        @elseif($inventario->estado_financiero == 'depreciado') #ffc107
+                                                        @elseif($inventario->estado_financiero == 'dado_de_baja') #dc3545
+                                                        @else #6c757d
+                                                        @endif; color: white; font-size: 0.8rem;">{{ ucfirst(str_replace('_', ' ', $inventario->estado_financiero)) }}</span>
+                                                @else
+                                                    <span class="badge" style="background-color: {{ $inventario->valor_unitario > 0 ? '#28a745' : '#6c757d' }}; color: white; font-size: 0.8rem;">{{ $inventario->valor_unitario > 0 ? 'Valorizado' : 'Sin valorizar' }}</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -556,89 +565,90 @@
         <!-- Contenedor 4: Bitácora de Observaciones -->
         <div class="row mb-4 mx-0">
             <div class="col-12 px-0">
-                <div class="card" style="border-radius: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                    <div class="card-header" style="background-color: #f8f9fa; border-radius: 15px 15px 0 0; border: none;">
-                        <div class="d-flex align-items-center">
-                            <div class="me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background-color: rgba(108,117,125,0.1); border-radius: 50%; color: #007bff; backdrop-filter: blur(10px);">
-                                <i class="fas fa-history" style="font-size: 1.4rem;"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h2 class="mb-1" style="color: #212529; font-size: 1.5rem; font-weight: 600;">Bitácora de Observaciones</h2>
-                                <p class="mb-0" style="color: #6c757d; font-size: 1rem;">Registro cronológico de eventos y observaciones</p>
-                            </div>
-                            @php
-                                $observacionesArray = [];
-                                if($inventario->observaciones) {
-                                    // Limpiar caracteres especiales y dividir por asteriscos o saltos de línea
-                                    $texto = str_replace(['_x000D_', '\r', '\n'], ' ', $inventario->observaciones);
-                                    $texto = preg_replace('/\s+/', ' ', $texto); // Normalizar espacios
-                                    
-                                    // Dividir por asteriscos (*) que preceden a fechas
-                                    $observacionesArray = preg_split('/\*(?=\d{1,2}\/\d{1,2}\/\d{4})/', $texto);
-                                    
-                                    // Si no hay asteriscos, intentar dividir por fechas directamente
-                                    if(count($observacionesArray) <= 1) {
-                                        $observacionesArray = preg_split('/(\d{1,2}\/\d{1,2}\/\d{4})/', $texto, -1, PREG_SPLIT_DELIM_CAPTURE);
-                                        // Reagrupar fechas con su contenido
-                                        $temp = [];
-                                        for($i = 1; $i < count($observacionesArray); $i += 2) {
-                                            if(isset($observacionesArray[$i]) && isset($observacionesArray[$i+1])) {
-                                                $temp[] = $observacionesArray[$i] . ' ' . trim($observacionesArray[$i+1]);
-                                            }
-                                        }
-                                        $observacionesArray = $temp;
-                                    }
-                                    
-                                    // Limpiar y filtrar observaciones
-                                    $observacionesArray = array_map(function($obs) {
-                                        $obs = trim($obs);
-                                        $obs = ltrim($obs, '*'); // Remover asterisco inicial si existe
-                                        return trim($obs);
-                                    }, $observacionesArray);
-                                    
-                                    $observacionesArray = array_filter($observacionesArray, function($obs) {
-                                        return !empty(trim($obs)) && preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $obs);
-                                    });
-                                    
-                                    // Ordenar por fecha (más reciente primero)
-                                    usort($observacionesArray, function($a, $b) {
-                                        $fechaA = null;
-                                        $fechaB = null;
-                                        
-                                        if(preg_match('/(\d{1,2}\/\d{1,2}\/\d{4})/', $a, $matchA)) {
-                                            $fechaA = $matchA[1];
-                                        }
-                                        if(preg_match('/(\d{1,2}\/\d{1,2}\/\d{4})/', $b, $matchB)) {
-                                            $fechaB = $matchB[1];
-                                        }
-                                        
-                                        if($fechaA && $fechaB) {
-                                            try {
-                                                $dateA = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaA);
-                                                $dateB = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaB);
-                                                return $dateB->timestamp - $dateA->timestamp; // Más reciente primero
-                                            } catch (Exception $e) {
-                                                return 0;
-                                            }
-                                        }
-                                        return 0;
-                                    });
+                @php
+                    $observacionesArray = [];
+                    if($inventario->observaciones) {
+                        // Limpiar caracteres especiales y dividir por asteriscos o saltos de línea
+                        $texto = str_replace(['_x000D_', '\r', '\n'], ' ', $inventario->observaciones);
+                        $texto = preg_replace('/\s+/', ' ', $texto); // Normalizar espacios
+                        
+                        // Dividir por asteriscos (*) que preceden a fechas
+                        $observacionesArray = preg_split('/\*(?=\d{1,2}\/\d{1,2}\/\d{4})/', $texto);
+                        
+                        // Si no hay asteriscos, intentar dividir por fechas directamente
+                        if(count($observacionesArray) <= 1) {
+                            $observacionesArray = preg_split('/(\d{1,2}\/\d{1,2}\/\d{4})/', $texto, -1, PREG_SPLIT_DELIM_CAPTURE);
+                            // Reagrupar fechas con su contenido
+                            $temp = [];
+                            for($i = 1; $i < count($observacionesArray); $i += 2) {
+                                if(isset($observacionesArray[$i]) && isset($observacionesArray[$i+1])) {
+                                    $temp[] = $observacionesArray[$i] . ' ' . trim($observacionesArray[$i+1]);
                                 }
-                                $totalObservaciones = count($observacionesArray);
-                            @endphp
-                            <div class="d-flex align-items-center">
-                                <span class="badge" style="background-color: rgba(255,255,255,0.2); color: white; font-size: 0.9rem; padding: 8px 12px; border-radius: 20px; backdrop-filter: blur(10px);">{{ $totalObservaciones }} eventos</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body" style="padding: 2rem; background-color: #f8f9fa;">
+                            }
+                            $observacionesArray = $temp;
+                        }
+                        
+                        // Limpiar y filtrar observaciones
+                        $observacionesArray = array_map(function($obs) {
+                            $obs = trim($obs);
+                            $obs = ltrim($obs, '*'); // Remover asterisco inicial si existe
+                            return trim($obs);
+                        }, $observacionesArray);
+                        
+                        $observacionesArray = array_filter($observacionesArray, function($obs) {
+                            return !empty(trim($obs)) && preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $obs);
+                        });
+                        
+                        // Ordenar por fecha (más reciente primero)
+                        usort($observacionesArray, function($a, $b) {
+                            $fechaA = null;
+                            $fechaB = null;
+                            
+                            if(preg_match('/(\d{1,2}\/\d{1,2}\/\d{4})/', $a, $matchA)) {
+                                $fechaA = $matchA[1];
+                            }
+                            if(preg_match('/(\d{1,2}\/\d{1,2}\/\d{4})/', $b, $matchB)) {
+                                $fechaB = $matchB[1];
+                            }
+                            
+                            if($fechaA && $fechaB) {
+                                try {
+                                    $dateA = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaA);
+                                    $dateB = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaB);
+                                    return $dateB->timestamp - $dateA->timestamp; // Más reciente primero
+                                } catch (Exception $e) {
+                                    return 0;
+                                }
+                            }
+                            return 0;
+                        });
+                    }
+                    $totalObservaciones = count($observacionesArray);
+                @endphp
+                
+                <div class="accordion" id="bitacoraAccordion">
+                    <div class="accordion-item" style="border-radius: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: none;">
+                        <h2 class="accordion-header" id="headingBitacora">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBitacora" aria-expanded="false" aria-controls="collapseBitacora" style="background-color: #f8f9fa; border-radius: 15px; border: none; padding: 1.5rem 2rem;">
+                                <div class="d-flex align-items-center w-100">
+                                    <div class="me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background-color: rgba(108,117,125,0.1); border-radius: 50%; color: #007bff;">
+                                        <i class="fas fa-history" style="font-size: 1.4rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h2 class="mb-1" style="color: #212529; font-size: 1.5rem; font-weight: 600;">Bitácora de Observaciones</h2>
+                                        <p class="mb-0" style="color: #6c757d; font-size: 1rem;">Registro cronológico de eventos y observaciones</p>
+                                    </div>
+                                    <div class="d-flex align-items-center me-3">
+                                        <span class="badge bg-primary" style="font-size: 0.9rem; padding: 8px 12px; border-radius: 20px;">{{ $totalObservaciones }} eventos</span>
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="collapseBitacora" class="accordion-collapse collapse" aria-labelledby="headingBitacora" data-bs-parent="#bitacoraAccordion">
+                            <div class="accordion-body" style="padding: 2rem; background-color: #f8f9fa;">
                         @if($totalObservaciones > 0)
-                            <div class="timeline-wrapper" style="position: relative;">
-                                <!-- Línea de tiempo vertical -->
-                                <div class="timeline-line" style="position: absolute; left: 30px; top: 0; bottom: 0; width: 3px; background: linear-gradient(to bottom, #667eea, #764ba2); border-radius: 2px;"></div>
-                                
-                                <div class="timeline-container" style="max-height: 500px; overflow-y: auto; padding-right: 10px;">
-                                    @foreach($observacionesArray as $index => $observacion)
+                            <div class="accordion" id="observacionesAccordion">
+                                @foreach($observacionesArray as $index => $observacion)
                                         @php
                                             $observacion = trim($observacion);
                                             if(empty($observacion)) continue;
@@ -717,28 +727,29 @@
                                              }
                                         @endphp
                                         
-                                        <div class="timeline-item" style="position: relative; margin-bottom: 2rem; margin-left: 60px;">
-                                            <!-- Marcador de la línea de tiempo -->
-                                            <div class="timeline-marker" style="position: absolute; left: -45px; top: 10px; width: 20px; height: 20px; background-color: {{ $color }}; border: 4px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 2;"></div>
-                                            
-                                            <!-- Contenido del evento -->
-                                            <div class="timeline-content" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid {{ $color }};">
-                                                <!-- Encabezado del evento -->
-                                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="me-3" style="width: 40px; height: 40px; background-color: {{ $color }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
-                                                            <i class="{{ $icono }}" style="font-size: 1rem;"></i>
-                                                        </div>
-                                                        <div>
-                                                            <h5 class="mb-1" style="color: #212529; font-size: 1.1rem; font-weight: 600;">{{ $tipo }}</h5>
-                                                            <p class="mb-0" style="color: #6c757d; font-size: 0.9rem;">{{ $fechaFormateada }}</p>
+                                    <div class="accordion-item" style="border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 8px; overflow: hidden;">
+                                        <h2 class="accordion-header" id="heading{{ $index }}">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $index }}" aria-expanded="false" aria-controls="collapse{{ $index }}" style="background-color: {{ $colorFondo }}; border: none; padding: 16px 20px;">
+                                                <div class="d-flex align-items-center w-100">
+                                                    <div class="me-3" style="width: 35px; height: 35px; background-color: {{ $color }}; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+                                                        <i class="{{ $icono }}" style="font-size: 0.9rem;"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <h6 class="mb-1" style="color: #212529; font-size: 1rem; font-weight: 600;">{{ $tipo }}</h6>
+                                                                <small style="color: #6c757d; font-size: 0.85rem;">{{ $fechaFormateada }}</small>
+                                                            </div>
+                                                            <span class="badge" style="background-color: {{ $color }}; color: white; font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; margin-right: 20px;">Evento #{{ $totalObservaciones - $index }}</span>
                                                         </div>
                                                     </div>
-                                                    <span class="badge" style="background-color: {{ $color }}; color: white; font-size: 0.8rem; padding: 6px 12px; border-radius: 20px;">Evento #{{ $totalObservaciones - $index }}</span>
                                                 </div>
-                                                
+                                            </button>
+                                        </h2>
+                                        <div id="collapse{{ $index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ $index }}" data-bs-parent="#observacionesAccordion">
+                                            <div class="accordion-body" style="padding: 20px; background-color: white;">
                                                 <!-- Descripción del evento -->
-                                                <div class="event-description" style="background-color: {{ $colorFondo }}; border-radius: 8px; padding: 1rem; border-left: 3px solid {{ $color }};">
+                                                <div class="event-description" style="background-color: {{ $colorFondo }}; border-radius: 8px; padding: 16px; border-left: 4px solid {{ $color }};">
                                                     <p class="mb-0" style="color: #212529; font-size: 1rem; line-height: 1.6;">{{ $contenido }}</p>
                                                 </div>
                                                 
@@ -753,15 +764,15 @@
                                                         }
                                                     @endphp
                                                     @if(isset($tiempoRelativo))
-                                                        <div class="mt-2">
+                                                        <div class="mt-3 pt-3" style="border-top: 1px solid #dee2e6;">
                                                             <small class="text-muted" style="font-style: italic;"><i class="fas fa-clock me-1"></i>{{ $tiempoRelativo }}</small>
                                                         </div>
                                                     @endif
                                                 @endif
                                             </div>
                                         </div>
-                                    @endforeach
-                                </div>
+                                    </div>
+                                @endforeach
                             </div>
                         @else
                             <div class="text-center py-5">
@@ -775,6 +786,8 @@
                                 </div>
                             </div>
                         @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -846,6 +859,8 @@
                                 <div class="tab-content" id="historyTabsContent">
                                     <!-- Pestaña de Movimientos -->
                                     <div class="tab-pane fade show active" id="movements" role="tabpanel" aria-labelledby="movements-tab">
+
+                                        
                                         @if($movimientos->count() > 0)
                                             <div class="table-responsive">
                                                 <table class="table table-hover" style="border: 1px solid #dee2e6;">
@@ -858,6 +873,9 @@
                                                             <th style="color: #212529; font-weight: 600; padding: 16px; text-align: center;">Cantidad</th>
                                                             <th style="color: #212529; font-weight: 600; padding: 16px; text-align: center;">Responsable</th>
                                                             <th style="color: #212529; font-weight: 600; padding: 16px; text-align: center;">Motivo</th>
+                                                            @if(auth()->user()->role->name === 'administrador')
+                                                                <th style="color: #212529; font-weight: 600; padding: 16px; text-align: center;">Acciones</th>
+                                                            @endif
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -909,6 +927,25 @@
                                                             <td style="padding: 16px; color: #212529; font-weight: 600; text-align: center;">{{ $movimiento->cantidad }}</td>
                                                             <td style="padding: 16px; color: #212529; text-align: center;">{{ $movimiento->usuarioDestino->nombre ?? 'N/A' }}</td>
                                                             <td style="padding: 16px; color: #212529; text-align: center; max-width: 250px;">{{ Str::limit($movimiento->motivo ?? 'Sin especificar', 60) }}</td>
+                                                            @if(auth()->user()->role->name === 'administrador')
+                                                                <td style="padding: 16px; text-align: center;">
+                                                                    <div class="btn-group" role="group">
+                                                                        <a href="{{ route('movimientos.show', $movimiento) }}" class="btn btn-info btn-sm" style="border-radius: 6px 0 0 6px; padding: 8px 12px; font-size: 0.8rem;" title="Ver detalles">
+                                                                            <i class="fas fa-eye"></i>
+                                                                        </a>
+                                                                        <a href="{{ route('movimientos.edit', $movimiento) }}" class="btn btn-warning btn-sm" style="border-radius: 0; padding: 8px 12px; font-size: 0.8rem;" title="Editar">
+                                                                            <i class="fas fa-edit"></i>
+                                                                        </a>
+                                                                        <form action="{{ route('movimientos.destroy', $movimiento) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este movimiento?')">
+                                                                            @csrf
+                                                                            @method('DELETE')
+                                                                            <button type="submit" class="btn btn-danger btn-sm" style="border-radius: 0 6px 6px 0; padding: 8px 12px; font-size: 0.8rem;" title="Eliminar">
+                                                                                <i class="fas fa-trash"></i>
+                                                                            </button>
+                                                                        </form>
+                                                                    </div>
+                                                                </td>
+                                                            @endif
                                                         </tr>
                                                         @endforeach
                                                     </tbody>
@@ -925,6 +962,8 @@
 
                                     <!-- Pestaña de Mantenimientos -->
                                     <div class="tab-pane fade" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
+
+                                        
                                         @if($inventario->mantenimientos->count() > 0)
                                             <div class="table-responsive">
                                                 <table class="table table-hover" style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; margin-bottom: 0;">
@@ -935,7 +974,10 @@
                                                             <th style="color: #212529; font-weight: 600; padding: 16px; text-align: center; border-right: 1px solid #dee2e6;">Fecha Inicio</th>
                                                             <th style="color: #212529; font-weight: 600; padding: 16px; text-align: center; border-right: 1px solid #dee2e6;">Fecha Fin</th>
                                                             <th style="color: #212529; font-weight: 600; padding: 16px; text-align: center; border-right: 1px solid #dee2e6;">Costo</th>
-                                                            <th style="color: #212529; font-weight: 600; padding: 16px; text-align: center;">Proveedor</th>
+                                                            <th style="color: #212529; font-weight: 600; padding: 16px; text-align: center; border-right: 1px solid #dee2e6;">Proveedor</th>
+                                                            @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'tecnico')
+                                                                <th style="color: #212529; font-weight: 600; padding: 16px; text-align: center;">Acciones</th>
+                                                            @endif
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -1001,11 +1043,30 @@
                                                                     ${{ number_format($mantenimiento->costo ?? 0, 2) }}
                                                                 </span>
                                                             </td>
-                                                            <td style="padding: 16px; text-align: center; vertical-align: middle;">
+                                                            <td style="padding: 16px; text-align: center; vertical-align: middle; border-right: 1px solid #f1f3f4;">
                                                                 <span style="color: #212529; font-size: 0.9rem;">
                                                                     {{ $mantenimiento->proveedor_servicio ?? 'No especificado' }}
                                                                 </span>
                                                             </td>
+                                                            @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'tecnico')
+                                                                <td style="padding: 16px; text-align: center; vertical-align: middle;">
+                                                                    <div class="btn-group" role="group">
+                                                                        <a href="{{ route('mantenimientos.show', $mantenimiento) }}" class="btn btn-info btn-sm" style="border-radius: 6px 0 0 6px; padding: 8px 12px; font-size: 0.8rem;" title="Ver detalles">
+                                                                            <i class="fas fa-eye"></i>
+                                                                        </a>
+                                                                        <a href="{{ route('mantenimientos.edit', $mantenimiento) }}" class="btn btn-warning btn-sm" style="border-radius: 0; padding: 8px 12px; font-size: 0.8rem;" title="Editar">
+                                                                            <i class="fas fa-edit"></i>
+                                                                        </a>
+                                                                        <form action="{{ route('mantenimientos.destroy', $mantenimiento) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este mantenimiento?')">
+                                                                            @csrf
+                                                                            @method('DELETE')
+                                                                            <button type="submit" class="btn btn-danger btn-sm" style="border-radius: 0 6px 6px 0; padding: 8px 12px; font-size: 0.8rem;" title="Eliminar">
+                                                                                <i class="fas fa-trash"></i>
+                                                                            </button>
+                                                                        </form>
+                                                                    </div>
+                                                                </td>
+                                                            @endif
                                                         </tr>
                                                         @endforeach
                                                     </tbody>
@@ -1022,68 +1083,90 @@
 
                                     <!-- Pestaña de Documentos -->
                                     <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-                                        <div class="row justify-content-center">
-                                            <div class="col-md-8">
-                                                <div class="card" style="border: 1px solid #dee2e6; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 12px;">
-                                                    <div class="card-body text-center" style="padding: 40px;">
-                                                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);">
-                                                            <i class="fas fa-server" style="color: white; font-size: 3rem;"></i>
-                                                        </div>
-                                                        <h4 style="color: #212529; font-weight: 700; margin-bottom: 16px; font-size: 1.5rem;">Documentación en NAS</h4>
-                                                        <p style="color: #6c757d; margin-bottom: 32px; font-size: 1rem; line-height: 1.6;">Toda la documentación técnica de este equipo está centralizada en nuestro servidor NAS. Escanea el código QR para acceder directamente a los archivos.</p>
-                                                        
-                                                        <!-- QR Code Container -->
-                                                        <div style="background-color: #f8f9fa; border: 2px solid #dee2e6; border-radius: 12px; padding: 24px; margin-bottom: 24px; display: inline-block;">
-                                                            @php
-                                                                // Generar URL del NAS para este equipo específico
-                                                                $nasUrl = 'http://nas.empresa.local/documentos/inventario/' . $inventario->id;
-                                                            @endphp
-                                                            <div id="qrcode-{{ $inventario->id }}" style="margin: 0 auto;"></div>
-                                                        </div>
-                                                        
-                                                        <div class="row g-3 text-start">
-                                                            <div class="col-md-6">
-                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
-                                                                    <i class="fas fa-file-pdf" style="color: #dc3545; font-size: 1.5rem; margin-right: 12px;"></i>
-                                                                    <div>
-                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 0.9rem;">Manuales</h6>
-                                                                        <small style="color: #6c757d;">Guías técnicas y de usuario</small>
-                                                                    </div>
-                                                                </div>
+                                        <div class="card" style="border: 1px solid #dee2e6; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 12px;">
+                                            <div class="card-body" style="padding: 40px;">
+                                                <div class="row align-items-center">
+                                                    <!-- Sección del QR Code -->
+                                                    <div class="col-md-5">
+                                                        <div class="text-center">
+                                                            <div style="background-color: #007bff; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                                                 <i class="fas fa-server" style="color: white; font-size: 2rem;"></i>
+                                                             </div>
+                                                            <h4 style="color: #212529; font-weight: 700; margin-bottom: 16px; font-size: 1.4rem;">Documentación del Equipo</h4>
+                                                             <p style="color: #6c757d; margin-bottom: 24px; font-size: 0.95rem; line-height: 1.5;">Escanea el código QR para acceso rápido desde dispositivos móviles</p>
+                                                            
+                                                            <!-- QR Code Container -->
+                                                            <div style="background-color: #f8f9fa; border: 2px solid #dee2e6; border-radius: 12px; padding: 20px; margin-bottom: 20px; display: inline-block;">
+                                                                @php
+                                                                    // Generar URL del NAS para este equipo específico
+                                                                    $nasUrl = 'http://nas.empresa.local/documentos/inventario/' . $inventario->id;
+                                                                @endphp
+                                                                <div id="qrcode-{{ $inventario->id }}" style="margin: 0 auto;"></div>
                                                             </div>
-                                                            <div class="col-md-6">
-                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
-                                                                    <i class="fas fa-receipt" style="color: #28a745; font-size: 1.5rem; margin-right: 12px;"></i>
-                                                                    <div>
-                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 0.9rem;">Facturas</h6>
-                                                                        <small style="color: #6c757d;">Comprobantes de compra</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #ffc107;">
-                                                                    <i class="fas fa-shield-alt" style="color: #ffc107; font-size: 1.5rem; margin-right: 12px;"></i>
-                                                                    <div>
-                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 0.9rem;">Garantías</h6>
-                                                                        <small style="color: #6c757d;">Certificados de garantía</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #6f42c1;">
-                                                                    <i class="fas fa-id-card" style="color: #007bff; font-size: 1.5rem; margin-right: 12px;"></i>
-                                                                    <div>
-                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 0.9rem;">Hoja de Vida</h6>
-                                                                        <small style="color: #6c757d;">Historial completo del equipo</small>
-                                                                    </div>
-                                                                </div>
+                                                            
+                                                            <div>
+                                                                <a href="{{ $nasUrl }}" target="_blank" class="btn btn-primary" style="font-weight: 600; padding: 12px 24px; border-radius: 8px; font-size: 0.9rem; width: 100%;">
+                                                                     <i class="fas fa-external-link-alt me-2" style="font-size: 0.8rem;"></i>Documentación de {{ $inventario->nombre }}
+                                                                 </a>
                                                             </div>
                                                         </div>
+                                                    </div>
+                                                    
+                                                    <!-- Separador vertical -->
+                                                     <div class="col-md-1 d-flex justify-content-center">
+                                                         <div style="width: 2px; height: 300px; background-color: #dee2e6;"></div>
+                                                     </div>
+                                                    
+                                                    <!-- Sección de tipos de documentos -->
+                                                    <div class="col-md-6">
+                                                        <h5 style="color: #212529; font-weight: 700; margin-bottom: 24px; font-size: 1.3rem;">Tipos de Documentos Disponibles</h5>
+                                                        <p style="color: #6c757d; margin-bottom: 32px; font-size: 0.9rem; line-height: 1.6;">Encuentra toda la documentación técnica organizada por categorías en nuestro servidor centralizado.</p>
                                                         
-                                                        <div class="mt-4">
-                                                            <a href="{{ $nasUrl }}" target="_blank" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; font-weight: 600; padding: 12px 32px; border-radius: 8px; text-decoration: none; transition: all 0.3s ease; font-size: 0.95rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(102, 126, 234, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                                                                <i class="fas fa-external-link-alt me-2" style="font-size: 0.9rem;"></i>Acceder al NAS
-                                                            </a>
+                                                        <div class="row g-3">
+                                                            <div class="col-12">
+                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 10px; border-left: 4px solid #dc3545; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateX(5px)';" onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateX(0)';">
+                                                                    <div style="background-color: #dc3545; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                                                        <i class="fas fa-file-pdf" style="color: white; font-size: 1.2rem;"></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 1rem;">Manuales Técnicos</h6>
+                                                                        <small style="color: #6c757d; font-size: 0.85rem;">Guías de instalación, operación y mantenimiento</small>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 10px; border-left: 4px solid #28a745; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateX(5px)';" onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateX(0)';">
+                                                                    <div style="background-color: #28a745; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                                                        <i class="fas fa-receipt" style="color: white; font-size: 1.2rem;"></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 1rem;">Facturas y Comprobantes</h6>
+                                                                        <small style="color: #6c757d; font-size: 0.85rem;">Documentos de compra y transacciones financieras</small>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 10px; border-left: 4px solid #ffc107; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateX(5px)';" onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateX(0)';">
+                                                                    <div style="background-color: #ffc107; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                                                        <i class="fas fa-shield-alt" style="color: white; font-size: 1.2rem;"></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 1rem;">Garantías y Certificados</h6>
+                                                                        <small style="color: #6c757d; font-size: 0.85rem;">Documentos de garantía y certificaciones técnicas</small>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 10px; border-left: 4px solid #007bff; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateX(5px)';" onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateX(0)';">
+                                                                    <div style="background-color: #007bff; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                                                        <i class="fas fa-id-card" style="color: white; font-size: 1.2rem;"></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 1rem;">Hoja de Vida del Equipo</h6>
+                                                                        <small style="color: #6c757d; font-size: 0.85rem;">Historial completo y registros de mantenimiento</small>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1120,8 +1203,60 @@
                     </div>
                 </div>
             </div>
-        </div>
 
+            <!-- Contenedor adicional: QR Personalizado y Enlace de Documentación -->
+            @if($inventario->qr_code || $inventario->enlace_documentacion)
+            <div class="row mb-4 mx-0">
+                <div class="col-12 px-0">
+                    <div class="card" style="border: 1px solid #dee2e6; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 12px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <div class="card-header" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border-radius: 12px 12px 0 0; padding: 20px; border: none;">
+                            <div class="d-flex align-items-center">
+                                <div style="background-color: rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                    <i class="fas fa-qrcode" style="color: white; font-size: 1.5rem;"></i>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; font-weight: 700; font-size: 1.4rem;">Documentación Personalizada</h4>
+                                    <p style="margin: 0; opacity: 0.9; font-size: 0.9rem;">QR y enlaces personalizados del equipo</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding: 30px;">
+                            <div class="row">
+                                @if($inventario->qr_code)
+                                <div class="col-md-6">
+                                    <div class="p-3" style="background-color: white; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <span class="info-label" style="color: #495057; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">QR Personalizado</span>
+                                        </div>
+                                        <div class="text-center">
+                                            <img src="{{ asset('storage/' . $inventario->qr_code) }}" alt="QR Personalizado" style="max-width: 200px; max-height: 200px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+                                @if($inventario->enlace_documentacion)
+                                <div class="col-md-6">
+                                    <div class="p-3" style="background-color: white; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <span class="info-label" style="color: #495057; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Enlace de Documentación</span>
+                                        </div>
+                                        <div class="text-center">
+                                            <a href="{{ $inventario->enlace_documentacion }}" target="_blank" class="btn btn-primary" style="font-weight: 600; padding: 12px 24px; border-radius: 8px; font-size: 0.9rem; width: 100%;">
+                                                <i class="fas fa-external-link-alt me-2" style="font-size: 0.8rem;"></i>Acceder a Documentación
+                                            </a>
+                                            <small class="text-muted d-block mt-2" style="word-break: break-all;">{{ $inventario->enlace_documentacion }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+        </div>
     </div>
 </div>
 

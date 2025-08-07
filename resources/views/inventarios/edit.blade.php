@@ -1,463 +1,658 @@
 @extends('layouts.app')
 
+@section('title', 'Editar Equipo - ' . $inventario->nombre)
+
 @section('content')
 <div class="container-fluid py-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h1 class="h3 mb-0"><i class="fas fa-edit me-3"></i>Editar Elemento de Inventario</h1>
-            <a href="{{ route('inventarios.show', $inventario) }}" class="btn btn-light btn-sm">
-                <i class="fas fa-arrow-left me-2"></i> Volver
-            </a>
-        </div>
-        <div class="card-body">
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>{{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
-            <form action="{{ route('inventarios.update', $inventario) }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card mb-4">
-                            <div class="card-header bg-light">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-info-circle me-2"></i>Información Básica
-                                </h5>
+    <!-- Contenedor Bootstrap principal -->
+    <div class="container-fluid px-0">
+        
+        <!-- Header Section -->
+        <div class="row mb-4 mx-0">
+            <div class="col-12 px-0">
+                <div class="card">
+                    <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #007bff; border-radius: 50%; color: white;">
+                                    <i class="fas fa-edit" style="font-size: 1.2rem;"></i>
+                                </div>
+                                <div>
+                                    <h2 class="mb-1" style="color: #212529; font-size: 1.5rem;">Editar: {{ $inventario->nombre }}</h2>
+                                    <p class="mb-0" style="color: #212529; font-size: 0.9rem;">Código: {{ $inventario->codigo_unico ?? $inventario->codigo }}</p>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="categoria_id" class="form-label">Categoría</label>
-                                    <select name="categoria_id" id="categoria_id" class="form-select" required>
-                                        @foreach($categorias as $categoria)
-                                            <option value="{{ $categoria->id }}" {{ old('categoria_id', $inventario->categoria_id) == $categoria->id ? 'selected' : '' }}>
-                                                {{ $categoria->nombre }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="nombre" class="form-label">Nombre</label>
-                                    <input type="text" name="nombre" id="nombre" class="form-control" required value="{{ old('nombre', $inventario->nombre) }}">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="propietario" class="form-label">Propietario</label>
-                                    <input type="text" name="propietario" id="propietario" class="form-control" required value="{{ old('propietario', $inventario->propietario) }}">
-                                </div>
-                                <!-- Se eliminó el selector de estado general -->
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('inventarios.show', $inventario->id) }}" class="btn" style="background-color: #6c757d; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 500;">
+                                    <i class="fas fa-eye me-1"></i>Ver
+                                </a>
+                                <button type="button" onclick="history.back()" class="btn" style="background-color: #495057; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 500;">
+                                    <i class="fas fa-arrow-left me-1"></i>Volver
+                                </button>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card mb-4">
-                            <div class="card-header bg-light">
-                                <h5 class="card-title mb-0"><i class="fas fa-cog me-2"></i>Detalles Técnicos</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="modelo" class="form-label">Modelo</label>
-                                    <input type="text" name="modelo" id="modelo" class="form-control" value="{{ old('modelo', $inventario->modelo) }}">
-                                    <small class="text-muted">Este campo es opcional</small>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="numero_serie" class="form-label">Número de Serie</label>
-                                    <input type="text" name="numero_serie" id="numero_serie" class="form-control" value="{{ old('numero_serie', $inventario->numero_serie) }}">
-                                    <small class="text-muted">Este campo es opcional</small>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="marca" class="form-label">Marca</label>
-                                    <input type="text" name="marca" id="marca" class="form-control" value="{{ old('marca', $inventario->marca) }}">
-                                    <small class="text-muted">Este campo es opcional</small>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="proveedor_id" class="form-label">Proveedor</label>
-                                    <select name="proveedor_id" id="proveedor_id" class="form-select" required>
-                                        @foreach($proveedores as $proveedor)
-                                            <option value="{{ $proveedor->id }}" {{ old('proveedor_id', $inventario->proveedor_id) == $proveedor->id ? 'selected' : '' }}>
-                                                {{ $proveedor->nombre }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card mb-4">
-                            <div class="card-header bg-light">
-                                <h5 class="card-title mb-0"><i class="fas fa-dollar-sign me-2"></i>Información Financiera</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="fecha_compra" class="form-label">Fecha de Compra</label>
-                                    <div class="input-group">
-                                        <input type="text" 
-                                               class="form-control flatpickr" 
-                                               id="fecha_compra" 
-                                               name="fecha_compra" 
-                                               value="{{ $inventario->fecha_compra_formatted }}"
-                                               placeholder="Seleccione una fecha"
-                                               readonly>
-                                        <span class="input-group-text pointer" onclick="document.getElementById('fecha_compra').click()">
-                                            <i class="fas fa-calendar-alt"></i>
-                                        </span>
-                                    </div>
-                                    <small class="text-muted">Este campo es opcional</small>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="numero_factura" class="form-label">Número de Factura</label>
-                                    <input type="text" name="numero_factura" id="numero_factura" class="form-control" value="{{ $inventario->numero_factura }}">
-                                    <small class="text-muted">Este campo es opcional</small>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="valor_unitario" class="form-label">Valor Unitario</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" name="valor_unitario" id="valor_unitario" class="form-control" min="0" step="0.01" required value="{{ old('valor_unitario', $inventario->valor_unitario) }}">
-                                    </div>
-                                    <small class="text-muted">Este campo es opcional</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card mb-4">
-                            <div class="card-header bg-light">
-                                <h5 class="card-title mb-0"><i class="fas fa-calendar-alt me-2"></i>Fechas Importantes</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="fecha_baja" class="form-label">Fecha de Baja</label>
-                                    <div class="input-group">
-                                        <input type="text" 
-                                               class="form-control flatpickr" 
-                                               id="fecha_baja" 
-                                               name="fecha_baja" 
-                                               value="{{ $inventario->fecha_baja_formatted }}"
-                                               placeholder="Seleccione una fecha"
-                                               readonly>
-                                        <span class="input-group-text pointer" onclick="document.getElementById('fecha_baja').click()">
-                                            <i class="fas fa-calendar-alt"></i>
-                                        </span>
-                                    </div>
-                                    <small class="text-muted">Este campo es opcional</small>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="fecha_inspeccion" class="form-label">Fecha de Inspección</label>
-                                    <div class="input-group">
-                                        <input type="text" 
-                                               class="form-control flatpickr" 
-                                               id="fecha_inspeccion" 
-                                               name="fecha_inspeccion" 
-                                               value="{{ $inventario->fecha_inspeccion_formatted }}"
-                                               placeholder="Seleccione una fecha"
-                                               readonly>
-                                        <span class="input-group-text pointer" onclick="document.getElementById('fecha_inspeccion').click()">
-                                            <i class="fas fa-calendar-alt"></i>
-                                        </span>
-                                    </div>
-                                    <small class="text-muted">Este campo es opcional</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card mb-4">
-                    <div class="card-header bg-light">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-map-marker-alt me-2"></i>Cantidades y Estados por Ubicación
-                            <small class="ms-2 text-muted">Gestione la cantidad y estado de los elementos en cada ubicación</small>
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover align-middle">
-                                <thead class="table-light">
-                                    <tr class="text-center">
-                                        <th style="width: 30%">Ubicación</th>
-                                        <th style="width: 30%">Cantidad</th>
-                                        <th style="width: 40%">Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($inventario->ubicaciones as $ubicacionInventario)
-                                        <tr>
-                                            <td class="align-middle">
-                                                <strong>{{ $ubicacionInventario->ubicacion->nombre }}</strong>
-                                            </td>
-                                            <td>
-                                                <div class="input-group">
-                                                    <input type="number" 
-                                                           name="cantidades[{{ $ubicacionInventario->ubicacion_id }}]" 
-                                                           class="form-control text-center"
-                                                           value="{{ $ubicacionInventario->cantidad }}" 
-                                                           min="0"
-                                                           required>
-                                                    <span class="input-group-text">unidades</span>
+                    <div class="card-body p-4">
+                        <style>
+                            /* Estilos para tema oscuro */
+                            [data-bs-theme="dark"] .card {
+                                background-color: #1e293b;
+                                border-color: #475569;
+                                color: #f8fafc;
+                            }
+                            
+                            [data-bs-theme="dark"] .card-header {
+                                background-color: #334155 !important;
+                                border-color: #475569;
+                                color: #f8fafc;
+                            }
+                            
+                            /* Información cards para tema oscuro */
+                            [data-bs-theme="dark"] .info-card {
+                                background-color: #334155 !important;
+                                border-color: #475569 !important;
+                                color: #f8fafc !important;
+                            }
+                            
+                            [data-bs-theme="dark"] .info-card small {
+                                color: #94a3b8 !important;
+                            }
+                            
+                            [data-bs-theme="dark"] .info-card .info-value {
+                                color: #f8fafc !important;
+                            }
+                            
+                            /* Botones para tema oscuro */
+                            [data-bs-theme="dark"] .btn-primary {
+                                background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                                border-color: #3b82f6;
+                            }
+                            
+                            [data-bs-theme="dark"] .btn-primary:hover {
+                                background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+                                border-color: #1d4ed8;
+                            }
+                            
+                            [data-bs-theme="dark"] .btn-outline-secondary {
+                                background-color: #374151;
+                                border-color: #6b7280;
+                                color: #f9fafb;
+                            }
+                            
+                            [data-bs-theme="dark"] .btn-outline-secondary:hover {
+                                background-color: #4b5563;
+                                border-color: #9ca3af;
+                                color: #f9fafb;
+                            }
+                            
+                            /* Form controls para tema oscuro */
+                            [data-bs-theme="dark"] .form-control {
+                                background-color: #374151;
+                                border-color: #6b7280;
+                                color: #f9fafb;
+                            }
+                            
+                            [data-bs-theme="dark"] .form-control:focus {
+                                background-color: #374151;
+                                border-color: #3b82f6;
+                                color: #f9fafb;
+                                box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+                            }
+                            
+                            [data-bs-theme="dark"] .form-select {
+                                background-color: #374151;
+                                border-color: #6b7280;
+                                color: #f9fafb;
+                            }
+                            
+                            [data-bs-theme="dark"] .form-select:focus {
+                                background-color: #374151;
+                                border-color: #3b82f6;
+                                color: #f9fafb;
+                                box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+                            }
+                        </style>
+                        
+                        <form action="{{ route('inventarios.update', $inventario->id) }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            @method('PUT')
+                            
+                            <!-- Contenedor 1: Información Básica -->
+                            <div class="row mb-4 mx-0">
+                                <div class="col-12 px-0">
+                                    <div class="card">
+                                        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #007bff; border-radius: 50%; color: white;">
+                                                    <i class="fas fa-id-card" style="font-size: 1.2rem;"></i>
                                                 </div>
-                                            </td>
-                                            <td>
-                                                <select name="estados[{{ $ubicacionInventario->ubicacion_id }}]" 
-                                                        class="form-select estado-ubicacion" 
-                                                        required
-                                                        data-ubicacion="{{ $ubicacionInventario->ubicacion->nombre }}">
-                                                    @foreach(['disponible', 'en uso', 'en mantenimiento', 'dado de baja', 'robado'] as $estado)
-                                                        <option value="{{ $estado }}" 
-                                                                {{ $ubicacionInventario->estado == $estado ? 'selected' : '' }}>
-                                                            {{ ucfirst($estado) }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                    <!-- Fila para agregar nueva ubicación -->
-                                    <tr class="table-light">
-                                        <td>
-                                            <select name="nueva_ubicacion_id" class="form-select">
-                                                <option value="">Agregar nueva ubicación...</option>
-                                                @foreach($ubicaciones as $ubicacion)
-                                                    @if(!$inventario->ubicaciones->contains('ubicacion_id', $ubicacion->id))
-                                                        <option value="{{ $ubicacion->id }}">{{ $ubicacion->nombre }}</option>
-                                                    @endif
-                                                @endforeach
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <div class="input-group">
-                                                <input type="number" 
-                                                       name="nueva_ubicacion_cantidad" 
-                                                       class="form-control text-center" 
-                                                       placeholder="Cantidad" 
-                                                       min="1">
-                                                <span class="input-group-text">unidades</span>
+                                                <div>
+                                                    <h2 class="mb-1" style="color: #212529; font-size: 1.5rem;">Información Básica</h2>
+                                                    <p class="mb-0" style="color: #212529; font-size: 0.9rem;">Datos principales del equipo</p>
+                                                </div>
                                             </div>
-                                        </td>
-                                        <td>
-                                            <select name="nueva_ubicacion_estado" class="form-select">
-                                                <option value="">Seleccionar estado...</option>
-                                                @foreach(['disponible', 'en uso', 'en mantenimiento', 'dado de baja', 'robado'] as $estado)
-                                                    <option value="{{ $estado }}">{{ ucfirst($estado) }}</option>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="nombre" class="form-label">Nombre del Equipo</label>
+                                                    <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre', $inventario->nombre) }}" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="codigo" class="form-label">Código</label>
+                                                    <input type="text" class="form-control" id="codigo" name="codigo" value="{{ old('codigo', $inventario->codigo) }}" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="categoria_id" class="form-label">Categoría</label>
+                                                    <select class="form-select" id="categoria_id" name="categoria_id" required>
+                                                        <option value="">Seleccionar categoría</option>
+                                                        @foreach($categorias as $categoria)
+                                                            <option value="{{ $categoria->id }}" {{ old('categoria_id', $inventario->categoria_id) == $categoria->id ? 'selected' : '' }}>
+                                                                {{ $categoria->nombre }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="propietario" class="form-label">Propietario</label>
+                                                    <input type="text" class="form-control" id="propietario" name="propietario" value="{{ old('propietario', $inventario->propietario ?? 'HIDROOBRAS') }}">
+                                                </div>
+                                                <div class="col-12">
+                                                    <label for="descripcion" class="form-label">Descripción</label>
+                                                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ old('descripcion', $inventario->descripcion) }}</textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Contenedor 2: Detalles Técnicos -->
+                            <div class="row mb-4 mx-0">
+                                <div class="col-12 px-0">
+                                    <div class="card">
+                                        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #28a745; border-radius: 50%; color: white;">
+                                                    <i class="fas fa-cogs" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h2 class="mb-1" style="color: #212529; font-size: 1.5rem;">Detalles Técnicos</h2>
+                                                    <p class="mb-0" style="color: #212529; font-size: 0.9rem;">Especificaciones y características técnicas</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="marca" class="form-label">Marca</label>
+                                                    <input type="text" class="form-control" id="marca" name="marca" value="{{ old('marca', $inventario->marca) }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="modelo" class="form-label">Modelo</label>
+                                                    <input type="text" class="form-control" id="modelo" name="modelo" value="{{ old('modelo', $inventario->modelo) }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="numero_serie" class="form-label">Número de Serie</label>
+                                                    <input type="text" class="form-control" id="numero_serie" name="numero_serie" value="{{ old('numero_serie', $inventario->numero_serie) }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="proveedor_id" class="form-label">Proveedor</label>
+                                                    <select class="form-select" id="proveedor_id" name="proveedor_id">
+                                                        <option value="">Seleccionar proveedor</option>
+                                                        @foreach($proveedores as $proveedor)
+                                                            <option value="{{ $proveedor->id }}" {{ old('proveedor_id', $inventario->proveedor_id) == $proveedor->id ? 'selected' : '' }}>
+                                                                {{ $proveedor->nombre }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Contenedor 3: Información Financiera -->
+                            <div class="row mb-4 mx-0">
+                                <div class="col-12 px-0">
+                                    <div class="card">
+                                        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #28a745; border-radius: 50%; color: white;">
+                                                    <i class="fas fa-chart-line" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h2 class="mb-1" style="color: #212529; font-size: 1.5rem;">Información Financiera</h2>
+                                                    <p class="mb-0" style="color: #212529; font-size: 0.9rem;">Detalles económicos y de adquisición</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="valor_unitario" class="form-label">Valor Unitario</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="number" class="form-control" id="valor_unitario" name="valor_unitario" value="{{ old('valor_unitario', $inventario->valor_unitario) }}" step="0.01" min="0">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="estado_financiero" class="form-label">Estado Financiero</label>
+                                                    <select class="form-select" id="estado_financiero" name="estado_financiero">
+                                                        <option value="">Seleccionar estado</option>
+                                                        <option value="activo" {{ old('estado_financiero', $inventario->estado_financiero) == 'activo' ? 'selected' : '' }}>Activo</option>
+                                                        <option value="depreciado" {{ old('estado_financiero', $inventario->estado_financiero) == 'depreciado' ? 'selected' : '' }}>Depreciado</option>
+                                                        <option value="dado_de_baja" {{ old('estado_financiero', $inventario->estado_financiero) == 'dado_de_baja' ? 'selected' : '' }}>Dado de Baja</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="fecha_compra" class="form-label">Fecha de Compra</label>
+                                                    <input type="date" class="form-control" id="fecha_compra" name="fecha_compra" value="{{ old('fecha_compra', $inventario->fecha_compra ? $inventario->fecha_compra->format('Y-m-d') : '') }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="numero_factura" class="form-label">Número de Factura</label>
+                                                    <input type="text" class="form-control" id="numero_factura" name="numero_factura" value="{{ old('numero_factura', $inventario->numero_factura) }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="depreciacion" class="form-label">Depreciación</label>
+                                                    <input type="text" class="form-control" id="depreciacion" name="depreciacion" value="{{ old('depreciacion', $inventario->depreciacion) }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="fecha_inspeccion" class="form-label">Fecha de Inspección</label>
+                                                    <input type="date" class="form-control" id="fecha_inspeccion" name="fecha_inspeccion" value="{{ old('fecha_inspeccion', $inventario->fecha_inspeccion ? $inventario->fecha_inspeccion->format('Y-m-d') : '') }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Contenedor 4: Cantidades y Estados por Ubicación -->
+                            <div class="row mb-4 mx-0">
+                                <div class="col-12 px-0">
+                                    <div class="card">
+                                        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #17a2b8; border-radius: 50%; color: white;">
+                                                    <i class="fas fa-map-marker-alt" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h2 class="mb-1" style="color: #212529; font-size: 1.5rem;">Ubicaciones y Cantidades</h2>
+                                                    <p class="mb-0" style="color: #212529; font-size: 0.9rem;">Distribución del equipo por ubicaciones</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            <div id="ubicaciones-container">
+                                                @foreach($inventario->ubicaciones as $index => $ubicacion)
+                                                    <div class="ubicacion-item mb-3 p-3" style="border: 1px solid #e9ecef; border-radius: 8px; background-color: #f8f9fa;">
+                                                        <div class="row g-3">
+                                                            <div class="col-md-4">
+                                                                <label class="form-label">Ubicación</label>
+                                                                <select class="form-select" name="ubicaciones[{{ $index }}][ubicacion_id]" required>
+                                                                    <option value="">Seleccionar ubicación</option>
+                                                                    @foreach($ubicaciones as $ub)
+                                                                        <option value="{{ $ub->id }}" {{ ($ubicacion->pivot && $ubicacion->pivot->ubicacion_id == $ub->id) ? 'selected' : '' }}>
+                                                                            {{ $ub->nombre }}
+                                                                        </option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <label class="form-label">Cantidad</label>
+                                                                <input type="number" class="form-control cantidad-input" name="ubicaciones[{{ $index }}][cantidad]" value="{{ $ubicacion->pivot ? $ubicacion->pivot->cantidad : 1 }}" min="1" required>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <label class="form-label">Estado</label>
+                                                                <select class="form-select" name="ubicaciones[{{ $index }}][estado]" required>
+                                                                    <option value="disponible" {{ ($ubicacion->pivot && $ubicacion->pivot->estado == 'disponible') ? 'selected' : '' }}>Disponible</option>
+                                                                    <option value="en uso" {{ ($ubicacion->pivot && $ubicacion->pivot->estado == 'en uso') ? 'selected' : '' }}>En Uso</option>
+                                                                    <option value="en mantenimiento" {{ ($ubicacion->pivot && $ubicacion->pivot->estado == 'en mantenimiento') ? 'selected' : '' }}>En Mantenimiento</option>
+                                                                    <option value="dado de baja" {{ ($ubicacion->pivot && $ubicacion->pivot->estado == 'dado de baja') ? 'selected' : '' }}>Dado de Baja</option>
+                                                                    <option value="robado" {{ ($ubicacion->pivot && $ubicacion->pivot->estado == 'robado') ? 'selected' : '' }}>Robado</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-2 d-flex align-items-end">
+                                                                <button type="button" class="btn btn-outline-danger btn-sm remove-ubicacion" style="width: 100%;">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 @endforeach
-                                            </select>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                                <tfoot class="table-light">
-                                    <tr>
-                                        <td class="text-end"><strong>Total:</strong></td>
-                                        <td colspan="2">
-                                            <strong id="cantidadTotal">{{ $inventario->cantidadTotal }}</strong> unidades
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="card mb-4">
-                    <div class="card-header bg-light">
-                        <h5 class="card-title mb-0"><i class="fas fa-image me-2"></i>Imágenes</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="imagen_principal" class="form-label">Imagen Principal</label>
-                                <input type="file" class="form-control" id="imagen_principal" name="imagen_principal" onchange="previewImage(this, 'preview_imagen_principal')">
-                                <img id="preview_imagen_principal" src="{{ $inventario->imagen_principal ? asset('storage/' . $inventario->imagen_principal) : '' }}" 
-                                     alt="Vista previa imagen principal" class="img-thumbnail mt-2" style="max-height: 200px; max-width: 100%;">
+                                            </div>
+                                            <button type="button" class="btn btn-outline-primary" id="add-ubicacion">
+                                                <i class="fas fa-plus me-2"></i>Agregar Ubicación
+                                            </button>
+                                            <div class="mt-3">
+                                                <strong>Cantidad Total: <span id="cantidad-total">0</span></strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="imagen_secundaria" class="form-label">Imagen Secundaria</label>
-                                <input type="file" class="form-control" id="imagen_secundaria" name="imagen_secundaria" onchange="previewImage(this, 'preview_imagen_secundaria')">
-                                <img id="preview_imagen_secundaria" src="{{ $inventario->imagen_secundaria ? asset('storage/' . $inventario->imagen_secundaria) : '' }}" 
-                                     alt="Vista previa imagen secundaria" class="img-thumbnail mt-2" style="max-height: 200px; max-width: 100%;">
+                            
+                            <!-- Contenedor 5: Documentos y QR -->
+                            <div class="row mb-4 mx-0">
+                                <div class="col-12 px-0">
+                                    <div class="card">
+                                        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #6f42c1; border-radius: 50%; color: white;">
+                                                    <i class="fas fa-qrcode" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h2 class="mb-1" style="color: #212529; font-size: 1.5rem;">Documentos y QR</h2>
+                                                    <p class="mb-0" style="color: #212529; font-size: 0.9rem;">Códigos QR y enlaces de documentación</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="qr_code" class="form-label">Código QR (Imagen)</label>
+                                                    <input type="file" class="form-control" id="qr_code" name="qr_code" accept="image/*">
+                                                    @if($inventario->qr_code)
+                                                        <div class="mt-2">
+                                                            <small class="text-muted">QR actual: {{ basename($inventario->qr_code) }}</small>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="enlace_documentacion" class="form-label">Enlace de Documentación</label>
+                                                    <input type="url" class="form-control" id="enlace_documentacion" name="enlace_documentacion" value="{{ old('enlace_documentacion', $inventario->enlace_documentacion) }}" placeholder="https://...">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                            
+                            <!-- Contenedor 6: Observaciones -->
+                            <div class="row mb-4 mx-0">
+                                <div class="col-12 px-0">
+                                    <div class="card">
+                                        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #fd7e14; border-radius: 50%; color: white;">
+                                                    <i class="fas fa-sticky-note" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h2 class="mb-1" style="color: #212529; font-size: 1.5rem;">Observaciones</h2>
+                                                    <p class="mb-0" style="color: #212529; font-size: 0.9rem;">Notas y comentarios adicionales</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <label for="observaciones" class="form-label">Observaciones</label>
+                                                    <textarea class="form-control" id="observaciones" name="observaciones" rows="4" placeholder="Ingrese observaciones adicionales...">{{ old('observaciones', $inventario->observaciones) }}</textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Contenedor 7: Imágenes Adicionales -->
+                            <div class="row mb-4 mx-0">
+                                <div class="col-12 px-0">
+                                    <div class="card">
+                                        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #ffc107; border-radius: 50%; color: #212529;">
+                                                    <i class="fas fa-images" style="font-size: 1.2rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h2 class="mb-1" style="color: #212529; font-size: 1.5rem;">Imágenes</h2>
+                                                    <p class="mb-0" style="color: #212529; font-size: 0.9rem;">Fotografías del equipo</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            <!-- Imágenes Existentes -->
+                                            @php
+                                                $imagenes = $inventario->getMedia('imagenes');
+                                                $totalImagenes = $imagenes->count();
+                                                $imagenPrincipal = null;
+                                                $imagenPrincipalFileName = null;
+                                                
+                                                // Determinar imagen principal
+                                                if($inventario->imagen_principal && file_exists(storage_path('app/public/' . $inventario->imagen_principal))) {
+                                                    $imagenPrincipal = asset('storage/' . $inventario->imagen_principal);
+                                                    $imagenPrincipalFileName = basename($inventario->imagen_principal);
+                                                }
+                                                elseif($inventario->getFirstMediaUrl('imagenes') && $inventario->getMedia('imagenes')->count() > 0) {
+                                                    $imagenPrincipal = $inventario->getFirstMediaUrl('imagenes');
+                                                    $imagenPrincipalFileName = $inventario->getMedia('imagenes')->first()->file_name;
+                                                }
+                                                elseif($inventario->imagen && file_exists(storage_path('app/public/inventario_imagenes/' . $inventario->imagen))) {
+                                                    $imagenPrincipal = asset('storage/inventario_imagenes/' . $inventario->imagen);
+                                                    $imagenPrincipalFileName = $inventario->imagen;
+                                                }
+                                                
+                                                // Filtrar imágenes adicionales (excluir la imagen principal)
+                                                $imagenesAdicionales = $imagenes->filter(function($imagen) use ($imagenPrincipalFileName) {
+                                                    return $imagen->file_name !== $imagenPrincipalFileName;
+                                                });
+                                            @endphp
+                                            
+                                            @php
+                                                $imagenSecundaria = $imagenesAdicionales->first();
+                                            @endphp
+                                            
+                                            @if($imagenPrincipal || $imagenSecundaria)
+                                            <div class="mb-4">
+                                                <h5 class="mb-3" style="color: #495057; font-weight: 600;">Imágenes Actuales del Equipo</h5>
+                                                <div class="row g-4">
+                                                    @if($imagenPrincipal)
+                                                    <div class="col-md-6">
+                                                        <div class="text-center">
+                                                            <div class="position-relative d-inline-block w-100">
+                                                                <img src="{{ $imagenPrincipal }}" alt="Imagen Principal" class="img-fluid" style="width: 100%; height: 200px; object-fit: cover; border-radius: 10px; border: 3px solid #007bff; box-shadow: 0 4px 12px rgba(0,123,255,0.3);">
+                                                                <span class="badge bg-primary position-absolute top-0 start-0 m-2" style="font-size: 0.75rem; font-weight: bold;">PRINCIPAL</span>
+                                                            </div>
+                                                            <p class="mt-2 mb-0 text-primary fw-bold" style="font-size: 0.9rem;">Imagen Principal</p>
+                                                        </div>
+                                                    </div>
+                                                    @endif
+                                                    @if($imagenSecundaria)
+                                                    <div class="col-md-6">
+                                                        <div class="text-center">
+                                                            <div class="position-relative d-inline-block w-100">
+                                                                <img src="{{ asset('storage/inventario_imagenes/' . $imagenSecundaria->file_name) }}" alt="Imagen Secundaria" class="img-fluid" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #28a745; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.03)'; this.style.boxShadow='0 4px 16px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                                                                <span class="badge bg-success position-absolute top-0 end-0 m-2" style="font-size: 0.7rem;">SECUNDARIA</span>
+                                                            </div>
+                                                            <p class="mt-2 mb-0 text-success fw-bold" style="font-size: 0.9rem;">Imagen Secundaria</p>
+                                                        </div>
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            @endif
+                                            
+                                            <!-- Gestión de Imágenes -->
+                                            <div class="border-top pt-4">
+                                                <h5 class="mb-3" style="color: #495057; font-weight: 600;">Gestionar Imágenes</h5>
+                                                <div class="row g-4">
+                                                    <div class="col-md-6">
+                                                        <div class="card border-primary" style="border-width: 2px;">
+                                                            <div class="card-header bg-primary text-white">
+                                                                <h6 class="mb-0"><i class="fas fa-image me-2"></i>Cambiar Imagen Principal</h6>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <input type="file" class="form-control" id="imagen_principal" name="imagen_principal" accept="image/*" onchange="previewImage(this, 'preview-principal')">
+                                                                <div id="preview-principal" class="mt-3"></div>
+                                                                <small class="text-muted d-block mt-2"><i class="fas fa-info-circle me-1"></i>Selecciona una nueva imagen para reemplazar la actual</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="card border-success" style="border-width: 2px;">
+                                                            <div class="card-header bg-success text-white">
+                                                                <h6 class="mb-0"><i class="fas fa-image me-2"></i>Cambiar Imagen Secundaria</h6>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <input type="file" class="form-control" id="imagen_secundaria" name="imagen_secundaria" accept="image/*" onchange="previewImage(this, 'preview-secundaria')">
+                                                                <div id="preview-secundaria" class="mt-3"></div>
+                                                                <small class="text-muted d-block mt-2"><i class="fas fa-info-circle me-1"></i>Selecciona una nueva imagen secundaria para reemplazar la actual</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Botones de Acción -->
+                            <div class="row mb-4 mx-0">
+                                <div class="col-12 px-0">
+                                    <div class="d-flex justify-content-center gap-3">
+                                        <button type="submit" class="btn" style="background-color: #28a745; color: white; border: none; border-radius: 6px; min-width: 140px; padding: 12px 20px; font-weight: 600; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);">
+                                            <i class="fas fa-save me-2"></i>Guardar Cambios
+                                        </button>
+                                        <a href="{{ route('inventarios.show', $inventario->id) }}" class="btn" style="background-color: #6c757d; color: white; border: none; border-radius: 6px; min-width: 140px; padding: 12px 20px; font-weight: 600; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-times me-2"></i>Cancelar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
-
-                <div class="card mb-4">
-                    <div class="card-header bg-light">
-                        <h5 class="card-title mb-0"><i class="fas fa-comment-alt me-2"></i>Observaciones</h5>
-                    </div>
-                    <div class="card-body">
-                        <textarea name="observaciones" id="observaciones" class="form-control" rows="3">{{ $inventario->observaciones }}</textarea>
-                    </div>
-                </div>
-
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                    <a href="{{ route('inventarios.show', $inventario) }}" class="btn btn-secondary me-md-2">
-                        <i class="fas fa-times me-2"></i> Cancelar
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i> Actualizar Elemento
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
-@endsection
-@push('styles')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<style>
-    .card {
-        border-radius: 15px;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-    .card-header {
-        border-top-left-radius: 15px;
-        border-top-right-radius: 15px;
-    }
-    .btn {
-        border-radius: 20px;
-    }
-    .form-control, .form-select {
-        border-radius: 10px;
-    }
-    .pointer {
-        cursor: pointer;
-    }
-    .input-group .input-group-text {
-        background-color: #fff;
-        border-left: none;
-    }
-    .flatpickr-input {
-        background-color: #fff !important;
-    }
-    .flatpickr-input:focus {
-        box-shadow: none !important;
-        border-color: #dee2e6 !important;
-    }
-    
-    /* Nuevos estilos para la tabla de ubicaciones */
-    .table-hover tbody tr:hover {
-        background-color: rgba(0,0,0,.02);
-    }
-    
-    .estado-ubicacion {
-        transition: all 0.3s ease;
-    }
-    
-    .estado-ubicacion option[value="disponible"] {
-        background-color: #e8f5e9;
-    }
-    
-    .estado-ubicacion option[value="en uso"] {
-        background-color: #e3f2fd;
-    }
-    
-    .estado-ubicacion option[value="en mantenimiento"] {
-        background-color: #fff3e0;
-    }
-    
-    .estado-ubicacion option[value="dado de baja"] {
-        background-color: #ffebee;
-    }
-    
-    .estado-ubicacion option[value="robado"] {
-        background-color: #fce4ec;
-    }
-</style>
-@endpush
 
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
-// Función para previsualización de imágenes
+// Función para calcular cantidad total
+function calcularCantidadTotal() {
+    let total = 0;
+    document.querySelectorAll('.cantidad-input').forEach(input => {
+        total += parseInt(input.value) || 0;
+    });
+    document.getElementById('cantidad-total').textContent = total;
+}
+
+// Función para agregar nueva ubicación
+function agregarUbicacion() {
+    const container = document.getElementById('ubicaciones-container');
+    const index = container.children.length;
+    
+    const ubicacionHtml = `
+        <div class="ubicacion-item mb-3 p-3" style="border: 1px solid #e9ecef; border-radius: 8px; background-color: #f8f9fa;">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Ubicación</label>
+                    <select class="form-select" name="ubicaciones[${index}][ubicacion_id]" required>
+                        <option value="">Seleccionar ubicación</option>
+                        @foreach($ubicaciones as $ub)
+                            <option value="{{ $ub->id }}">{{ $ub->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" class="form-control cantidad-input" name="ubicaciones[${index}][cantidad]" value="1" min="1" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select class="form-select" name="ubicaciones[${index}][estado]" required>
+                        <option value="disponible">Disponible</option>
+                        <option value="en uso">En Uso</option>
+                        <option value="en mantenimiento">En Mantenimiento</option>
+                        <option value="dado de baja">Dado de Baja</option>
+                        <option value="robado">Robado</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-ubicacion" style="width: 100%;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', ubicacionHtml);
+    actualizarEventos();
+    calcularCantidadTotal();
+}
+
+// Función para actualizar eventos
+function actualizarEventos() {
+    // Eventos para remover ubicación
+    document.querySelectorAll('.remove-ubicacion').forEach(btn => {
+        btn.onclick = function() {
+            this.closest('.ubicacion-item').remove();
+            calcularCantidadTotal();
+        };
+    });
+    
+    // Eventos para calcular total
+    document.querySelectorAll('.cantidad-input').forEach(input => {
+        input.oninput = calcularCantidadTotal;
+    });
+}
+
+// Función para preview de imagen principal
 function previewImage(input, previewId) {
+    const preview = document.getElementById(previewId);
+    preview.innerHTML = '';
+    
     if (input.files && input.files[0]) {
-        var reader = new FileReader();
+        const reader = new FileReader();
         reader.onload = function(e) {
-            document.getElementById(previewId).src = e.target.result;
-            document.getElementById(previewId).style.display = 'block';
-        }
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.maxWidth = '200px';
+            img.style.maxHeight = '200px';
+            img.style.borderRadius = '8px';
+            img.style.border = '1px solid #e9ecef';
+            preview.appendChild(img);
+        };
         reader.readAsDataURL(input.files[0]);
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Configuración de Flatpickr
-    flatpickr.localize(flatpickr.l10ns.es);
+// Función para preview de imágenes múltiples
+function previewImages(input, previewId) {
+    const preview = document.getElementById(previewId);
+    preview.innerHTML = '';
     
-    const config = {
-        dateFormat: "d/m/Y",
-        allowInput: false,
-        disableMobile: true,
-        locale: {
-            firstDayOfWeek: 1,
-            weekdays: {
-                shorthand: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
-                longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],         
-            },
-            months: {
-                shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-                longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-            },
-        },
-        onChange: function(selectedDates, dateStr, instance) {
-            instance.input.value = dateStr;
-        }
-    };
-
-    document.querySelectorAll('.flatpickr').forEach(function(elem) {
-        flatpickr(elem, config);
-    });
-
-    // Manejo de cantidades y total
-    function actualizarTotal() {
-        let total = 0;
-        document.querySelectorAll('input[name^="cantidades["]').forEach(function(input) {
-            total += parseInt(input.value) || 0;
+    if (input.files) {
+        Array.from(input.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '100px';
+                img.style.maxHeight = '100px';
+                img.style.borderRadius = '8px';
+                img.style.border = '1px solid #e9ecef';
+                img.style.margin = '5px';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
         });
-        const nuevaCantidad = document.querySelector('input[name="nueva_ubicacion_cantidad"]');
-        if (nuevaCantidad && nuevaCantidad.value) {
-            total += parseInt(nuevaCantidad.value);
-        }
-        document.getElementById('cantidadTotal').textContent = total;
     }
+}
 
-    // Escuchar cambios en las cantidades
-    document.querySelectorAll('input[type="number"]').forEach(function(input) {
-        input.addEventListener('change', actualizarTotal);
-        input.addEventListener('keyup', actualizarTotal);
-    });
-
-    // Validación de nueva ubicación
-    const nuevaUbicacionSelect = document.querySelector('select[name="nueva_ubicacion_id"]');
-    const nuevaCantidadInput = document.querySelector('input[name="nueva_ubicacion_cantidad"]');
-    const nuevoEstadoSelect = document.querySelector('select[name="nueva_ubicacion_estado"]');
-
-    function validarNuevaUbicacion() {
-        if (nuevaUbicacionSelect.value) {
-            nuevaCantidadInput.required = true;
-            nuevoEstadoSelect.required = true;
-        } else {
-            nuevaCantidadInput.required = false;
-            nuevoEstadoSelect.required = false;
-        }
-    }
-
-    nuevaUbicacionSelect.addEventListener('change', validarNuevaUbicacion);
+// Inicializar eventos al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Evento para agregar ubicación
+    document.getElementById('add-ubicacion').onclick = agregarUbicacion;
     
-    // Validación del formulario
-    document.querySelector('form').addEventListener('submit', function(e) {
-        if (nuevaUbicacionSelect.value) {
-            if (!nuevaCantidadInput.value || !nuevoEstadoSelect.value) {
-                e.preventDefault();
-                alert('Por favor complete todos los campos de la nueva ubicación');
-            }
-        }
-    });
+    // Actualizar eventos existentes
+    actualizarEventos();
+    
+    // Calcular cantidad total inicial
+    calcularCantidadTotal();
 });
 </script>
-@endpush
+@endsection
