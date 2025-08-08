@@ -706,16 +706,16 @@ class InventarioController extends Controller
     }
 
     $validator = Validator::make($data, [
-        'categoria_id' => 'required|exists:categorias,id',
-        'proveedor_id' => 'required|exists:proveedores,id',
-        'nombre' => 'required|string|max:255',
-        'propietario' => 'required|string|max:255',
+        'categoria_id' => 'nullable|exists:categorias,id',
+        'proveedor_id' => 'nullable|exists:proveedores,id',
+        'nombre' => 'nullable|string|max:255',
+        'propietario' => 'nullable|string|max:255',
         'modelo' => 'nullable|string|max:255',
         'numero_serie' => 'nullable|string|max:255',
         'marca' => 'nullable|string|max:255',
         'fecha_compra' => 'nullable|date',
         'numero_factura' => 'nullable|string|max:255',
-        'valor_unitario' => 'required|numeric|min:0',
+        'valor_unitario' => 'nullable|numeric|min:0',
         'fecha_baja' => 'nullable|date',
         'fecha_inspeccion' => 'nullable|date',
         'observaciones' => 'nullable|string',
@@ -724,10 +724,10 @@ class InventarioController extends Controller
         'cantidades' => 'array',
         'cantidades.*' => 'integer|min:0',
         'estados' => 'array',
-        'estados.*' => 'required|in:disponible,en uso,en mantenimiento,dado de baja,robado',
+        'estados.*' => 'nullable|in:disponible,en uso,en mantenimiento,dado de baja,robado',
         'nueva_ubicacion_id' => 'nullable|exists:ubicaciones,id',
-        'nueva_ubicacion_cantidad' => 'required_with:nueva_ubicacion_id|nullable|integer|min:1',
-        'nueva_ubicacion_estado' => 'required_with:nueva_ubicacion_id|nullable|in:disponible,en uso,en mantenimiento,dado de baja,robado',
+        'nueva_ubicacion_cantidad' => 'nullable|integer|min:0',
+        'nueva_ubicacion_estado' => 'nullable|in:disponible,en uso,en mantenimiento,dado de baja,robado',
     ]);
 
     if ($validator->fails()) {

@@ -167,7 +167,7 @@
                                             <div class="row g-3">
                                                 <div class="col-md-6">
                                                     <label for="nombre" class="form-label">Nombre del Equipo</label>
-                                                    <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre', $inventario->nombre) }}" required>
+                                                    <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre', $inventario->nombre) }}">
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label for="codigo" class="form-label">Código</label>
@@ -175,7 +175,7 @@
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label for="categoria_id" class="form-label">Categoría</label>
-                                                    <select class="form-select" id="categoria_id" name="categoria_id" required>
+                                                    <select class="form-select" id="categoria_id" name="categoria_id">
                                                         <option value="">Seleccionar categoría</option>
                                                         @foreach($categorias as $categoria)
                                                             <option value="{{ $categoria->id }}" {{ old('categoria_id', $inventario->categoria_id) == $categoria->id ? 'selected' : '' }}>
@@ -321,7 +321,7 @@
                                                         <div class="row g-3">
                                                             <div class="col-md-4">
                                                                 <label class="form-label">Ubicación</label>
-                                                                <select class="form-select" name="ubicaciones[{{ $index }}][ubicacion_id]" required>
+                                                                <select class="form-select" name="ubicaciones[{{ $index }}][ubicacion_id]">
                                                     <option value="">Seleccionar ubicación</option>
                                                     @foreach($ubicaciones as $ub)
                                                         <option value="{{ $ub->id }}" {{ ($ubicacion->ubicacion_id == $ub->id) ? 'selected' : '' }}>
@@ -332,11 +332,11 @@
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <label class="form-label">Cantidad</label>
-                                                                <input type="number" class="form-control cantidad-input" name="ubicaciones[{{ $index }}][cantidad]" value="{{ $ubicacion->cantidad ?? 1 }}" min="1" required>
+                                                                <input type="number" class="form-control cantidad-input" name="ubicaciones[{{ $index }}][cantidad]" value="{{ $ubicacion->cantidad ?? 1 }}" min="0">
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <label class="form-label">Estado</label>
-                                                                <select class="form-select" name="ubicaciones[{{ $index }}][estado]" required>
+                                                                <select class="form-select" name="ubicaciones[{{ $index }}][estado]">
                                                     <option value="disponible" {{ ($ubicacion->estado == 'disponible') ? 'selected' : '' }}>Disponible</option>
                                                     <option value="en uso" {{ ($ubicacion->estado == 'en uso') ? 'selected' : '' }}>En Uso</option>
                                                     <option value="en mantenimiento" {{ ($ubicacion->estado == 'en mantenimiento') ? 'selected' : '' }}>En Mantenimiento</option>
@@ -580,7 +580,7 @@ function agregarUbicacion() {
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">Ubicación</label>
-                    <select class="form-select" name="ubicaciones[${index}][ubicacion_id]" required>
+                    <select class="form-select" name="ubicaciones[${index}][ubicacion_id]">
                         <option value="">Seleccionar ubicación</option>
                         @foreach($ubicaciones as $ub)
                             <option value="{{ $ub->id }}">{{ $ub->nombre }}</option>
@@ -589,11 +589,11 @@ function agregarUbicacion() {
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Cantidad</label>
-                    <input type="number" class="form-control cantidad-input" name="ubicaciones[${index}][cantidad]" value="1" min="1" required>
+                    <input type="number" class="form-control cantidad-input" name="ubicaciones[${index}][cantidad]" value="1" min="0">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Estado</label>
-                    <select class="form-select" name="ubicaciones[${index}][estado]" required>
+                    <select class="form-select" name="ubicaciones[${index}][estado]">
                         <option value="disponible">Disponible</option>
                         <option value="en uso">En Uso</option>
                         <option value="en mantenimiento">En Mantenimiento</option>
