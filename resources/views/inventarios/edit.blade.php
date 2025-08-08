@@ -321,7 +321,7 @@
                                                         <div class="row g-3">
                                                             <div class="col-md-4">
                                                                 <label class="form-label">Ubicación</label>
-                                                                <select class="form-select" name="cantidades_ubicacion[{{ $ubicacion->ubicacion_id }}]" data-ubicacion-id="{{ $ubicacion->ubicacion_id }}">
+                                                                <select class="form-select" name="cantidades_ubicacion[{{ $ubicacion->id }}]" data-ubicacion-id="{{ $ubicacion->ubicacion_id }}">
                                                     <option value="">Seleccionar ubicación</option>
                                                     @foreach($ubicaciones as $ub)
                                                         <option value="{{ $ub->id }}" {{ ($ubicacion->ubicacion_id == $ub->id) ? 'selected' : '' }}>
@@ -332,12 +332,12 @@
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <label class="form-label">Cantidad</label>
-                                                                <input type="number" class="form-control cantidad-input" name="cantidades[{{ $ubicacion->ubicacion_id }}]" value="{{ $ubicacion->cantidad ?? 1 }}" min="0">
-                                                                <input type="hidden" name="ubicacion_existente[{{ $ubicacion->ubicacion_id }}]" value="{{ $ubicacion->id }}">
+                                                                <input type="number" class="form-control cantidad-input" name="cantidades[{{ $ubicacion->id }}]" value="{{ $ubicacion->cantidad ?? 1 }}" min="0">
+                                                <input type="hidden" name="ubicacion_existente[{{ $ubicacion->id }}]" value="{{ $ubicacion->id }}">
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <label class="form-label">Estado</label>
-                                                                <select class="form-select" name="estados[{{ $ubicacion->ubicacion_id }}]">
+                                                                <select class="form-select" name="estados[{{ $ubicacion->id }}]">
                                                     <option value="disponible" {{ ($ubicacion->estado == 'disponible') ? 'selected' : '' }}>Disponible</option>
                                                     <option value="en uso" {{ ($ubicacion->estado == 'en uso') ? 'selected' : '' }}>En Uso</option>
                                                     <option value="en mantenimiento" {{ ($ubicacion->estado == 'en mantenimiento') ? 'selected' : '' }}>En Mantenimiento</option>

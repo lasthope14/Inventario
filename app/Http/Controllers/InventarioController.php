@@ -801,27 +801,21 @@ class InventarioController extends Controller
             // Actualizar cantidades y estados existentes
             $cantidadTotal = 0;
             if (isset($request->cantidades)) {
-                foreach ($request->cantidades as $ubicacionId => $cantidad) {
+                foreach ($request->cantidades as $relacionId => $cantidad) {
                     $cantidad = max(0, intval($cantidad));
-                    $estado = $request->estados[$ubicacionId] ?? 'disponible';
+                    $estado = $request->estados[$relacionId] ?? 'disponible';
+                    $ubicacionId = $request->cantidades_ubicacion[$relacionId] ?? null;
                     
-                    // Buscar el registro específico usando el ID de la relación si existe
-                    $relacionId = $request->ubicacion_existente[$ubicacionId] ?? null;
+                    // Verificar que tenemos el ID de ubicación
+                    if (!$ubicacionId) {
+                        continue;
+                    }
                     
                     if ($cantidad > 0) {
-                        if ($relacionId) {
-                            // Actualizar registro existente por su ID específico
-                            $ubicacionExistente = $inventario->ubicaciones()->find($relacionId);
-                            if ($ubicacionExistente) {
-                                $ubicacionExistente->update([
-                                    'ubicacion_id' => $ubicacionId,
-                                    'cantidad' => $cantidad,
-                                    'estado' => $estado
-                                ]);
-                            }
-                        } else {
-                            // Crear nuevo registro
-                            $inventario->ubicaciones()->create([
+                        // Actualizar registro existente por su ID específico
+                        $ubicacionExistente = $inventario->ubicaciones()->find($relacionId);
+                        if ($ubicacionExistente) {
+                            $ubicacionExistente->update([
                                 'ubicacion_id' => $ubicacionId,
                                 'cantidad' => $cantidad,
                                 'estado' => $estado
@@ -839,15 +833,13 @@ class InventarioController extends Controller
                         $cantidadTotal += $cantidad;
                     } else {
                         // Eliminar registro específico si cantidad es 0
-                        if ($relacionId) {
-                            $inventario->ubicaciones()->where('id', $relacionId)->delete();
-                            
-                            Log::info('Eliminación de ubicación específica por cantidad 0', [
-                                'inventario_id' => $inventario->id,
-                                'relacion_id' => $relacionId,
-                                'ubicacion_id' => $ubicacionId
-                            ]);
-                        }
+                        $inventario->ubicaciones()->where('id', $relacionId)->delete();
+                        
+                        Log::info('Eliminación de ubicación específica por cantidad 0', [
+                            'inventario_id' => $inventario->id,
+                            'relacion_id' => $relacionId,
+                            'ubicacion_id' => $ubicacionId
+                        ]);
                     }
                 }
             }
