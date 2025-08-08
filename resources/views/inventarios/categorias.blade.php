@@ -487,12 +487,10 @@
                                                 <span class="detail-label-compact">Serie:</span>
                                                 <span class="detail-value-compact">{{ $inventario->numero_serie ?: 'N/A' }}</span>
                                             </div>
-                                            @if($inventario->ubicaciones->first() && $inventario->ubicaciones->first()->empleado)
                                             <div class="detail-row-compact">
-                                                <span class="detail-label-compact">Propietario:</span>
-                                                <span class="detail-value-compact">{{ $inventario->ubicaciones->first()->empleado->nombre }}</span>
-                                            </div>
-                                            @endif
+                                <span class="detail-label-compact">Propietario:</span>
+                                <span class="detail-value-compact">{{ $inventario->propietario ?? 'HIDROOBRAS' }}</span>
+                            </div>
                                         </div>
                                         
                                         <div class="element-locations-compact">
@@ -602,14 +600,10 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <div class="table-owner">
-                                                    @if($inventario->ubicaciones->first() && $inventario->ubicaciones->first()->empleado)
-                                                        {{ $inventario->ubicaciones->first()->empleado->nombre }}
-                                                    @else
-                                                        <span class="text-muted">Sin asignar</span>
-                                                    @endif
-                                                </div>
-                                            </td>
+                                <div class="table-owner">
+                                    {{ $inventario->propietario ?? 'HIDROOBRAS' }}
+                                </div>
+                            </td>
                                             <td>
                                                 <div class="table-locations-detailed">
                                                     @foreach($inventario->ubicaciones->take(2) as $ubicacion)

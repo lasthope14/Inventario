@@ -291,27 +291,27 @@
                                                             <div class="col-md-4">
                                                                 <label class="form-label">Ubicación</label>
                                                                 <select class="form-select" name="ubicaciones[{{ $index }}][ubicacion_id]" required>
-                                                                    <option value="">Seleccionar ubicación</option>
-                                                                    @foreach($ubicaciones as $ub)
-                                                                        <option value="{{ $ub->id }}" {{ ($ubicacion->pivot && $ubicacion->pivot->ubicacion_id == $ub->id) ? 'selected' : '' }}>
-                                                                            {{ $ub->nombre }}
-                                                                        </option>
-                                                                    @endforeach
-                                                                </select>
+                                                    <option value="">Seleccionar ubicación</option>
+                                                    @foreach($ubicaciones as $ub)
+                                                        <option value="{{ $ub->id }}" {{ ($ubicacion->ubicacion_id == $ub->id) ? 'selected' : '' }}>
+                                                            {{ $ub->nombre }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <label class="form-label">Cantidad</label>
-                                                                <input type="number" class="form-control cantidad-input" name="ubicaciones[{{ $index }}][cantidad]" value="{{ $ubicacion->pivot ? $ubicacion->pivot->cantidad : 1 }}" min="1" required>
+                                                                <input type="number" class="form-control cantidad-input" name="ubicaciones[{{ $index }}][cantidad]" value="{{ $ubicacion->cantidad ?? 1 }}" min="1" required>
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <label class="form-label">Estado</label>
                                                                 <select class="form-select" name="ubicaciones[{{ $index }}][estado]" required>
-                                                                    <option value="disponible" {{ ($ubicacion->pivot && $ubicacion->pivot->estado == 'disponible') ? 'selected' : '' }}>Disponible</option>
-                                                                    <option value="en uso" {{ ($ubicacion->pivot && $ubicacion->pivot->estado == 'en uso') ? 'selected' : '' }}>En Uso</option>
-                                                                    <option value="en mantenimiento" {{ ($ubicacion->pivot && $ubicacion->pivot->estado == 'en mantenimiento') ? 'selected' : '' }}>En Mantenimiento</option>
-                                                                    <option value="dado de baja" {{ ($ubicacion->pivot && $ubicacion->pivot->estado == 'dado de baja') ? 'selected' : '' }}>Dado de Baja</option>
-                                                                    <option value="robado" {{ ($ubicacion->pivot && $ubicacion->pivot->estado == 'robado') ? 'selected' : '' }}>Robado</option>
-                                                                </select>
+                                                    <option value="disponible" {{ ($ubicacion->estado == 'disponible') ? 'selected' : '' }}>Disponible</option>
+                                                    <option value="en uso" {{ ($ubicacion->estado == 'en uso') ? 'selected' : '' }}>En Uso</option>
+                                                    <option value="en mantenimiento" {{ ($ubicacion->estado == 'en mantenimiento') ? 'selected' : '' }}>En Mantenimiento</option>
+                                                    <option value="dado de baja" {{ ($ubicacion->estado == 'dado de baja') ? 'selected' : '' }}>Dado de Baja</option>
+                                                    <option value="robado" {{ ($ubicacion->estado == 'robado') ? 'selected' : '' }}>Robado</option>
+                                                </select>
                                                             </div>
                                                             <div class="col-md-2 d-flex align-items-end">
                                                                 <button type="button" class="btn btn-outline-danger btn-sm remove-ubicacion" style="width: 100%;">
