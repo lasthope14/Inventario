@@ -199,6 +199,10 @@
 
                                     <!-- Botones de acción -->
                                     <div class="d-grid gap-2">
+                                        <button type="button" id="analyzeBtn" class="btn btn-warning" style="display: none;">
+                                            <i class="fas fa-search me-2"></i>
+                                            Analizar Archivo
+                                        </button>
                                         <button type="button" id="submitImport" class="btn btn-primary" style="display: none;">
                                             <i class="fas fa-upload me-2"></i>
                                             Importar Datos
@@ -207,6 +211,21 @@
                                             <i class="fas fa-download me-2"></i>
                                             Descargar Plantilla
                                         </a>
+                                    </div>
+
+                                    <!-- Resultados del análisis -->
+                                    <div id="analysisResults" class="mt-4" style="display: none;">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-chart-bar me-2"></i>
+                                                    Resultados del Análisis
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="analysisContent"></div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <!-- Guía de importación -->
@@ -761,12 +780,15 @@
 
             // Elementos del DOM
             const submitButton = document.getElementById('submitImport');
+            const analyzeButton = document.getElementById('analyzeBtn');
             const filePreview = document.getElementById('filePreview');
             const uploadProgress = document.getElementById('uploadProgress');
             const progressBar = uploadProgress.querySelector('.progress-bar');
             const progressText = uploadProgress.querySelector('.progress-text');
             const uploadStatus = document.getElementById('uploadStatus');
             const removeFileBtn = document.getElementById('removeFile');
+            const analysisResults = document.getElementById('analysisResults');
+            const analysisContent = document.getElementById('analysisContent');
 
             // Evento: Archivo añadido
             myDropzone.on("addedfile", function(file) {
@@ -774,14 +796,21 @@
                 filePreview.querySelector(".file-name").textContent = file.name;
                 filePreview.querySelector(".file-size").textContent = 
                     (file.size / (1024 * 1024)).toFixed(2) + " MB";
+                analyzeButton.style.display = "block";
                 submitButton.style.display = "block";
                 uploadStatus.style.display = "none";
+                analysisResults.style.display = "none";
             });
 
             // Evento: Remover archivo
             removeFileBtn.addEventListener('click', function() {
                 myDropzone.removeAllFiles(true);
                 resetUploadState();
+            });
+
+            // Evento: Analizar archivo
+            analyzeButton.addEventListener('click', function() {
+                analyzeFile();
             });
 
             // Evento: Iniciar importación
@@ -842,11 +871,166 @@
                 submitButton.disabled = false;
             }
 
+            function analyzeFile() {
+                const files = myDropzone.getAcceptedFiles();
+                if (files.length === 0) {
+                    alert('Por favor selecciona un archivo primero');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', files[0]);
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+                analyzeButton.disabled = true;
+                analyzeButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analizando...';
+
+                fetch('{{ route("inventarios.analyze") }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    analyzeButton.disabled = false;
+                    analyzeButton.innerHTML = '<i class="fas fa-search me-2"></i>Analizar Archivo';
+
+                    if (data.success) {
+                        displayAnalysisResults(data.analysis);
+                    } else {
+                        alert('Error al analizar el archivo: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    analyzeButton.disabled = false;
+                    analyzeButton.innerHTML = '<i class="fas fa-search me-2"></i>Analizar Archivo';
+                    alert('Error al analizar el archivo: ' + error.message);
+                });
+            }
+
+            function displayAnalysisResults(analysis) {
+                let html = '';
+
+                // Resumen general
+                html += `<div class="row mb-4">`;
+                html += `<div class="col-md-6">`;
+                html += `<h6 class="text-primary mb-3"><i class="fas fa-chart-pie me-2"></i>Resumen General</h6>`;
+                html += `<ul class="list-group">`;
+                html += `<li class="list-group-item d-flex justify-content-between align-items-center">`;
+                html += `Total de filas: <span class="badge bg-primary rounded-pill">${analysis.total_rows}</span>`;
+                html += `</li>`;
+                html += `<li class="list-group-item d-flex justify-content-between align-items-center">`;
+                html += `Duplicados: <span class="badge bg-warning rounded-pill">${analysis.summary.total_duplicates}</span>`;
+                html += `</li>`;
+                html += `<li class="list-group-item d-flex justify-content-between align-items-center">`;
+                html += `Conflictos: <span class="badge bg-danger rounded-pill">${analysis.summary.total_conflicts}</span>`;
+                html += `</li>`;
+                html += `<li class="list-group-item d-flex justify-content-between align-items-center">`;
+                html += `Referencias faltantes: <span class="badge bg-secondary rounded-pill">${analysis.summary.total_missing_references}</span>`;
+                html += `</li>`;
+                html += `<li class="list-group-item d-flex justify-content-between align-items-center">`;
+                html += `Advertencias: <span class="badge bg-info rounded-pill">${analysis.summary.total_warnings}</span>`;
+                html += `</li>`;
+                html += `</ul>`;
+                html += `</div>`;
+
+                // Estado de importación
+                html += `<div class="col-md-6">`;
+                html += `<h6 class="text-primary mb-3"><i class="fas fa-shield-alt me-2"></i>Estado de Importación</h6>`;
+                if (analysis.summary.can_import) {
+                    html += `<div class="alert alert-success">`;
+                    html += `<i class="fas fa-check-circle me-2"></i>`;
+                    html += `<strong>✅ Archivo listo para importar</strong><br>`;
+                    html += `No se encontraron errores críticos que impidan la importación.`;
+                    html += `</div>`;
+                } else {
+                    html += `<div class="alert alert-danger">`;
+                    html += `<i class="fas fa-exclamation-triangle me-2"></i>`;
+                    html += `<strong>❌ Archivo no puede ser importado</strong><br>`;
+                    html += `Se encontraron errores que deben corregirse antes de la importación.`;
+                    html += `</div>`;
+                }
+                html += `</div>`;
+                html += `</div>`;
+
+                // Detalles de problemas
+                if (analysis.duplicates.length > 0 || analysis.conflicts.length > 0 || analysis.missing_references.length > 0) {
+                    html += `<div class="accordion" id="analysisAccordion">`;
+
+                    // Duplicados
+                    if (analysis.duplicates.length > 0) {
+                        html += createAccordionSection('duplicates', 'Duplicados', 'danger', analysis.duplicates);
+                    }
+
+                    // Conflictos
+                    if (analysis.conflicts.length > 0) {
+                        html += createAccordionSection('conflicts', 'Conflictos con BD', 'warning', analysis.conflicts);
+                    }
+
+                    // Referencias faltantes
+                    if (analysis.missing_references.length > 0) {
+                        html += createAccordionSection('missing', 'Referencias Faltantes', 'secondary', analysis.missing_references);
+                    }
+
+                    html += `</div>`;
+                }
+
+                // Advertencias
+                if (analysis.warnings.length > 0) {
+                    html += `<div class="mt-3">`;
+                    html += `<h6 class="text-info mb-2"><i class="fas fa-info-circle me-2"></i>Advertencias (${analysis.warnings.length})</h6>`;
+                    html += `<div class="alert alert-info">`;
+                    html += `<small>Se encontraron campos vacíos que podrían afectar la calidad de los datos.</small>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                }
+
+                analysisContent.innerHTML = html;
+                analysisResults.style.display = 'block';
+            }
+
+            function createAccordionSection(id, title, type, items) {
+                let html = `<div class="accordion-item">`;
+                html += `<h2 class="accordion-header">`;
+                html += `<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${id}">`;
+                html += `<i class="fas fa-exclamation-triangle me-2 text-${type}"></i>${title} (${items.length})`;
+                html += `</button>`;
+                html += `</h2>`;
+                html += `<div id="collapse${id}" class="accordion-collapse collapse" data-bs-parent="#analysisAccordion">`;
+                html += `<div class="accordion-body">`;
+                html += `<div class="list-group">`;
+
+                items.forEach(item => {
+                    html += `<div class="list-group-item">`;
+                    html += `<div class="d-flex w-100 justify-content-between">`;
+                    html += `<h6 class="mb-1 text-${type}">${item.message}</h6>`;
+                    if (item.row) {
+                        html += `<small class="text-muted">Fila ${item.row}</small>`;
+                    }
+                    html += `</div>`;
+                    if (item.value) {
+                        html += `<p class="mb-1"><strong>Valor:</strong> ${item.value}</p>`;
+                    }
+                    if (item.existing_codigo) {
+                        html += `<small class="text-muted">Código existente: ${item.existing_codigo}</small>`;
+                    }
+                    html += `</div>`;
+                });
+
+                html += `</div>`;
+                html += `</div>`;
+                html += `</div>`;
+                html += `</div>`;
+
+                return html;
+            }
+
             function resetUploadState() {
                 filePreview.style.display = "none";
+                analyzeButton.style.display = "none";
                 submitButton.style.display = "none";
                 uploadProgress.style.display = "none";
                 uploadStatus.style.display = "none";
+                analysisResults.style.display = "none";
                 progressBar.style.width = "0%";
                 progressBar.classList.remove("bg-danger");
                 progressBar.classList.add("progress-bar-animated", "bg-primary");
@@ -854,6 +1038,7 @@
                 uploadStatus.className = "";
                 uploadStatus.innerHTML = "";
                 submitButton.disabled = false;
+                analyzeButton.disabled = false;
             }
         }
 

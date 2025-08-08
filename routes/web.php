@@ -53,6 +53,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rutas de importación
     Route::get('/inventarios/importar', [ImportController::class, 'showImportForm'])->name('inventarios.import.form');
+    Route::post('/inventarios/analizar', [ImportController::class, 'analyzeFile'])->name('inventarios.analyze');
     Route::post('/inventarios/importar', [ImportController::class, 'import'])->name('inventarios.import');
     Route::get('/inventarios/descargar-plantilla', [ImportController::class, 'downloadTemplate'])
         ->name('inventarios.template.download');

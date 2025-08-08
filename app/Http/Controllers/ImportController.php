@@ -43,6 +43,261 @@ class ImportController extends Controller
     return view('inventarios.import', compact('categorias', 'proveedores', 'ubicaciones', 'importLogs'));
 }
 
+    public function analyzeFile(Request $request)
+    {
+        if (!in_array(auth()->user()->role->name, ['administrador', 'almacenista'])) {
+            abort(403, $this->utf8Message('No tienes permisos para realizar análisis.'));
+        }
+
+        $request->validate([
+            'file' => 'required|file|mimes:zip|max:102400'
+        ]);
+
+        $file = $request->file('file');
+        $fileName = $file->getClientOriginalName();
+        
+        // Crear directorio temporal único
+        $tempDir = 'temp_analyze_' . uniqid();
+        $tempPath = storage_path('app/' . $tempDir);
+        
+        try {
+            // Crear el directorio temporal usando PHP nativo
+            if (!file_exists($tempPath)) {
+                mkdir($tempPath, 0755, true);
+            }
+            
+            // Guardar el archivo ZIP temporalmente
+            $zipPath = $tempPath . '/' . $fileName;
+            $file->move($tempPath, $fileName);
+            
+            // Extraer el ZIP
+            $zip = new \ZipArchive;
+            if ($zip->open($zipPath) === TRUE) {
+                $zip->extractTo($tempPath);
+                $zip->close();
+                // Eliminar el archivo ZIP después de extraer
+                unlink($zipPath);
+            } else {
+                $this->cleanupDirectory($tempPath);
+                return response()->json([
+                    'success' => false,
+                    'message' => $this->utf8Message('No se pudo extraer el archivo ZIP')
+                ]);
+            }
+            
+            // Buscar el archivo Excel recursivamente usando PHP nativo
+            $excelFile = null;
+            $allFiles = $this->getAllFilesRecursive($tempPath);
+            
+            // Log de depuración para ver qué archivos se encontraron
+            \Log::info('Archivos encontrados en ZIP:', $allFiles);
+            
+            foreach ($allFiles as $file) {
+                $fileName = basename($file);
+                if (preg_match('/\.(xlsx|xls)$/i', $fileName)) {
+                    $excelFile = $file;
+                    break;
+                }
+            }
+            
+            if (!$excelFile) {
+                $this->cleanupDirectory($tempPath);
+                return response()->json([
+                    'success' => false,
+                    'message' => $this->utf8Message('No se encontró un archivo Excel en el ZIP. Archivos encontrados: ' . implode(', ', array_map('basename', $allFiles)))
+                ]);
+            }
+            
+            // Analizar el archivo Excel
+            $analysis = $this->performFileAnalysis($excelFile);
+            
+            // Limpiar directorio temporal
+            $this->cleanupDirectory($tempPath);
+            
+            return response()->json([
+                'success' => true,
+                'analysis' => $analysis
+            ]);
+            
+        } catch (\Exception $e) {
+            // Limpiar directorio temporal en caso de error
+            try {
+                $this->cleanupDirectory($tempPath);
+            } catch (\Exception $cleanupError) {
+                \Log::error('Error al limpiar directorio temporal: ' . $cleanupError->getMessage());
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => $this->utf8Message('Error al analizar el archivo: ') . $e->getMessage()
+            ]);
+        }
+    }
+    
+    private function getAllFilesRecursive($dir)
+    {
+        $files = [];
+        if (is_dir($dir)) {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::LEAVES_ONLY
+            );
+            
+            foreach ($iterator as $file) {
+                if ($file->isFile()) {
+                    $files[] = $file->getPathname();
+                }
+            }
+        }
+        return $files;
+    }
+    
+    private function cleanupDirectory($dir)
+    {
+        if (is_dir($dir)) {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::CHILD_FIRST
+            );
+            
+            foreach ($iterator as $file) {
+                if ($file->isDir()) {
+                    rmdir($file->getPathname());
+                } else {
+                    unlink($file->getPathname());
+                }
+            }
+            rmdir($dir);
+        }
+    }
+
+    private function performFileAnalysis($excelFile)
+    {
+        $spreadsheet = IOFactory::load($excelFile);
+        $worksheet = $spreadsheet->getActiveSheet();
+        $rows = $worksheet->toArray();
+        
+        $headers = array_map('strtolower', array_map('trim', array_shift($rows)));
+        
+        $analysis = [
+            'total_rows' => count($rows),
+            'duplicates' => [],
+            'conflicts' => [],
+            'missing_references' => [],
+            'warnings' => [],
+            'summary' => []
+        ];
+        
+        $numerosSerieUsados = [];
+        
+        foreach ($rows as $rowIndex => $row) {
+            if (empty(array_filter($row))) {
+                continue;
+            }
+            
+            $data = array_combine($headers, $row);
+            $rowNumber = $rowIndex + 2; // +2 porque eliminamos headers y empezamos en 1
+            
+            // Verificar duplicados por número de serie
+            if (isset($data['numero_serie']) && !empty($data['numero_serie'])) {
+                $numeroSerie = trim($data['numero_serie']);
+                if (isset($numerosSerieUsados[$numeroSerie])) {
+                    $analysis['duplicates'][] = [
+                        'type' => 'numero_serie_duplicado',
+                        'value' => $numeroSerie,
+                        'rows' => [$numerosSerieUsados[$numeroSerie], $rowNumber],
+                        'message' => "El número de serie '{$numeroSerie}' está duplicado en las filas {$numerosSerieUsados[$numeroSerie]} y {$rowNumber}"
+                    ];
+                } else {
+                    $numerosSerieUsados[$numeroSerie] = $rowNumber;
+                }
+                
+                // Verificar si ya existe en la base de datos por número de serie
+                $existingInventario = Inventario::where('numero_serie', $numeroSerie)->first();
+                if ($existingInventario) {
+                    $analysis['conflicts'][] = [
+                        'type' => 'numero_serie_existente',
+                        'value' => $numeroSerie,
+                        'row' => $rowNumber,
+                        'existing_id' => $existingInventario->id,
+                        'existing_codigo' => $existingInventario->codigo_unico,
+                        'message' => "El número de serie '{$numeroSerie}' ya existe en la base de datos (Elemento: {$existingInventario->nombre}, Código: {$existingInventario->codigo_unico})"
+                    ];
+                }
+            } else {
+                // Si no tiene número de serie, es una advertencia
+                $analysis['warnings'][] = [
+                    'type' => 'numero_serie_vacio',
+                    'row' => $rowNumber,
+                    'message' => "El número de serie está vacío en la fila {$rowNumber}. Esto puede causar problemas de identificación única."
+                ];
+            }
+            
+            // Verificar referencias de categoría
+            if (isset($data['categoria_id']) && !empty($data['categoria_id'])) {
+                $categoria = Categoria::find($data['categoria_id']);
+                if (!$categoria) {
+                    $analysis['missing_references'][] = [
+                        'type' => 'categoria_no_encontrada',
+                        'value' => $data['categoria_id'],
+                        'row' => $rowNumber,
+                        'message' => "La categoría con ID {$data['categoria_id']} no existe"
+                    ];
+                }
+            }
+            
+            // Verificar referencias de proveedor
+            if (isset($data['proveedor_id']) && !empty($data['proveedor_id'])) {
+                $proveedor = Proveedor::find($data['proveedor_id']);
+                if (!$proveedor) {
+                    $analysis['missing_references'][] = [
+                        'type' => 'proveedor_no_encontrado',
+                        'value' => $data['proveedor_id'],
+                        'row' => $rowNumber,
+                        'message' => "El proveedor con ID {$data['proveedor_id']} no existe"
+                    ];
+                }
+            }
+            
+            // Verificar referencias de ubicación
+            if (isset($data['ubicacion_id']) && !empty($data['ubicacion_id'])) {
+                $ubicacion = Ubicacion::find($data['ubicacion_id']);
+                if (!$ubicacion) {
+                    $analysis['missing_references'][] = [
+                        'type' => 'ubicacion_no_encontrada',
+                        'value' => $data['ubicacion_id'],
+                        'row' => $rowNumber,
+                        'message' => "La ubicación con ID {$data['ubicacion_id']} no existe"
+                    ];
+                }
+            }
+            
+            // Verificar campos requeridos (excluyendo numero_serie que ya se verifica arriba)
+            $requiredFields = ['nombre', 'categoria_id', 'cantidad', 'estado'];
+            foreach ($requiredFields as $field) {
+                if (!isset($data[$field]) || empty($data[$field])) {
+                    $analysis['warnings'][] = [
+                        'type' => 'campo_vacio',
+                        'field' => $field,
+                        'row' => $rowNumber,
+                        'message' => "El campo '{$field}' está vacío en la fila {$rowNumber}"
+                    ];
+                }
+            }
+        }
+        
+        // Generar resumen
+        $analysis['summary'] = [
+            'total_duplicates' => count($analysis['duplicates']),
+            'total_conflicts' => count($analysis['conflicts']),
+            'total_missing_references' => count($analysis['missing_references']),
+            'total_warnings' => count($analysis['warnings']),
+            'can_import' => count($analysis['duplicates']) === 0 && count($analysis['conflicts']) === 0 && count($analysis['missing_references']) === 0
+        ];
+        
+        return $analysis;
+    }
+
     public function import(Request $request)
     {
         if (!in_array(auth()->user()->role->name, ['administrador', 'almacenista'])) {
