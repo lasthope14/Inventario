@@ -40,7 +40,42 @@ class UbicacionController extends Controller
     public function show(Ubicacion $ubicacion)
     {
         $this->authorize('view', $ubicacion);
-        return view('ubicaciones.show', compact('ubicacion'));
+        
+        // Obtener todos los inventarios que están en esta ubicación
+        $inventarios = DB::table('inventario_ubicaciones')
+            ->join('inventarios', 'inventario_ubicaciones.inventario_id', '=', 'inventarios.id')
+            ->join('categorias', 'inventarios.categoria_id', '=', 'categorias.id')
+            ->where('inventario_ubicaciones.ubicacion_id', $ubicacion->id)
+            ->where('inventario_ubicaciones.cantidad', '>', 0)
+            ->select(
+                'inventarios.id',
+                'inventarios.nombre',
+                'inventarios.codigo_unico',
+                'inventarios.marca',
+                'inventarios.modelo',
+                'inventarios.numero_serie',
+                'categorias.nombre as categoria_nombre',
+                'inventario_ubicaciones.cantidad',
+                'inventario_ubicaciones.estado',
+                'inventario_ubicaciones.updated_at as ultima_actualizacion'
+            )
+            ->orderBy('inventarios.nombre')
+            ->get();
+        
+        // Calcular estadísticas
+        $totalInventarios = $inventarios->count();
+        $totalUnidades = $inventarios->sum('cantidad');
+        $estadisticas = [
+            'total_inventarios' => $totalInventarios,
+            'total_unidades' => $totalUnidades,
+            'disponibles' => $inventarios->where('estado', 'disponible')->sum('cantidad'),
+            'en_uso' => $inventarios->where('estado', 'en uso')->sum('cantidad'),
+            'en_mantenimiento' => $inventarios->where('estado', 'en mantenimiento')->sum('cantidad'),
+            'dados_de_baja' => $inventarios->where('estado', 'dado de baja')->sum('cantidad'),
+            'robados' => $inventarios->where('estado', 'robado')->sum('cantidad')
+        ];
+        
+        return view('ubicaciones.show', compact('ubicacion', 'inventarios', 'estadisticas'));
     }
 
     public function edit(Ubicacion $ubicacion)

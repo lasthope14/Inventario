@@ -833,7 +833,52 @@ class InventarioController extends Controller
                 }
             }
 
-            // Agregar nueva ubicación si se proporciona
+            // Procesar ubicaciones dinámicas agregadas desde JavaScript
+            if ($request->has('ubicaciones') && is_array($request->ubicaciones)) {
+                foreach ($request->ubicaciones as $ubicacionData) {
+                    if (isset($ubicacionData['ubicacion_id']) && isset($ubicacionData['cantidad']) && $ubicacionData['cantidad'] > 0) {
+                        // Verificar si ya existe esta ubicación para este inventario
+                        $ubicacionExistente = $inventario->ubicaciones()
+                            ->where('ubicacion_id', $ubicacionData['ubicacion_id'])
+                            ->first();
+                        
+                        if ($ubicacionExistente) {
+                            // Si existe, actualizar la cantidad
+                            $ubicacionExistente->update([
+                                'cantidad' => $ubicacionExistente->cantidad + intval($ubicacionData['cantidad']),
+                                'estado' => $ubicacionData['estado'] ?? 'disponible'
+                            ]);
+                            
+                            Log::info('Ubicación existente actualizada', [
+                                'inventario_id' => $inventario->id,
+                                'ubicacion_id' => $ubicacionData['ubicacion_id'],
+                                'cantidad_anterior' => $ubicacionExistente->cantidad - intval($ubicacionData['cantidad']),
+                                'cantidad_agregada' => intval($ubicacionData['cantidad']),
+                                'cantidad_total' => $ubicacionExistente->cantidad,
+                                'estado' => $ubicacionData['estado'] ?? 'disponible'
+                            ]);
+                        } else {
+                            // Si no existe, crear nueva
+                            $inventario->ubicaciones()->create([
+                                'ubicacion_id' => $ubicacionData['ubicacion_id'],
+                                'cantidad' => intval($ubicacionData['cantidad']),
+                                'estado' => $ubicacionData['estado'] ?? 'disponible'
+                            ]);
+                            
+                            Log::info('Nueva ubicación creada desde JavaScript', [
+                                'inventario_id' => $inventario->id,
+                                'ubicacion_id' => $ubicacionData['ubicacion_id'],
+                                'cantidad' => intval($ubicacionData['cantidad']),
+                                'estado' => $ubicacionData['estado'] ?? 'disponible'
+                            ]);
+                        }
+                        
+                        $cantidadTotal += intval($ubicacionData['cantidad']);
+                    }
+                }
+            }
+
+            // Agregar nueva ubicación si se proporciona (mantener compatibilidad)
             if ($request->nueva_ubicacion_id && $request->nueva_ubicacion_cantidad > 0) {
                 $nuevaUbicacion = $inventario->ubicaciones()->create([
                     'ubicacion_id' => $request->nueva_ubicacion_id,

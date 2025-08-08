@@ -24,20 +24,40 @@
                             </div>
                             <div>
                                 @php
-                                    $estadoPrincipal = $ubicaciones->first()->estado ?? 'disponible';
-                                    $statusConfig = match($estadoPrincipal) {
-                                        'disponible' => ['bg' => '#e8f5e8', 'color' => '#2d5a2d', 'icon' => 'fas fa-check-circle', 'iconColor' => '#28a745', 'text' => 'Disponible'],
-                                        'en uso' => ['bg' => '#e3f2fd', 'color' => '#1565c0', 'icon' => 'fas fa-user-clock', 'iconColor' => '#1976d2', 'text' => 'En Uso'],
-                                        'en mantenimiento' => ['bg' => '#fff8e1', 'color' => '#e65100', 'icon' => 'fas fa-tools', 'iconColor' => '#ff9800', 'text' => 'Mantenimiento'],
-                                        'dado de baja' => ['bg' => '#ffebee', 'color' => '#c62828', 'icon' => 'fas fa-times-circle', 'iconColor' => '#d32f2f', 'text' => 'Dado de Baja'],
-                                        'robado' => ['bg' => '#fafafa', 'color' => '#424242', 'icon' => 'fas fa-exclamation-triangle', 'iconColor' => '#757575', 'text' => 'Robado'],
-                                        default => ['bg' => '#f5f5f5', 'color' => '#424242', 'icon' => 'fas fa-question-circle', 'iconColor' => '#757575', 'text' => ucfirst(str_replace('_', ' ', $estadoPrincipal))]
-                                    };
+                                    // Obtener todos los estados únicos de las ubicaciones
+                                    $estadosUnicos = $ubicaciones ? $ubicaciones->pluck('estado')->unique()->values() : collect(['disponible']);
+                                    
+                                    // Función para obtener configuración de estado
+                                    function getStatusConfig($estado) {
+                                        return match($estado) {
+                                            'disponible' => ['bg' => '#e8f5e8', 'color' => '#2d5a2d', 'icon' => 'fas fa-check-circle', 'iconColor' => '#28a745', 'text' => 'Disponible'],
+                                            'en uso' => ['bg' => '#e3f2fd', 'color' => '#1565c0', 'icon' => 'fas fa-user-clock', 'iconColor' => '#1976d2', 'text' => 'En Uso'],
+                                            'en mantenimiento' => ['bg' => '#fff8e1', 'color' => '#e65100', 'icon' => 'fas fa-tools', 'iconColor' => '#ff9800', 'text' => 'Mantenimiento'],
+                                            'dado de baja' => ['bg' => '#ffebee', 'color' => '#c62828', 'icon' => 'fas fa-times-circle', 'iconColor' => '#d32f2f', 'text' => 'Dado de Baja'],
+                                            'robado' => ['bg' => '#fafafa', 'color' => '#424242', 'icon' => 'fas fa-exclamation-triangle', 'iconColor' => '#757575', 'text' => 'Robado'],
+                                            default => ['bg' => '#f5f5f5', 'color' => '#424242', 'icon' => 'fas fa-question-circle', 'iconColor' => '#757575', 'text' => ucfirst(str_replace('_', ' ', $estado))]
+                                        };
+                                    }
                                 @endphp
-                                <span class="badge px-3 py-2 d-flex align-items-center status-badge" style="background-color: {{ $statusConfig['bg'] }}; color: {{ $statusConfig['color'] }}; font-size: 0.9rem; gap: 0.5rem; border: 1px solid {{ $statusConfig['iconColor'] }}; font-weight: 600;">
-                                    <i class="{{ $statusConfig['icon'] }}" style="font-size: 1rem; color: {{ $statusConfig['iconColor'] }};"></i>
-                                    {{ $statusConfig['text'] }}
-                                </span>
+                                
+                                @if($estadosUnicos->count() == 1)
+                                    @php $statusConfig = getStatusConfig($estadosUnicos->first()); @endphp
+                                    <span class="badge px-3 py-2 d-flex align-items-center status-badge" style="background-color: {{ $statusConfig['bg'] }}; color: {{ $statusConfig['color'] }}; font-size: 0.9rem; gap: 0.5rem; border: 1px solid {{ $statusConfig['iconColor'] }}; font-weight: 600;">
+                                        <i class="{{ $statusConfig['icon'] }}" style="font-size: 1rem; color: {{ $statusConfig['iconColor'] }};"></i>
+                                        {{ $statusConfig['text'] }}
+                                    </span>
+                                @else
+                                    <!-- Múltiples estados -->
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach($estadosUnicos as $estado)
+                                            @php $statusConfig = getStatusConfig($estado); @endphp
+                                            <span class="badge px-2 py-1 d-flex align-items-center" style="background-color: {{ $statusConfig['bg'] }}; color: {{ $statusConfig['color'] }}; font-size: 0.75rem; gap: 0.3rem; border: 1px solid {{ $statusConfig['iconColor'] }}; font-weight: 600;">
+                                                <i class="{{ $statusConfig['icon'] }}" style="font-size: 0.8rem; color: {{ $statusConfig['iconColor'] }};"></i>
+                                                {{ $statusConfig['text'] }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -171,21 +191,11 @@
                             <div class="col-lg-6 col-md-6">
                                 <!-- Equipment Details -->
                                 <div class="row g-3 mb-4">
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
-                                            <div class="me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; background-color: #007bff; border-radius: 50%; color: white;">
-                                                <i class="fas fa-barcode" style="font-size: 0.9rem;"></i>
-                                            </div>
-                                            <div>
-                                                <small style="color: #6c757d; font-size: 0.8rem;">Código</small>
-                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $inventario->codigo_unico ?? $inventario->codigo }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
-                                            <div class="me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; background-color: #28a745; border-radius: 50%; color: white;">
-                                                <i class="fas fa-layer-group" style="font-size: 0.9rem;"></i>
+                                    <!-- Primera fila: Categoría, Código y Valor con el mismo tamaño -->
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; height: 100%;">
+                                            <div class="me-3">
+                                                <i class="fas fa-layer-group" style="font-size: 1.5rem; color: #28a745;"></i>
                                             </div>
                                             <div>
                                                 <small style="color: #6c757d; font-size: 0.8rem;">Categoría</small>
@@ -193,26 +203,81 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
-                                            <div class="me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; background-color: #17a2b8; border-radius: 50%; color: white;">
-                                                <i class="fas fa-map-marker-alt" style="font-size: 0.9rem;"></i>
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; height: 100%;">
+                                            <div class="me-3">
+                                                <i class="fas fa-barcode" style="font-size: 1.5rem; color: #007bff;"></i>
                                             </div>
                                             <div>
-                                                <small style="color: #6c757d; font-size: 0.8rem;">Ubicación</small>
-                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $ubicaciones->first()->ubicacion->nombre ?? 'Sin ubicación' }}</div>
+                                                <small style="color: #6c757d; font-size: 0.8rem;">Código</small>
+                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $inventario->codigo_unico ?? $inventario->codigo }}</div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
-                                            <div class="me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; background-color: #ffc107; border-radius: 50%; color: #212529;">
-                                                <i class="fas fa-dollar-sign" style="font-size: 0.9rem;"></i>
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; height: 100%;">
+                                            <div class="me-3">
+                                                <i class="fas fa-dollar-sign" style="font-size: 1.5rem; color: #ffc107;"></i>
                                             </div>
                                             <div>
                                                 <small style="color: #6c757d; font-size: 0.8rem;">Valor</small>
                                                 <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">${{ number_format($inventario->valor_unitario * $cantidadTotal, 2) }}</div>
                                             </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Segunda fila: Ubicaciones ocupando todo el ancho -->
+                                    <div class="col-12">
+                                        <div class="p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="me-3">
+                                                    <i class="fas fa-map-marker-alt" style="font-size: 1.5rem; color: #17a2b8;"></i>
+                                                </div>
+                                                <div>
+                                                    <small style="color: #6c757d; font-size: 0.8rem;">Distribución por Ubicaciones</small>
+                                                    <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $ubicaciones ? $ubicaciones->count() : 0 }} ubicación(es) asignada(s)</div>
+                                                </div>
+                                            </div>
+                                            @if($ubicaciones && $ubicaciones->count() > 0)
+                                                <div class="row g-2">
+                                                    @foreach($ubicaciones as $ubicacion)
+                                                        <div class="col-md-6 col-lg-4">
+                                                            <div class="d-flex align-items-center justify-content-between p-2" style="background-color: white; border: 1px solid #e9ecef; border-radius: 6px; min-height: 60px;">
+                                                    <div class="flex-grow-1">
+                                                        <div style="font-weight: 600; color: #212529; font-size: 0.85rem; line-height: 1.2; word-break: break-word;">
+                                                            {{ $ubicacion->ubicacion->nombre }}
+                                                        </div>
+                                                        <div style="color: #6c757d; font-size: 0.75rem; line-height: 1.1;">
+                                                            Cantidad: {{ $ubicacion->cantidad }}
+                                                        </div>
+                                                    </div>
+                                                                <div class="ms-2 flex-shrink-0">
+                                                                    @php
+                                                                        $estadoConfig = match($ubicacion->estado) {
+                                                                            'disponible' => ['bg' => '#28a745', 'text' => 'Disponible'],
+                                                                            'en uso' => ['bg' => '#ffc107', 'text' => 'En Uso'],
+                                                                            'en mantenimiento' => ['bg' => '#6c757d', 'text' => 'Mantenimiento'],
+                                                                            'dado de baja' => ['bg' => '#dc3545', 'text' => 'Dado de Baja'],
+                                                                            'robado' => ['bg' => '#343a40', 'text' => 'Robado'],
+                                                                            default => ['bg' => '#6c757d', 'text' => ucfirst(str_replace('_', ' ', $ubicacion->estado))]
+                                                                        };
+                                                                    @endphp
+                                                                    <span class="badge" style="background-color: {{ $estadoConfig['bg'] }}; color: white; font-size: 0.65rem; padding: 3px 6px; white-space: nowrap;">
+                                                                        {{ $estadoConfig['text'] }}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <div class="text-center py-3">
+                                                    <div class="text-muted" style="font-size: 0.9rem;">
+                                                        <i class="fas fa-map-marker-alt me-2" style="opacity: 0.5;"></i>
+                                                        Sin ubicaciones asignadas
+                                                    </div>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
