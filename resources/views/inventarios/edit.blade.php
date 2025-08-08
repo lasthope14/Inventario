@@ -321,7 +321,7 @@
                                                         <div class="row g-3">
                                                             <div class="col-md-4">
                                                                 <label class="form-label">Ubicación</label>
-                                                                <select class="form-select" name="ubicaciones[{{ $index }}][ubicacion_id]">
+                                                                <select class="form-select" name="cantidades_ubicacion[{{ $ubicacion->ubicacion_id }}]" data-ubicacion-id="{{ $ubicacion->ubicacion_id }}">
                                                     <option value="">Seleccionar ubicación</option>
                                                     @foreach($ubicaciones as $ub)
                                                         <option value="{{ $ub->id }}" {{ ($ubicacion->ubicacion_id == $ub->id) ? 'selected' : '' }}>
@@ -332,11 +332,12 @@
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <label class="form-label">Cantidad</label>
-                                                                <input type="number" class="form-control cantidad-input" name="ubicaciones[{{ $index }}][cantidad]" value="{{ $ubicacion->cantidad ?? 1 }}" min="0">
+                                                                <input type="number" class="form-control cantidad-input" name="cantidades[{{ $ubicacion->ubicacion_id }}]" value="{{ $ubicacion->cantidad ?? 1 }}" min="0">
+                                                                <input type="hidden" name="ubicacion_existente[{{ $ubicacion->ubicacion_id }}]" value="{{ $ubicacion->id }}">
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <label class="form-label">Estado</label>
-                                                                <select class="form-select" name="ubicaciones[{{ $index }}][estado]">
+                                                                <select class="form-select" name="estados[{{ $ubicacion->ubicacion_id }}]">
                                                     <option value="disponible" {{ ($ubicacion->estado == 'disponible') ? 'selected' : '' }}>Disponible</option>
                                                     <option value="en uso" {{ ($ubicacion->estado == 'en uso') ? 'selected' : '' }}>En Uso</option>
                                                     <option value="en mantenimiento" {{ ($ubicacion->estado == 'en mantenimiento') ? 'selected' : '' }}>En Mantenimiento</option>
@@ -565,7 +566,11 @@
 function calcularCantidadTotal() {
     let total = 0;
     document.querySelectorAll('.cantidad-input').forEach(input => {
-        total += parseInt(input.value) || 0;
+        const ubicacionItem = input.closest('.ubicacion-item');
+        // Solo contar si la ubicación no está oculta (marcada para eliminación)
+        if (ubicacionItem && ubicacionItem.style.display !== 'none') {
+            total += parseInt(input.value) || 0;
+        }
     });
     document.getElementById('cantidad-total').textContent = total;
 }
@@ -620,7 +625,17 @@ function actualizarEventos() {
     // Eventos para remover ubicación
     document.querySelectorAll('.remove-ubicacion').forEach(btn => {
         btn.onclick = function() {
-            this.closest('.ubicacion-item').remove();
+            const ubicacionItem = this.closest('.ubicacion-item');
+            const cantidadInput = ubicacionItem.querySelector('input[name^="cantidades["]');
+            
+            if (cantidadInput) {
+                // Si es una ubicación existente, marcar cantidad como 0 para eliminarla
+                cantidadInput.value = 0;
+                ubicacionItem.style.display = 'none';
+            } else {
+                // Si es una ubicación nueva, simplemente remover del DOM
+                ubicacionItem.remove();
+            }
             calcularCantidadTotal();
         };
     });
