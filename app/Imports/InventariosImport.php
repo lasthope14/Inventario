@@ -581,12 +581,36 @@ class InventariosImport
         
         \Log::info('Buscando archivo:', [
             'fileName' => $fileName,
-            'basePath' => $basePath
+            'basePath' => $basePath,
+            'basePath_exists' => is_dir($basePath),
+            'allowedExtensions' => $allowedExtensions
         ]);
+
+        // Listar todos los archivos disponibles en el directorio base
+        if (is_dir($basePath)) {
+            $allFiles = [];
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($basePath, \RecursiveDirectoryIterator::SKIP_DOTS)
+            );
+            foreach ($iterator as $file) {
+                if ($file->isFile()) {
+                    $allFiles[] = $file->getPathname();
+                }
+            }
+            \Log::info('Archivos disponibles en directorio:', [
+                'total_files' => count($allFiles),
+                'files' => array_map('basename', $allFiles)
+            ]);
+        }
 
         $directories = ['documentos', 'imagenes', ''];
         foreach ($directories as $dir) {
             $searchPath = $dir ? $basePath . '/' . $dir : $basePath;
+            
+            \Log::info('Buscando en directorio:', [
+                'searchPath' => $searchPath,
+                'dir_exists' => is_dir($searchPath)
+            ]);
             
             $filePath = $searchPath . '/' . $fileName;
             if (file_exists($filePath) && $this->validateFileExtension($fileName, $allowedExtensions)) {
@@ -594,12 +618,19 @@ class InventariosImport
                 return $filePath;
             }
 
-            $files = glob($searchPath . '/*');
-            foreach ($files as $file) {
-                if (strtolower(basename($file)) === strtolower($fileName)) {
-                    if ($this->validateFileExtension($file, $allowedExtensions)) {
-                        \Log::info('Archivo encontrado (case-insensitive):', ['path' => $file]);
-                        return $file;
+            if (is_dir($searchPath)) {
+                $files = glob($searchPath . '/*');
+                \Log::info('Archivos en directorio:', [
+                    'searchPath' => $searchPath,
+                    'files_found' => array_map('basename', $files)
+                ]);
+                
+                foreach ($files as $file) {
+                    if (strtolower(basename($file)) === strtolower($fileName)) {
+                        if ($this->validateFileExtension($file, $allowedExtensions)) {
+                            \Log::info('Archivo encontrado (case-insensitive):', ['path' => $file]);
+                            return $file;
+                        }
                     }
                 }
             }
