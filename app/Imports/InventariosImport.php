@@ -43,12 +43,7 @@ class InventariosImport
             
             $data = array_combine($headers, $row);
 
-            // Registro del valor unitario antes de procesamiento
-            \Log::info('Valor unitario antes de procesamiento:', [
-                'valor' => $data['valor_unitario'] ?? 'no set',
-                'tipo' => isset($data['valor_unitario']) ? gettype($data['valor_unitario']) : 'undefined',
-                'raw_valor' => $row[array_search('valor_unitario', $headers)] ?? 'no encontrado'
-            ]);
+
 
             // Pre-procesar valor_unitario
             if (isset($data['valor_unitario'])) {
@@ -60,11 +55,7 @@ class InventariosImport
                     $data['valor_unitario'] = (float) $cleanValue;
                 }
                 
-                // Registro después del procesamiento
-                \Log::info('Valor unitario después de procesamiento:', [
-                    'valor' => $data['valor_unitario'],
-                    'tipo' => gettype($data['valor_unitario'])
-                ]);
+
             }
             
             try {
@@ -154,11 +145,7 @@ class InventariosImport
                 $data['valor_unitario'] = (float) $data['valor_unitario'];
             }
             
-            \Log::info('Valor unitario en validateRow:', [
-                'original' => $data['valor_unitario'],
-                'processed' => $data['valor_unitario'],
-                'type' => gettype($data['valor_unitario'])
-            ]);
+
         }
 
         $validator = Validator::make($data, [
@@ -222,25 +209,12 @@ class InventariosImport
         foreach ($directories as $directory) {
             try {
                 if (!file_exists($directory)) {
-                    if (mkdir($directory, 0755, true)) {
-                        \Log::info("Directorio creado: $directory");
-                    } else {
-                        \Log::error("No se pudo crear el directorio: $directory");
-                    }
+                    mkdir($directory, 0755, true);
                 }
                 
-                \Log::info("Verificación de directorio", [
-                    'directorio' => $directory,
-                    'existe' => file_exists($directory),
-                    'permisos' => substr(sprintf('%o', fileperms($directory)), -4),
-                    'escribible' => is_writable($directory)
-                ]);
+
                 
             } catch (\Exception $e) {
-                \Log::error("Error al crear directorio", [
-                    'directorio' => $directory,
-                    'error' => $e->getMessage()
-                ]);
                 throw $e;
             }
         }
@@ -256,31 +230,17 @@ class InventariosImport
     {
         $processedFiles = [];
         
-        \Log::info('Verificando directorios para imágenes', [
-            'public_path' => storage_path('app/public/inventario_imagenes'),
-            'public_exists' => is_dir(storage_path('app/public/inventario_imagenes')),
-            'public_writable' => is_writable(storage_path('app/public/inventario_imagenes')),
-            'disk_exists' => Storage::disk('public')->exists('inventario_imagenes'),
-            'files_path' => $filesPath,
-            'files_path_exists' => is_dir($filesPath)
-        ]);
+
         
         // Procesar imagen 1
         if (!empty($data['imagen_1'])) {
-            \Log::info('Intentando procesar imagen 1', [
-                'nombre_imagen' => $data['imagen_1']
-            ]);
+
 
             $imagePath = $this->findFile($filesPath, $data['imagen_1'], $this->allowedImageExtensions);
             if ($imagePath) {
                 try {
                     $imageHash = hash_file('md5', $imagePath);
-                    \Log::info('Imagen 1 encontrada', [
-                        'path' => $imagePath,
-                        'hash' => $imageHash,
-                        'size' => filesize($imagePath),
-                        'permisos' => substr(sprintf('%o', fileperms($imagePath)), -4)
-                    ]);
+
                     
                     $existingImage = DB::table('media')
                         ->where('collection_name', 'imagenes')
@@ -288,10 +248,7 @@ class InventariosImport
                         ->first();
 
                     if ($existingImage) {
-                        \Log::info('Imagen existente encontrada, verificando archivo físico', [
-                            'existing_path' => $existingImage->file_name,
-                            'full_path' => storage_path('app/public/inventario_imagenes/' . $existingImage->file_name)
-                        ]);
+
 
                         $physicalPath = storage_path('app/public/inventario_imagenes/' . $existingImage->file_name);
                         if (!file_exists($physicalPath)) {
@@ -299,14 +256,11 @@ class InventariosImport
                             $destinationPath = 'inventario_imagenes/' . $fileName;
                             $fullDestinationPath = storage_path('app/public/' . $destinationPath);
                             
-                            \Log::info('Archivo físico no encontrado, copiando nueva imagen', [
-                                'origen' => $imagePath,
-                                'destino' => $fullDestinationPath
-                            ]);
+
 
                             if (copy($imagePath, $fullDestinationPath)) {
                                 chmod($fullDestinationPath, 0644);
-                                \Log::info('Imagen copiada exitosamente');
+
                             } else {
                                 \Log::error('Error al copiar imagen', [
                                     'error' => error_get_last()
@@ -323,14 +277,11 @@ class InventariosImport
                         $destinationPath = 'inventario_imagenes/' . $fileName;
                         $fullDestinationPath = storage_path('app/public/' . $destinationPath);
                         
-                        \Log::info('Procesando nueva imagen', [
-                            'origen' => $imagePath,
-                            'destino' => $fullDestinationPath
-                        ]);
+
 
                         if (copy($imagePath, $fullDestinationPath)) {
                             chmod($fullDestinationPath, 0644);
-                            \Log::info('Nueva imagen copiada exitosamente');
+
                             
                             $inventario->imagen_principal = $destinationPath;
                             $inventario->save();
@@ -374,20 +325,13 @@ class InventariosImport
 
         // Procesar imagen 2
         if (!empty($data['imagen_2'])) {
-            \Log::info('Intentando procesar imagen 2', [
-                'nombre_imagen' => $data['imagen_2']
-            ]);
+
 
             $imagePath = $this->findFile($filesPath, $data['imagen_2'], $this->allowedImageExtensions);
             if ($imagePath) {
                 try {
                     $imageHash = hash_file('md5', $imagePath);
-                    \Log::info('Imagen 2 encontrada', [
-                        'path' => $imagePath,
-                        'hash' => $imageHash,
-                        'size' => filesize($imagePath),
-                        'permisos' => substr(sprintf('%o', fileperms($imagePath)), -4)
-                    ]);
+
                     
                     $existingImage = DB::table('media')
                         ->where('collection_name', 'imagenes')
@@ -395,10 +339,7 @@ class InventariosImport
                         ->first();
 
                     if ($existingImage) {
-                        \Log::info('Imagen existente encontrada, verificando archivo físico', [
-                            'existing_path' => $existingImage->file_name,
-                            'full_path' => storage_path('app/public/inventario_imagenes/' . $existingImage->file_name)
-                        ]);
+
 
                         $physicalPath = storage_path('app/public/inventario_imagenes/' . $existingImage->file_name);
                         if (!file_exists($physicalPath)) {
@@ -406,14 +347,11 @@ class InventariosImport
                             $destinationPath = 'inventario_imagenes/' . $fileName;
                             $fullDestinationPath = storage_path('app/public/' . $destinationPath);
                             
-                            \Log::info('Archivo físico no encontrado, copiando nueva imagen', [
-                                'origen' => $imagePath,
-                                'destino' => $fullDestinationPath
-                            ]);
+
 
                             if (copy($imagePath, $fullDestinationPath)) {
                                 chmod($fullDestinationPath, 0644);
-                                \Log::info('Imagen copiada exitosamente');
+
                             } else {
                                 \Log::error('Error al copiar imagen', [
                                     'error' => error_get_last()
@@ -430,14 +368,11 @@ class InventariosImport
                         $destinationPath = 'inventario_imagenes/' . $fileName;
                         $fullDestinationPath = storage_path('app/public/' . $destinationPath);
                         
-                        \Log::info('Procesando nueva imagen', [
-                            'origen' => $imagePath,
-                            'destino' => $fullDestinationPath
-                        ]);
+
 
                         if (copy($imagePath, $fullDestinationPath)) {
                             chmod($fullDestinationPath, 0644);
-                            \Log::info('Nueva imagen copiada exitosamente');
+
                             
                             $inventario->imagen_secundaria = $destinationPath;
                             $inventario->save();
@@ -587,48 +522,31 @@ class InventariosImport
         ]);
 
         // Listar todos los archivos disponibles en el directorio base
-        if (is_dir($basePath)) {
-            $allFiles = [];
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($basePath, \RecursiveDirectoryIterator::SKIP_DOTS)
-            );
-            foreach ($iterator as $file) {
-                if ($file->isFile()) {
-                    $allFiles[] = $file->getPathname();
-                }
-            }
-            \Log::info('Archivos disponibles en directorio:', [
-                'total_files' => count($allFiles),
-                'files' => array_map('basename', $allFiles)
-            ]);
+        // Verificar que el directorio base existe
+        if (!is_dir($basePath)) {
+            return null;
         }
 
         $directories = ['documentos', 'imagenes', ''];
         foreach ($directories as $dir) {
             $searchPath = $dir ? $basePath . '/' . $dir : $basePath;
             
-            \Log::info('Buscando en directorio:', [
-                'searchPath' => $searchPath,
-                'dir_exists' => is_dir($searchPath)
-            ]);
+
             
             $filePath = $searchPath . '/' . $fileName;
             if (file_exists($filePath) && $this->validateFileExtension($fileName, $allowedExtensions)) {
-                \Log::info('Archivo encontrado:', ['path' => $filePath]);
+
                 return $filePath;
             }
 
             if (is_dir($searchPath)) {
                 $files = glob($searchPath . '/*');
-                \Log::info('Archivos en directorio:', [
-                    'searchPath' => $searchPath,
-                    'files_found' => array_map('basename', $files)
-                ]);
+
                 
                 foreach ($files as $file) {
                     if (strtolower(basename($file)) === strtolower($fileName)) {
                         if ($this->validateFileExtension($file, $allowedExtensions)) {
-                            \Log::info('Archivo encontrado (case-insensitive):', ['path' => $file]);
+
                             return $file;
                         }
                     }
@@ -636,7 +554,7 @@ class InventariosImport
             }
         }
 
-        \Log::warning('Archivo no encontrado:', ['fileName' => $fileName]);
+
         return null;
     }
 }

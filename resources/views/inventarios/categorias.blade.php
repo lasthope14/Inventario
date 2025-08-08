@@ -108,7 +108,7 @@
             </div>
             
             <div class="header-actions">
-                <a href="{{ route('inventarios.import') }}" class="btn btn-outline-secondary">
+                <a href="{{ route('inventarios.import.form') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-file-import"></i> Importar Inventario
                 </a>
                 <a href="{{ route('inventarios.create') }}" class="btn btn-primary">
