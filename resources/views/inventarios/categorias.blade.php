@@ -4961,7 +4961,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </td>
                 <td>
                     <div class="table-owner">
-                        <span class="text-muted">Sin asignar</span>
+                        ${inventario.propietario || '<span class="text-muted">Sin asignar</span>'}
                     </div>
                 </td>
                 <td>

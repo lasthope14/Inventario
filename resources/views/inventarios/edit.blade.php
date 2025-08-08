@@ -122,6 +122,37 @@
                                 <div class="col-12 px-0">
                                     <div class="card">
                                         <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                                            <style>
+                                                [data-bs-theme="dark"] .card-header {
+                                                    background-color: #374151 !important;
+                                                    border-bottom: 1px solid #4b5563 !important;
+                                                }
+                                                [data-bs-theme="dark"] .card-header h2,
+                                                [data-bs-theme="dark"] .card-header p {
+                                                    color: #f8fafc !important;
+                                                }
+                                                [data-bs-theme="dark"] .card {
+                                                    background-color: #1f2937 !important;
+                                                    border-color: #374151 !important;
+                                                }
+                                                [data-bs-theme="dark"] .ubicacion-item {
+                                                    background-color: #374151 !important;
+                                                    border-color: #4b5563 !important;
+                                                }
+                                                [data-bs-theme="dark"] .form-label {
+                                                    color: #f8fafc !important;
+                                                }
+                                                [data-bs-theme="dark"] .form-select,
+                                                [data-bs-theme="dark"] .form-control {
+                                                    background-color: #1f2937 !important;
+                                                    border-color: #4b5563 !important;
+                                                    color: #f8fafc !important;
+                                                }
+                                                [data-bs-theme="dark"] .form-select option {
+                                                    background-color: #1f2937 !important;
+                                                    color: #f8fafc !important;
+                                                }
+                                            </style>
                                             <div class="d-flex align-items-center">
                                                 <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #007bff; border-radius: 50%; color: white;">
                                                     <i class="fas fa-id-card" style="font-size: 1.2rem;"></i>
@@ -314,7 +345,7 @@
                                                 </select>
                                                             </div>
                                                             <div class="col-md-2 d-flex align-items-end">
-                                                                <button type="button" class="btn btn-outline-danger btn-sm remove-ubicacion" style="width: 100%;">
+                                                                <button type="button" class="btn btn-outline-danger remove-ubicacion" style="width: 100%; height: calc(1.5em + 1.2rem + 2px);">
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
                                                             </div>
@@ -571,7 +602,7 @@ function agregarUbicacion() {
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm remove-ubicacion" style="width: 100%;">
+                    <button type="button" class="btn btn-outline-danger remove-ubicacion" style="width: 100%; height: calc(1.5em + 1.2rem + 2px);">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>

@@ -390,6 +390,7 @@ class InventarioController extends Controller
                     'marca' => $inventario->marca,
                     'modelo' => $inventario->modelo,
                     'numero_serie' => $inventario->numero_serie,
+                    'propietario' => $inventario->propietario,
                     'categoria' => $inventario->categoria->nombre,
                     'imagen_principal' => $inventario->imagen_principal ? \Storage::url($inventario->imagen_principal) : null,
                     'ubicaciones' => $inventario->ubicaciones->map(function($ubicacion) {
@@ -863,6 +864,7 @@ class InventarioController extends Controller
         return redirect()
             ->route('inventarios.show', $inventario)
             ->with('success', 'Elemento de inventario actualizado con éxito.');
+            // No agregar fragmento para evitar scroll automático
 
     } catch (\Exception $e) {
         Log::error('Error al actualizar inventario', [

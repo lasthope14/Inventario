@@ -263,6 +263,9 @@
                                         <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn btn-outline-secondary" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
                                             <i class="fas fa-edit me-2"></i>Editar
                                         </a>
+                                        <a href="{{ route('inventarios.index') }}" class="btn btn-outline-primary" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
+                                            <i class="fas fa-arrow-left me-2"></i>Volver a Inventario
+                                        </a>
                                     </div>
                                 </div>
                             </div>
