@@ -807,10 +807,12 @@ class InventarioController extends Controller
                         $estado = $request->estados[$ubicacionId] ?? 'disponible';
                         
                         $ubicacion = $inventario->ubicaciones()->updateOrCreate(
-                            ['ubicacion_id' => $ubicacionId],
                             [
-                                'cantidad' => $cantidad,
+                                'ubicacion_id' => $ubicacionId,
                                 'estado' => $estado
+                            ],
+                            [
+                                'cantidad' => $cantidad
                             ]
                         );
                         
@@ -837,16 +839,16 @@ class InventarioController extends Controller
             if ($request->has('ubicaciones') && is_array($request->ubicaciones)) {
                 foreach ($request->ubicaciones as $ubicacionData) {
                     if (isset($ubicacionData['ubicacion_id']) && isset($ubicacionData['cantidad']) && $ubicacionData['cantidad'] > 0) {
-                        // Verificar si ya existe esta ubicación para este inventario
+                        // Verificar si ya existe esta combinación de ubicación y estado
                         $ubicacionExistente = $inventario->ubicaciones()
                             ->where('ubicacion_id', $ubicacionData['ubicacion_id'])
+                            ->where('estado', $ubicacionData['estado'] ?? 'disponible')
                             ->first();
                         
                         if ($ubicacionExistente) {
-                            // Si existe, reemplazar la cantidad (no sumar)
+                            // Si existe la misma ubicación con el mismo estado, reemplazar la cantidad
                             $ubicacionExistente->update([
-                                'cantidad' => intval($ubicacionData['cantidad']),
-                                'estado' => $ubicacionData['estado'] ?? 'disponible'
+                                'cantidad' => intval($ubicacionData['cantidad'])
                             ]);
                             
                             Log::info('Ubicación existente actualizada', [
@@ -856,7 +858,7 @@ class InventarioController extends Controller
                                 'estado' => $ubicacionData['estado'] ?? 'disponible'
                             ]);
                         } else {
-                            // Si no existe, crear nueva
+                            // Si no existe esta combinación, crear nueva
                             $inventario->ubicaciones()->create([
                                 'ubicacion_id' => $ubicacionData['ubicacion_id'],
                                 'cantidad' => intval($ubicacionData['cantidad']),
