@@ -843,18 +843,16 @@ class InventarioController extends Controller
                             ->first();
                         
                         if ($ubicacionExistente) {
-                            // Si existe, actualizar la cantidad
+                            // Si existe, reemplazar la cantidad (no sumar)
                             $ubicacionExistente->update([
-                                'cantidad' => $ubicacionExistente->cantidad + intval($ubicacionData['cantidad']),
+                                'cantidad' => intval($ubicacionData['cantidad']),
                                 'estado' => $ubicacionData['estado'] ?? 'disponible'
                             ]);
                             
                             Log::info('Ubicación existente actualizada', [
                                 'inventario_id' => $inventario->id,
                                 'ubicacion_id' => $ubicacionData['ubicacion_id'],
-                                'cantidad_anterior' => $ubicacionExistente->cantidad - intval($ubicacionData['cantidad']),
-                                'cantidad_agregada' => intval($ubicacionData['cantidad']),
-                                'cantidad_total' => $ubicacionExistente->cantidad,
+                                'cantidad_nueva' => intval($ubicacionData['cantidad']),
                                 'estado' => $ubicacionData['estado'] ?? 'disponible'
                             ]);
                         } else {
