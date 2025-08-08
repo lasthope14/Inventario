@@ -108,6 +108,9 @@
             </div>
             
             <div class="header-actions">
+                <a href="{{ route('inventarios.import') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-file-import"></i> Importar Inventario
+                </a>
                 <a href="{{ route('inventarios.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Nuevo Elemento
                 </a>
@@ -825,8 +828,51 @@ body {
 .header-actions {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1rem;
     flex-shrink: 0;
+}
+
+.header-actions .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    min-width: 180px;
+    justify-content: center;
+}
+
+.header-actions .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+}
+
+.header-actions .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px 0 rgba(102, 126, 234, 0.4);
+}
+
+.header-actions .btn-outline-secondary {
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: #64748b;
+}
+
+.header-actions .btn-outline-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #475569;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.header-actions .btn i {
+    font-size: 1rem;
 }
 
 /* Sistema de Búsqueda y Filtros Avanzado */
@@ -844,8 +890,8 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem 2rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: transparent;
+    color: #1e293b;
 }
 
 .search-title {
@@ -854,21 +900,21 @@ body {
 }
 
 .search-title h5 {
-    color: white;
+    color: #1e293b;
     font-weight: 600;
 }
 
 .toggle-filters {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
     transition: all 0.3s ease;
 }
 
 .toggle-filters:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
-    color: white;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #475569;
 }
 
 /* Búsqueda Principal */
@@ -2959,24 +3005,107 @@ body {
 }
 
 [data-bs-theme="dark"] .search-header {
-    background: linear-gradient(135deg, #1e3a8a 0%, #581c87 100%);
-    color: white;
+    background: transparent;
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .search-header .search-title {
+    color: #f8fafc;
 }
 
 [data-bs-theme="dark"] .search-header .search-title h5 {
-    color: white;
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .search-header .search-title i {
+    color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .advanced-search-container {
+    background: #1e293b;
+    border-color: #475569;
 }
 
 [data-bs-theme="dark"] .search-header .toggle-filters {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: white;
+    background: #334155;
+    border-color: #475569;
+    color: #cbd5e1;
 }
 
 [data-bs-theme="dark"] .search-header .toggle-filters:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: #475569;
+    border-color: #64748b;
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .header-actions .btn-primary {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border: none;
     color: white;
+}
+
+[data-bs-theme="dark"] .header-actions .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px 0 rgba(79, 70, 229, 0.4);
+}
+
+[data-bs-theme="dark"] .header-actions .btn-outline-secondary {
+    background: #334155;
+    border: 2px solid #475569;
+    color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .header-actions .btn-outline-secondary:hover {
+    background: #475569;
+    border-color: #64748b;
+    color: #f8fafc;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.3);
+}
+
+[data-bs-theme="dark"] .header-card {
+    background: #1e293b;
+    border-color: #475569;
+}
+
+[data-bs-theme="dark"] .header-title {
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .header-badge {
+    background: #334155;
+    color: #cbd5e1;
+    border-color: #475569;
+}
+
+[data-bs-theme="dark"] .stat-item {
+    background: #334155;
+    border-color: #475569;
+}
+
+[data-bs-theme="dark"] .stat-item:hover {
+    background: #475569;
+    border-color: #64748b;
+}
+
+[data-bs-theme="dark"] .stat-number {
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .stat-label {
+    color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .stat-icon {
+    background: #475569;
+    border-color: #64748b;
+    color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .header-icon {
+    background: #334155;
+    border-color: #475569;
+    color: #cbd5e1;
 }
 
 [data-bs-theme="dark"] .search-results-header {
@@ -4454,39 +4583,75 @@ document.addEventListener('DOMContentLoaded', function() {
     const applyFiltersBtn = document.getElementById('applyFilters');
     const clearFiltersBtn = document.getElementById('clearFilters');
     
-    // ===== BÚSQUEDA INSTANTÁNEA =====
+    // ===== BÚSQUEDA INSTANTÁNEA OPTIMIZADA =====
     
-    searchInput.addEventListener('input', function() {
-        const query = this.value.trim();
-        
-        // Mostrar/ocultar botón de limpiar
-        if (query.length > 0) {
-            clearSearchBtn.style.display = 'flex';
-        } else {
-            clearSearchBtn.style.display = 'none';
-        }
-        
-        // Limpiar timeout anterior
-        clearTimeout(searchTimeout);
-        
-        if (query.length >= 2) {
-            // Mostrar loading
-            searchLoading.style.display = 'block';
+    // Variables para optimización de búsqueda
+    let lastSearchQuery = '';
+    let isSearching = false;
+    
+    // Event listener optimizado con debouncing mejorado
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const query = this.value.trim();
             
-            // Debounce search
-            searchTimeout = setTimeout(() => {
-                performInstantSearch(query);
-            }, 300);
-        } else if (query.length === 0) {
-            hideInstantResults();
-        }
-    });
+            // Mostrar/ocultar botón de limpiar
+            if (clearSearchBtn) {
+                clearSearchBtn.style.display = query.length > 0 ? 'flex' : 'none';
+            }
+            
+            // Limpiar timeout anterior
+            clearTimeout(searchTimeout);
+            
+            // Evitar búsquedas duplicadas
+            if (query === lastSearchQuery) {
+                return;
+            }
+            
+            if (query.length >= 2) {
+                // Mostrar loading solo si no estamos ya buscando
+                if (searchLoading && !isSearching) {
+                    searchLoading.style.display = 'block';
+                }
+                
+                // Debounce search con tiempo optimizado
+                searchTimeout = setTimeout(() => {
+                    if (!isSearching) {
+                        lastSearchQuery = query;
+                        performInstantSearch(query);
+                    }
+                }, 250); // Reducido de 300ms a 250ms para mejor responsividad
+            } else if (query.length === 0) {
+                lastSearchQuery = '';
+                hideInstantResults();
+            }
+        });
+        
+        // Agregar event listener para Enter key
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+                if (query.length >= 1) {
+                    lastSearchQuery = query;
+                    performInstantSearch(query);
+                }
+            }
+        });
+    }
     
-    clearSearchBtn.addEventListener('click', function() {
-        searchInput.value = '';
-        clearSearchBtn.style.display = 'none';
-        hideInstantResults();
-    });
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.focus(); // Mantener el foco en el input
+            }
+            this.style.display = 'none';
+            lastSearchQuery = '';
+            currentFilters.search = '';
+            hideInstantResults();
+        });
+    }
     
     // Toggle de vistas para resultados de búsqueda
     const searchGridToggle = document.getElementById('searchGridToggle');
@@ -4525,6 +4690,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function performInstantSearch(query = null) {
+        // Prevenir búsquedas concurrentes
+        if (isSearching) {
+            return;
+        }
+        
+        isSearching = true;
+        
         if (query !== null) {
             currentFilters.search = query;
         }
@@ -4539,16 +4711,68 @@ document.addEventListener('DOMContentLoaded', function() {
         // Mostrar loading si hay elemento de loading
         if (searchLoading) searchLoading.style.display = 'block';
         
-        fetch(`{{ route('inventarios.search-instantaneo') }}?${params.toString()}`)
-            .then(response => response.json())
-            .then(data => {
+        // Usar XMLHttpRequest para mejor compatibilidad con navegadores
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `{{ route('inventarios.search-instantaneo') }}?${params.toString()}`, true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.setRequestHeader('Accept', 'application/json');
+        
+        // Timeout para evitar búsquedas que se cuelguen
+        xhr.timeout = 10000; // 10 segundos
+        
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                isSearching = false;
                 if (searchLoading) searchLoading.style.display = 'none';
-                displayInstantResults(data);
-            })
-            .catch(error => {
-                console.error('Error en búsqueda instantánea:', error);
-                if (searchLoading) searchLoading.style.display = 'none';
-            });
+                
+                if (xhr.status === 200) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        displayInstantResults(data);
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        showSearchError('Error al procesar los resultados');
+                    }
+                } else {
+                    console.error('Error en búsqueda instantánea:', xhr.status);
+                    showSearchError('Error al realizar la búsqueda');
+                }
+            }
+        };
+        
+        xhr.ontimeout = function() {
+            isSearching = false;
+            if (searchLoading) searchLoading.style.display = 'none';
+            console.error('Timeout en búsqueda instantánea');
+            showSearchError('La búsqueda tardó demasiado tiempo');
+        };
+        
+        xhr.onerror = function() {
+            isSearching = false;
+            if (searchLoading) searchLoading.style.display = 'none';
+            console.error('Error de red en búsqueda instantánea');
+            showSearchError('Error de conexión');
+        };
+        
+        xhr.send();
+    }
+    
+    function showSearchError(message) {
+        if (instantSearchGrid) {
+            const gridContainer = instantSearchGrid.querySelector('.elements-grid-compact');
+            if (gridContainer) {
+                gridContainer.innerHTML = `<div class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle me-2"></i>${message}</div>`;
+            }
+        }
+        
+        const instantSearchTableBody = document.getElementById('instantSearchTableBody');
+        if (instantSearchTableBody) {
+            instantSearchTableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle me-2"></i>${message}</td></tr>`;
+        }
+        
+        if (instantSearchResults) {
+            instantSearchResults.style.display = 'block';
+        }
     }
     
     function displayInstantResults(data) {

@@ -140,7 +140,7 @@
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label for="codigo" class="form-label">Código</label>
-                                                    <input type="text" class="form-control" id="codigo" name="codigo" value="{{ old('codigo', $inventario->codigo) }}" required>
+                                                    <input type="text" class="form-control" id="codigo" name="codigo" value="{{ old('codigo', $inventario->codigo) }}">
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label for="categoria_id" class="form-label">Categoría</label>
