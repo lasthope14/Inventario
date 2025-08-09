@@ -7,7 +7,7 @@
             <h1 class="h3 mb-0">Crear Nueva Categoría</h1>
         </div>
         <div class="card-body">
-            <form action="{{ route('categorias.store') }}" method="POST">
+            <form action="{{ route('categorias.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="row">
                     <div class="col-md-6 mb-3">
@@ -21,6 +21,16 @@
                         <label for="prefijo" class="form-label">Prefijo</label>
                         <input type="text" class="form-control @error('prefijo') is-invalid @enderror" id="prefijo" name="prefijo" value="{{ old('prefijo') }}" required maxlength="3">
                         @error('prefijo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="imagen" class="form-label">Imagen de la Categoría</label>
+                        <input type="file" class="form-control @error('imagen') is-invalid @enderror" id="imagen" name="imagen" accept="image/*">
+                        <small class="form-text text-muted">Formatos permitidos: JPEG, PNG, JPG, GIF, SVG. Tamaño máximo: 2MB</small>
+                        @error('imagen')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>

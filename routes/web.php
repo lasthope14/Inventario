@@ -64,12 +64,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/importlogs/{log}/revert', [ImportController::class, 'revert'])
         ->name('importlogs.revert');
 
-    // Rutas de elementos por categoría
+    // Rutas específicas de inventarios (DEBEN IR ANTES del resource)
+    Route::get('/inventarios/buscar', [InventarioController::class, 'search'])->name('inventarios.search');
+    Route::get('/inventarios/categoria/{categoria}', [InventarioController::class, 'showCategoria'])->name('inventarios.categoria');
+    Route::get('/inventarios/categorias', [InventarioController::class, 'showCategorias'])->name('inventarios.categorias');
+    
+    // Rutas AJAX y API
     Route::get('/inventarios/elementos-por-categoria/{categoria}', [InventarioController::class, 'getElementosPorCategoria']);
     Route::post('/inventarios/search-ai', [InventarioController::class, 'searchWithAI'])->name('inventarios.search-ai');
     Route::get('/inventarios/filtros-ajax', [InventarioController::class, 'getFiltrosAjax'])->name('inventarios.filtros-ajax');
     Route::get('/inventarios/search-instantaneo', [InventarioController::class, 'searchInstantaneo'])->name('inventarios.search-instantaneo');
     Route::get('/inventarios/filtros-cascada', [InventarioController::class, 'getFiltrosCascada'])->name('inventarios.filtros-cascada');
+    Route::get('/inventarios/autocomplete', [InventarioController::class, 'autocomplete'])->name('inventarios.autocomplete');
 
     // Ruta resource de inventarios
     Route::resource('inventarios', InventarioController::class)->parameters([

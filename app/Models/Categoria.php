@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Categoria extends Model
 {
-    protected $fillable = ['nombre', 'prefijo'];
+    protected $fillable = ['nombre', 'prefijo', 'imagen'];
 
     public function inventarios()
     {

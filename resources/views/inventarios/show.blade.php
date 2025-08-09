@@ -61,6 +61,29 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Botones de Acción - Ubicados en la parte superior para mejor UX -->
+                    <div class="card-body p-3" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                        <div class="d-flex justify-content-center">
+                            <div class="d-flex gap-3 flex-wrap justify-content-center">
+                                @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'almacenista')
+                                    <a href="{{ route('movimientos.create', ['inventario_id' => $inventario->id]) }}" class="btn btn-primary" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
+                                        <i class="fas fa-exchange-alt me-2"></i>Movimiento
+                                    </a>
+                                    <a href="{{ route('mantenimientos.create', ['inventario_id' => $inventario->id]) }}" class="btn btn-warning" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
+                                        <i class="fas fa-tools me-2"></i>Mantenimiento
+                                    </a>
+                                @endif
+                                <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn btn-outline-secondary" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
+                                    <i class="fas fa-edit me-2"></i>Editar
+                                </a>
+                                <a href="{{ route('inventarios.index') }}" class="btn btn-outline-primary" id="volverInventarioBtn" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver a Inventario
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="card-body p-4">
                         <style>
                             /* Estilos para tema oscuro */
@@ -184,6 +207,24 @@
                             
                             [data-bs-theme="dark"] .no-image-placeholder p {
                                 color: #9ca3af !important;
+                            }
+                            
+                            /* Sección de botones de acción para tema oscuro */
+                            [data-bs-theme="dark"] .card-body:has(.btn-primary) {
+                                background-color: #334155 !important;
+                                border-color: #475569 !important;
+                            }
+                            
+                            [data-bs-theme="dark"] .btn-outline-primary {
+                                background-color: transparent;
+                                border-color: #3b82f6;
+                                color: #3b82f6;
+                            }
+                            
+                            [data-bs-theme="dark"] .btn-outline-primary:hover {
+                                background-color: #3b82f6;
+                                border-color: #3b82f6;
+                                color: #ffffff;
                             }
                         </style>
                         <div class="row">
@@ -314,25 +355,7 @@
                                 </div>
                                 @endif
                                 
-                                <!-- Actions - Centered between columns -->
-                                <div class="d-flex justify-content-center mt-4 mb-3">
-                                    <div class="d-flex gap-3 flex-wrap justify-content-center">
-                                        @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'almacenista')
-                                            <a href="{{ route('movimientos.create', ['inventario_id' => $inventario->id]) }}" class="btn btn-primary" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
-                                                <i class="fas fa-exchange-alt me-2"></i>Movimiento
-                                            </a>
-                                            <a href="{{ route('mantenimientos.create', ['inventario_id' => $inventario->id]) }}" class="btn btn-warning" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
-                                                <i class="fas fa-tools me-2"></i>Mantenimiento
-                                            </a>
-                                        @endif
-                                        <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn btn-outline-secondary" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
-                                            <i class="fas fa-edit me-2"></i>Editar
-                                        </a>
-                                        <a href="{{ route('inventarios.index') }}" class="btn btn-outline-primary" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
-                                            <i class="fas fa-arrow-left me-2"></i>Volver a Inventario
-                                        </a>
-                                    </div>
-                                </div>
+
                             </div>
                             
                             <!-- Image Section (50%) -->
@@ -1766,4 +1789,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 </style>
+
+<script>
+// Navegación simple usando historial del navegador
+document.addEventListener('DOMContentLoaded', function() {
+    const volverBtn = document.getElementById('volverInventarioBtn');
+    
+    if (volverBtn) {
+        volverBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Verificar si venimos de la lista de inventarios
+            if (sessionStorage.getItem('from_inventarios_list') === 'true') {
+                // Usar el historial del navegador para volver (mantiene el estado)
+                history.back();
+            } else {
+                // Si no venimos de la lista, ir directamente
+                window.location.href = '/inventarios';
+            }
+            
+            // Limpiar la marca
+            sessionStorage.removeItem('from_inventarios_list');
+        });
+    }
+});
+</script>
+
 @endsection

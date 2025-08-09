@@ -29,9 +29,19 @@ class CategoriaController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:255',
             'prefijo' => 'required|string|max:3|unique:categorias',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        Categoria::create($request->all());
+        $data = $request->only(['nombre', 'prefijo']);
+        
+        if ($request->hasFile('imagen')) {
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $rutaImagen = $imagen->storeAs('categorias', $nombreImagen, 'public');
+            $data['imagen'] = $rutaImagen;
+        }
+
+        Categoria::create($data);
 
         return redirect()->route('categorias.index')
             ->with('success', 'Categoría creada exitosamente.');
@@ -55,9 +65,24 @@ class CategoriaController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:255',
             'prefijo' => 'required|string|max:3|unique:categorias,prefijo,' . $categoria->id,
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        $categoria->update($request->all());
+        $data = $request->only(['nombre', 'prefijo']);
+        
+        if ($request->hasFile('imagen')) {
+            // Eliminar imagen anterior si existe
+            if ($categoria->imagen && \Storage::disk('public')->exists($categoria->imagen)) {
+                \Storage::disk('public')->delete($categoria->imagen);
+            }
+            
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $rutaImagen = $imagen->storeAs('categorias', $nombreImagen, 'public');
+            $data['imagen'] = $rutaImagen;
+        }
+
+        $categoria->update($data);
 
         return redirect()->route('categorias.index')
             ->with('success', 'Categoría actualizada exitosamente.');
