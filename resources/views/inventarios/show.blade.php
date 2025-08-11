@@ -286,21 +286,21 @@
                                                             <div class="d-flex align-items-center justify-content-between p-2" style="background-color: white; border: 1px solid #e9ecef; border-radius: 6px; min-height: 60px;">
                                                     <div class="flex-grow-1">
                                                         <div style="font-weight: 600; color: #212529; font-size: 0.85rem; line-height: 1.2; word-break: break-word;">
-                                                            {{ $ubicacion->ubicacion->nombre }}
+                                                            {{ $ubicacion->nombre }}
                                                         </div>
                                                         <div style="color: #6c757d; font-size: 0.75rem; line-height: 1.1;">
-                                                            Cantidad: {{ $ubicacion->cantidad }}
+                                                            Cantidad: {{ $ubicacion->pivot->cantidad }}
                                                         </div>
                                                     </div>
                                                                 <div class="ms-2 flex-shrink-0">
                                                                     @php
-                                                                        $estadoConfig = match($ubicacion->estado) {
+                                                                        $estadoConfig = match($ubicacion->pivot->estado) {
                                                                             'disponible' => ['bg' => '#28a745', 'text' => 'Disponible'],
                                                                             'en uso' => ['bg' => '#ffc107', 'text' => 'En Uso'],
                                                                             'en mantenimiento' => ['bg' => '#6c757d', 'text' => 'Mantenimiento'],
                                                                             'dado de baja' => ['bg' => '#dc3545', 'text' => 'Dado de Baja'],
                                                                             'robado' => ['bg' => '#343a40', 'text' => 'Robado'],
-                                                                            default => ['bg' => '#6c757d', 'text' => ucfirst(str_replace('_', ' ', $ubicacion->estado))]
+                                                                            default => ['bg' => '#6c757d', 'text' => ucfirst(str_replace('_', ' ', $ubicacion->pivot->estado))]
                                                                         };
                                                                     @endphp
                                                                     <span class="badge" style="background-color: {{ $estadoConfig['bg'] }}; color: white; font-size: 0.65rem; padding: 3px 6px; white-space: nowrap;">

@@ -113,6 +113,14 @@ class Inventario extends Model implements HasMedia
         return $this->belongsTo(Ubicacion::class, 'ubicacion_id');
     }
 
+    // Relación many-to-many con ubicaciones a través de tabla pivot
+    public function ubicaciones()
+    {
+        return $this->belongsToMany(Ubicacion::class, 'inventario_ubicaciones')
+                    ->withPivot('cantidad', 'estado')
+                    ->withTimestamps();
+    }
+
     public function mantenimientos()
     {
         return $this->hasMany(Mantenimiento::class);
@@ -146,11 +154,6 @@ class Inventario extends Model implements HasMedia
     public function checklists()
     {
         return $this->hasMany(Checklist::class);
-    }
-
-    public function ubicaciones()
-    {
-        return $this->hasMany(InventarioUbicacion::class);
     }
 
     // Attributes

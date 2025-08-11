@@ -2,248 +2,241 @@
 
 @section('content')
 <div class="container-fluid" data-page="inventarios-categoria">
-    <!-- Breadcrumb Navigation -->
-    <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Inicio</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('inventarios.index') }}">Inventario</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{{ $categoria->nombre }}</li>
-        </ol>
-    </nav>
+    
 
     <!-- Header Profesional -->
-    <div class="header-card mb-4">
+    <div class="header-card">
         <div class="header-main">
-            <div class="header-title-section">
-                <div class="header-icon">
-                    <i class="fas fa-layer-group"></i>
+            <div class="header-top">
+                <div class="header-info">
+                    <div class="header-title-section">
+                        <div class="header-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="header-text">
+                            <h1 class="header-title">{{ $categoria->nombre }}</h1>
+                            <div class="header-badges">
+                                <span class="header-badge">
+                                    <i class="fas fa-cube me-1"></i>
+                                    {{ $stats->total_elementos ?? 0 }} Elementos
+                                </span>
+                                <span class="header-badge">
+                                    <i class="fas fa-boxes me-1"></i>
+                                    {{ $stats->total_unidades ?? 0 }} Unidades
+                                </span>
+                            </div>
+                            
+
+                        </div>
+                    </div>
                 </div>
-                <div class="header-text">
-                    <h1 class="header-title">{{ $categoria->nombre }}</h1>
-                    <div class="header-badges">
-                        <span class="header-badge header-badge-primary">
-                            <i class="fas fa-cube"></i>
-                            {{ $stats->total_elementos ?? 0 }} Elementos
-                        </span>
-                        <span class="header-badge header-badge-secondary">
-                            <i class="fas fa-boxes"></i>
-                            {{ $stats->total_unidades ?? 0 }} Unidades
-                        </span>
+                
+                <div class="header-actions">
+                    <div class="quick-actions-compact">
+                        <a href="{{ route('inventarios.create') }}" class="quick-action-btn">
+                            <div class="quick-action-icon-small">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="quick-action-text">
+                                <span class="quick-action-title">Agregar</span>
+                                <span class="quick-action-subtitle">Nuevo elemento</span>
+                            </div>
+                        </a>
+                        <a href="{{ route('inventarios.index') }}" class="quick-action-btn">
+                            <div class="quick-action-icon-small">
+                                <i class="fas fa-arrow-left"></i>
+                            </div>
+                            <div class="quick-action-text">
+                                <span class="quick-action-title">Volver</span>
+                                <span class="quick-action-subtitle">Vista principal</span>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>
-            
+                
             <div class="header-stats">
-                <div class="stat-item">
-                    <div class="stat-icon stat-icon-success">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
+                <a href="{{ route('inventarios.categoria', ['categoria' => $categoria->id, 'estado' => 'disponible']) }}" class="stat-item stat-item-clickable">
+                    <i class="fas fa-check-circle stat-icon stat-icon-success"></i>
                     <div class="stat-content">
                         <div class="stat-number">{{ $stats->disponibles ?? 0 }}</div>
                         <div class="stat-label">Disponibles</div>
                     </div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-icon stat-icon-primary">
-                        <i class="fas fa-play-circle"></i>
-                    </div>
+                </a>
+                <a href="{{ route('inventarios.categoria', ['categoria' => $categoria->id, 'estado' => 'en uso']) }}" class="stat-item stat-item-clickable">
+                    <i class="fas fa-play-circle stat-icon stat-icon-primary"></i>
                     <div class="stat-content">
                         <div class="stat-number">{{ $stats->en_uso ?? 0 }}</div>
                         <div class="stat-label">En Uso</div>
                     </div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-icon stat-icon-warning">
-                        <i class="fas fa-tools"></i>
-                    </div>
+                </a>
+                <a href="{{ route('inventarios.categoria', ['categoria' => $categoria->id, 'estado' => 'en mantenimiento']) }}" class="stat-item stat-item-clickable">
+                    <i class="fas fa-tools stat-icon stat-icon-warning"></i>
                     <div class="stat-content">
                         <div class="stat-number">{{ $stats->en_mantenimiento ?? 0 }}</div>
                         <div class="stat-label">Mantenimiento</div>
                     </div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-icon stat-icon-danger">
-                        <i class="fas fa-ban"></i>
-                    </div>
+                </a>
+                <a href="{{ route('inventarios.categoria', ['categoria' => $categoria->id, 'estado' => 'dado de baja']) }}" class="stat-item stat-item-clickable">
+                    <i class="fas fa-ban stat-icon stat-icon-danger"></i>
                     <div class="stat-content">
                         <div class="stat-number">{{ $stats->dados_de_baja ?? 0 }}</div>
                         <div class="stat-label">Dados de Baja</div>
                     </div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-icon stat-icon-dark">
-                        <i class="fas fa-user-secret"></i>
-                    </div>
+                </a>
+                <a href="{{ route('inventarios.categoria', ['categoria' => $categoria->id, 'estado' => 'robado']) }}" class="stat-item stat-item-clickable">
+                    <i class="fas fa-user-secret stat-icon stat-icon-dark"></i>
                     <div class="stat-content">
                         <div class="stat-number">{{ $stats->robados ?? 0 }}</div>
                         <div class="stat-label">Robados</div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="header-actions">
-                <a href="{{ route('inventarios.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i>
-                    Agregar Elemento
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Sistema de Búsqueda y Filtros Avanzados -->
-    <div class="advanced-search-container mb-4">
-        <div class="search-header">
-            <h3 class="search-title">
-                <i class="fas fa-search"></i>
-                Búsqueda y Filtros
-            </h3>
-            <button type="button" class="toggle-filters" id="toggleFilters">
-                <i class="fas fa-sliders-h"></i>
-                <span class="filter-text">Mostrar Filtros</span>
-            </button>
-        </div>
-        
-        <div class="main-search-container">
-            <div class="search-input-group">
-                <div class="search-input-wrapper">
-                    <input type="text" 
-                           class="search-input-modern" 
-                           id="searchInput" 
-                           placeholder="Buscar elementos por nombre, código, marca, modelo, serie..." 
-                           autocomplete="off">
-                    <div class="search-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <div class="search-loading" id="searchLoading" style="display: none;">
-                        <i class="fas fa-spinner fa-spin"></i>
-                    </div>
-                    <button type="button" class="btn-clear-search-modern" id="clearSearch" style="display: none;">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="search-suggestions" id="searchSuggestions" style="display: none;"></div>
-            </div>
-        </div>
-        
-        <div class="filters-panel" id="filtersPanel" style="display: none;">
-            <div class="filters-grid">
-                <div class="filter-item">
-                    <label class="filter-label">
-                        <i class="fas fa-tag"></i>
-                        Elemento
-                    </label>
-                    <select class="filter-select" id="filterElemento">
-                        <option value="">Todos los elementos</option>
-                        @foreach($elementos ?? [] as $elemento)
-                            <option value="{{ $elemento }}">{{ $elemento }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="filter-item">
-                    <label class="filter-label">
-                        <i class="fas fa-industry"></i>
-                        Marca
-                    </label>
-                    <select class="filter-select" id="filterMarca">
-                        <option value="">Todas las marcas</option>
-                        @foreach($marcas ?? [] as $marca)
-                            <option value="{{ $marca }}">{{ $marca }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="filter-item">
-                    <label class="filter-label">
-                        <i class="fas fa-info-circle"></i>
-                        Estado
-                    </label>
-                    <select class="filter-select" id="filterEstado">
-                        <option value="">Todos los estados</option>
-                        <option value="disponible">Disponible</option>
-                        <option value="en_uso">En Uso</option>
-                        <option value="en_mantenimiento">En Mantenimiento</option>
-                        <option value="dado_de_baja">Dado de Baja</option>
-                        <option value="robado">Robado</option>
-                    </select>
-                </div>
-                
-                <div class="filter-item">
-                    <label class="filter-label">
-                        <i class="fas fa-map-marker-alt"></i>
-                        Ubicación
-                    </label>
-                    <select class="filter-select" id="filterUbicacion">
-                        <option value="">Todas las ubicaciones</option>
-                        @foreach($ubicaciones ?? [] as $ubicacion)
-                            <option value="{{ $ubicacion->id }}">{{ $ubicacion->nombre }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="filter-actions">
-                    <button type="button" class="btn btn-primary" id="applyFilters">
-                        <i class="fas fa-filter"></i>
-                        Aplicar Filtros
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" id="clearFilters">
-                        <i class="fas fa-times"></i>
-                        Limpiar Todo
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="active-filters" id="activeFilters" style="display: none;">
-            <div class="active-filters-header">
-                <span class="active-filters-title">Filtros Activos:</span>
-            </div>
-            <div class="active-filters-list" id="activeFiltersList"></div>
-        </div>
-    </div>
+    <!-- Sistema de Búsqueda y Filtros Integrado -->
+    <div class="advanced-search-container">
 
-    <!-- Resultados de Búsqueda Instantánea -->
-    <div class="search-results-section" id="instantSearchResults" style="display: none;">
-        <div class="search-results-header">
-            <div class="search-results-info">
-                <h4 class="search-results-title">
-                    <i class="fas fa-search"></i>
-                    Resultados de búsqueda <span id="searchTermDisplay"></span>
-                </h4>
-            </div>
-            <div class="search-results-controls">
-                <div class="view-toggle-buttons-small">
-                    <button type="button" class="view-toggle-btn-small active" id="searchGridToggle" data-view="grid">
-                        <i class="fas fa-th"></i>
-                        Tarjetas
-                    </button>
-                    <button type="button" class="view-toggle-btn-small" id="searchTableToggle" data-view="table">
-                        <i class="fas fa-list"></i>
-                        Tabla
-                    </button>
+        
+        <!-- Contenedor Principal de Búsqueda y Filtros -->
+        <div class="search-and-filters-wrapper">
+            <!-- Búsqueda Principal -->
+            <div class="search-input-section mb-3">
+                <div class="search-input-container">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="searchInput" class="form-control search-input-modern" 
+                               placeholder="Buscar por nombre, código, serie, marca, modelo..." 
+                               autocomplete="off">
+
+                        <button type="button" class="btn-clear-search-modern" id="clearSearch" style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="search-suggestions" id="searchSuggestions" style="display: none;"></div>
                 </div>
             </div>
-        </div>
-        
-        <div class="search-results-grid" id="instantSearchGrid"></div>
-        
-        <div class="search-results-table" id="instantSearchTable" style="display: none;">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Imagen</th>
-                            <th>Elemento</th>
-                            <th>Código</th>
-                            <th>Marca/Modelo</th>
-                            <th>Serie</th>
-                            <th>Propietario</th>
-                            <th>Ubicaciones</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="instantSearchTableBody"></tbody>
-                </table>
+            
+            <!-- Panel de Filtros con Acordeón -->
+            <div class="filters-panel-accordion" id="filtersPanel">
+                <div class="filters-header mb-3">
+                    <button class="btn btn-link p-0 text-decoration-none w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="true" aria-controls="filtersCollapse">
+                        <h6 class="filters-subtitle mb-0 d-flex align-items-center">
+                            <span><i class="fas fa-filter me-2"></i>Filtros Avanzados</span>
+                        </h6>
+                    </button>
+                </div>
+                
+                <div class="collapse show" id="filtersCollapse">
+                
+                <form id="filtersForm" method="GET" action="{{ route('inventarios.categoria', $categoria->id) }}">
+                    <input type="hidden" name="categoria" value="{{ $categoria->id }}">
+                    <input type="hidden" id="hiddenSearchInput" name="search" value="">
+                    <div class="filters-grid">
+                        <!-- Filtro por Elemento -->
+                        <div class="filter-item">
+                            <label class="filter-label">
+                                <i class="fas fa-cube me-1"></i>
+                                Elemento
+                            </label>
+
+                            <select name="elemento" class="filter-select form-select" id="filterElemento">
+                                <option value="">Todos los elementos</option>
+                                @foreach($elementos ?? [] as $elemento)
+                                    <option value="{{ $elemento }}" {{ request('elemento') == $elemento ? 'selected' : '' }}>{{ $elemento }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <!-- Filtro por Marca -->
+                        <div class="filter-item">
+                            <label class="filter-label">
+                                <i class="fas fa-tag me-1"></i>
+                                Marca
+                            </label>
+                            <select name="marca" class="filter-select form-select" id="filterMarca" disabled>
+                                <option value="">Selecciona un elemento primero</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Filtro por Ubicación -->
+                        <div class="filter-item">
+                            <label class="filter-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                Ubicación
+                            </label>
+                            <select name="ubicacion" class="filter-select form-select" id="filterUbicacion">
+                                <option value="">Todas las ubicaciones</option>
+                                @foreach($ubicaciones ?? [] as $ubicacion)
+                                    <option value="{{ $ubicacion->id }}" {{ request('ubicacion') == $ubicacion->id ? 'selected' : '' }}>{{ $ubicacion->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <!-- Filtro por Estado -->
+                        <div class="filter-item">
+                            <label class="filter-label">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Estado
+                            </label>
+                            <select name="estado" class="filter-select form-select" id="filterEstado">
+                                <option value="">Todos los estados</option>
+                                @foreach($estadosDisponibles ?? [] as $estado)
+                                    @php
+                                        $estadoLabel = [
+                                            'disponible' => 'Disponible',
+                                            'en uso' => 'En Uso',
+                                            'en mantenimiento' => 'En Mantenimiento',
+                                            'dado de baja' => 'Dado de Baja',
+                                            'robado' => 'Robado'
+                                        ][$estado] ?? ucfirst($estado);
+                                    @endphp
+                                    <option value="{{ $estado }}" {{ request('estado') == $estado ? 'selected' : '' }}>{{ $estadoLabel }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <!-- Filtro por Proveedor -->
+                        <div class="filter-item">
+                            <label class="filter-label">
+                                <i class="fas fa-truck me-1"></i>
+                                Proveedor
+                            </label>
+                            <select name="proveedor" class="filter-select form-select" id="filterProveedor">
+                                <option value="">Todos los proveedores</option>
+                                @foreach($proveedores ?? [] as $proveedor)
+                                    <option value="{{ $proveedor->id }}" {{ request('proveedor') == $proveedor->id ? 'selected' : '' }}>{{ $proveedor->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+
+
+                    </div>
+                    
+                    <div class="filter-actions mt-3">
+                        <button type="submit" class="btn btn-primary btn-sm me-2" id="applyFilters">
+                            <i class="fas fa-search me-1"></i>
+                            Buscar
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="clearFilters">
+                            <i class="fas fa-broom me-1"></i>
+                            Limpiar
+                        </button>
+                    </div>
+                </form>
+                </div> <!-- Cierre del collapse -->
+            </div>
+            
+            <!-- Filtros Activos -->
+            <div class="active-filters mt-3" id="activeFilters" style="display: none;">
+                <div class="active-filters-header">
+                    <span class="active-filters-title">Filtros activos:</span>
+                </div>
+                <div class="active-filters-list" id="activeFiltersList">
+                    <!-- Los filtros activos se mostrarán aquí dinámicamente -->
+                </div>
             </div>
         </div>
     </div>
@@ -295,7 +288,7 @@
                         <div class="element-content-compact">
                             <div class="element-header-compact">
                                 <h6 class="element-name-compact">{{ $inventario->nombre }}</h6>
-                                <span class="element-code-compact">{{ $inventario->codigo }}</span>
+                                <span class="element-code-compact">{{ $inventario->codigo_unico ?? $inventario->codigo }}</span>
                             </div>
                             <div class="element-details-compact">
                                 <div class="detail-row-compact">
@@ -309,6 +302,10 @@
                                 <div class="detail-row-compact">
                                     <span class="detail-label-compact">Propietario:</span>
                                     <span class="detail-value-compact">{{ $inventario->propietario ?? 'No asignado' }}</span>
+                                </div>
+                                <div class="detail-row-compact">
+                                    <span class="detail-label-compact">Precio:</span>
+                                    <span class="detail-value-compact">${{ number_format($inventario->valor_unitario, 2) }}</span>
                                 </div>
                             </div>
                             <div class="element-locations-compact">
@@ -366,6 +363,7 @@
                             <th>Marca/Modelo</th>
                             <th>Serie</th>
                             <th>Propietario</th>
+                            <th>Precio</th>
                             <th>Ubicaciones</th>
                             <th>Acciones</th>
                         </tr>
@@ -391,7 +389,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="table-serial">{{ $inventario->codigo }}</span>
+                                    <span class="table-code">{{ $inventario->codigo_unico ?? $inventario->codigo }}</span>
                                 </td>
                                 <td>
                                     <div class="table-brand-model">
@@ -403,6 +401,7 @@
                                     <span class="table-serial">{{ $inventario->numero_serie }}</span>
                                 </td>
                                 <td>{{ $inventario->propietario ?? 'No asignado' }}</td>
+                                <td>${{ number_format($inventario->valor_unitario, 2) }}</td>
                                 <td>
                                     <div class="table-locations">
                                         @php
@@ -472,264 +471,133 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== ELEMENTOS DEL DOM =====
     const searchInput = document.getElementById('searchInput');
     const clearSearchBtn = document.getElementById('clearSearch');
-    const toggleFiltersBtn = document.getElementById('toggleFilters');
-    const filtersPanel = document.getElementById('filtersPanel');
-    const applyFiltersBtn = document.getElementById('applyFilters');
-    const clearFiltersBtn = document.getElementById('clearFilters');
-    const activeFiltersContainer = document.getElementById('activeFilters');
-    const searchResultsSection = document.getElementById('instantSearchResults');
-    const instantSearchGrid = document.getElementById('instantSearchGrid');
-    const instantSearchTable = document.getElementById('instantSearchTable');
-    const searchGridToggle = document.getElementById('searchGridToggle');
-    const searchTableToggle = document.getElementById('searchTableToggle');
+    const searchSuggestions = document.getElementById('searchSuggestions');
     
     // Botones de vista para elementos de categoría
     const categoryToggleBtns = document.querySelectorAll('.view-toggle-btn');
     const elementsGridView = document.getElementById('elements-grid-category');
     const elementsTableView = document.getElementById('elements-table-category');
     
-    // ===== FUNCIONES DE BÚSQUEDA =====
-    function performInstantSearch() {
-        const searchTerm = searchInput.value.trim();
-        const elementFilter = document.getElementById('filterElemento').value;
-        const brandFilter = document.getElementById('filterMarca').value;
-        const statusFilter = document.getElementById('filterEstado').value;
-        const locationFilter = document.getElementById('filterUbicacion').value;
-        
-        if (searchTerm.length === 0 && !elementFilter && !brandFilter && !statusFilter && !locationFilter) {
-            hideSearchResults();
+    // ===== FUNCIONES DE AUTOCOMPLETADO =====
+    function fetchAutocomplete(query) {
+        if (query.length < 2) {
+            hideSuggestions();
             return;
         }
         
-        // Mostrar loading
-        showSearchLoading();
-        
-        // Simular búsqueda (aquí iría la llamada AJAX real)
-        setTimeout(() => {
-            const mockResults = generateMockResults(searchTerm);
-            displaySearchResults(mockResults);
-        }, 300);
+        fetch(`{{ route('inventarios.categoria.autocomplete', $categoria->id) }}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                displaySuggestions(data);
+            })
+            .catch(error => {
+                console.error('Error fetching autocomplete:', error);
+                hideSuggestions();
+            });
     }
     
-    function generateMockResults(searchTerm) {
-        // Esta función simula resultados de búsqueda
-        // En la implementación real, esto sería una llamada AJAX al servidor
-        return {
-            elements: [
-                {
-                    id: 1,
-                    codigo: 'LAP001',
-                    nombre: 'Laptop Dell Inspiron',
-                    categoria: '{{ $categoria->nombre }}',
-                    marca: 'Dell',
-                    modelo: 'Inspiron 15 3000',
-                    serie: 'DL123456',
-                    propietario: 'Juan Pérez',
-                    imagen: '/images/laptop-dell.jpg',
-                    ubicaciones: [
-                        { ubicacion_nombre: 'Oficina Principal', cantidad: 1, estado: 'en uso' },
-                        { ubicacion_nombre: 'Almacén', cantidad: 2, estado: 'disponible' }
-                    ]
-                }
-            ],
-            total: 1
-        };
-    }
-    
-    function displaySearchResults(results) {
-        if (results.total === 0) {
-            showNoResults();
+    function displaySuggestions(suggestions) {
+        if (!suggestions || suggestions.length === 0) {
+            hideSuggestions();
             return;
         }
         
-        // Mostrar sección de resultados
-        searchResultsSection.style.display = 'block';
-        
-        // Actualizar título
-        document.getElementById('searchTermDisplay').textContent = 
-            `(${results.total} elementos)`;
-        
-        // Generar HTML para grid
-        const gridHTML = generateGridHTML(results.elements);
-        instantSearchGrid.innerHTML = gridHTML;
-        
-        // Generar HTML para tabla
-        document.getElementById('instantSearchTableBody').innerHTML = generateTableBodyHTML(results.elements);
-        
-        // Aplicar vista actual
-        applyCurrentView();
-        
-        // Inicializar lazy loading para nuevas imágenes
-        initializeLazyLoading();
-    }
-    
-    function generateGridHTML(elements) {
-        return `
-            <div class="elements-grid-compact">
-                ${elements.map(element => `
-                    <div class="element-card-compact">
-                        <div class="element-image-compact">
-                            <img src="${element.imagen}" alt="${element.nombre}" class="lazy-load" data-src="${element.imagen}">
-                        </div>
-                        <div class="element-content-compact">
-                            <div class="element-header-compact">
-                                <h6 class="element-name-compact">${element.nombre}</h6>
-                                <span class="element-code-compact">${element.codigo}</span>
-                            </div>
-                            <div class="element-details-compact">
-                                <div class="detail-row-compact">
-                                    <span class="detail-label-compact">Marca/Modelo:</span>
-                                    <span class="detail-value-compact">${element.marca} ${element.modelo}</span>
-                                </div>
-                                <div class="detail-row-compact">
-                                    <span class="detail-label-compact">Serie:</span>
-                                    <span class="detail-value-compact">${element.serie}</span>
-                                </div>
-                                <div class="detail-row-compact">
-                                    <span class="detail-label-compact">Propietario:</span>
-                                    <span class="detail-value-compact">${element.propietario}</span>
-                                </div>
-                            </div>
-                            <div class="element-locations-compact">
-                                ${element.ubicaciones.slice(0, 2).map(ubicacion => `
-                                    <div class="location-compact">
-                                        <div class="location-info-compact">
-                                            <span class="location-name-compact">${ubicacion.ubicacion_nombre}</span>
-                                            <span class="location-quantity-compact">${ubicacion.cantidad} unidades</span>
-                                        </div>
-                                        <div class="status-badge-element-new status-${ubicacion.estado.replace(/\s+/g, '-')}">
-                                            <i class="status-icon-compact ${getEstadoIcon(ubicacion.estado)}"></i>
-                                            <span class="status-text-compact">${ubicacion.estado.charAt(0).toUpperCase() + ubicacion.estado.slice(1).replace('_', ' ')}</span>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                                ${element.ubicaciones.length > 2 ? `
-                                    <div class="more-locations-compact" onclick="expandLocations(this, ${JSON.stringify(element.ubicaciones.slice(2)).replace(/"/g, '&quot;')})">
-                                        +${element.ubicaciones.length - 2} ubicaciones más
-                                    </div>
-                                ` : ''}
-                            </div>
-                            <div class="element-actions-compact">
-                                <a href="/inventarios/${element.id}" class="btn btn-outline-primary btn-xs">
-                                    <i class="fas fa-eye"></i> Ver
-                                </a>
-                                <a href="/inventarios/${element.id}/edit" class="btn btn-outline-secondary btn-xs">
-                                    <i class="fas fa-edit"></i> Editar
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                `).join('')}
+        const suggestionsHTML = suggestions.map(suggestion => `
+            <div class="suggestion-item" data-url="${suggestion.url}">
+                <div class="suggestion-icon">
+                    <i class="${getSuggestionIcon(suggestion.type)}"></i>
+                </div>
+                <div class="suggestion-content">
+                    <div class="suggestion-text">${suggestion.text}</div>
+                    <div class="suggestion-subtitle">${suggestion.subtitle}</div>
+                </div>
+                <div class="suggestion-type">${getSuggestionTypeText(suggestion.type)}</div>
             </div>
-        `;
-    }
-    
-    function generateTableBodyHTML(elements) {
-        return elements.map(element => `
-            <tr>
-                <td>
-                    <img src="${element.imagen}" alt="${element.nombre}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
-                </td>
-                <td>
-                    <div class="table-element-info">
-                        <h6 class="table-element-name">${element.nombre}</h6>
-                        <span class="table-element-code">${element.codigo}</span>
-                    </div>
-                </td>
-                <td>
-                    <span class="table-serial">${element.codigo}</span>
-                </td>
-                <td>
-                    <div class="table-brand-model">
-                        <span class="table-brand">${element.marca}</span>
-                        <span class="table-model">${element.modelo}</span>
-                    </div>
-                </td>
-                <td>
-                    <span class="table-serial">${element.serie}</span>
-                </td>
-                <td>${element.propietario}</td>
-                <td>
-                    <div class="table-locations">
-                        ${element.ubicaciones.slice(0, 2).map(ubicacion => `
-                            <div class="table-location-item">
-                                <div class="table-location-info">
-                                    <span class="table-location-name">${ubicacion.ubicacion_nombre}</span>
-                                </div>
-                                <div class="table-status-badge status-${ubicacion.estado.replace(/\s+/g, '-')}">
-                                    <span class="table-quantity">${ubicacion.cantidad}</span>
-                                    <i class="table-status-icon ${getEstadoIcon(ubicacion.estado)}"></i>
-                                    <span class="table-status-text">${ubicacion.estado.charAt(0).toUpperCase() + ubicacion.estado.slice(1).replace('_', ' ')}</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                        ${element.ubicaciones.length > 2 ? `
-                            <div class="more-locations-table" onclick="expandTableLocations(this, ${JSON.stringify(element.ubicaciones.slice(2)).replace(/"/g, '&quot;')})">
-                                <i class="fas fa-plus-circle"></i> Ver ${element.ubicaciones.length - 2} ubicaciones más
-                            </div>
-                        ` : ''}
-                    </div>
-                </td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <a href="/inventarios/${element.id}" class="btn btn-outline-primary btn-xs">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <a href="/inventarios/${element.id}/edit" class="btn btn-outline-secondary btn-xs">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                    </div>
-                </td>
-            </tr>
         `).join('');
+        
+        searchSuggestions.innerHTML = suggestionsHTML;
+        searchSuggestions.style.display = 'block';
+        
+        // Agregar event listeners a las sugerencias
+        document.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const url = this.getAttribute('data-url');
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
     }
     
-    function showSearchLoading() {
-        searchResultsSection.style.display = 'block';
-        document.getElementById('searchTermDisplay').textContent = 'Buscando...';
-        instantSearchGrid.innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Cargando resultados...</div>';
-        document.getElementById('instantSearchTableBody').innerHTML = '<tr><td colspan="8" class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Cargando resultados...</td></tr>';
+    function hideSuggestions() {
+        searchSuggestions.style.display = 'none';
+        searchSuggestions.innerHTML = '';
     }
     
-    function showNoResults() {
-        searchResultsSection.style.display = 'block';
-        document.getElementById('searchTermDisplay').textContent = 'Sin resultados';
-        const noResultsHTML = '<div class="text-center p-4"><i class="fas fa-search"></i><br>No se encontraron elementos que coincidan con tu búsqueda.</div>';
-        instantSearchGrid.innerHTML = noResultsHTML;
-        document.getElementById('instantSearchTableBody').innerHTML = '<tr><td colspan="8" class="text-center p-4"><i class="fas fa-search"></i><br>No se encontraron elementos que coincidan con tu búsqueda.</td></tr>';
+    function getSuggestionIcon(type) {
+        const icons = {
+            'inventario': 'fas fa-cube',
+            'marca': 'fas fa-tag',
+            'estado': 'fas fa-info-circle'
+        };
+        return icons[type] || 'fas fa-search';
     }
     
-    function hideSearchResults() {
-        searchResultsSection.style.display = 'none';
+    function getSuggestionTypeText(type) {
+        const types = {
+            'inventario': 'Elemento',
+            'marca': 'Marca',
+            'estado': 'Estado'
+        };
+        return types[type] || 'Resultado';
     }
     
-    function applyCurrentView() {
-        const currentView = globalViewPreference;
-        if (currentView === 'grid') {
-            instantSearchGrid.style.display = 'block';
-            instantSearchTable.style.display = 'none';
-            if (searchGridToggle) searchGridToggle.classList.add('active');
-            if (searchTableToggle) searchTableToggle.classList.remove('active');
-        } else {
-            instantSearchGrid.style.display = 'none';
-            instantSearchTable.style.display = 'block';
-            if (searchGridToggle) searchGridToggle.classList.remove('active');
-            if (searchTableToggle) searchTableToggle.classList.add('active');
-        }
+    // ===== FUNCIONES DE UTILIDAD =====
+    function getEstadoIcon(estado) {
+        const icons = {
+            'disponible': 'fas fa-check-circle',
+            'en_uso': 'fas fa-play-circle',
+            'en uso': 'fas fa-play-circle',
+            'en_mantenimiento': 'fas fa-tools',
+            'en mantenimiento': 'fas fa-tools',
+            'dado_de_baja': 'fas fa-ban',
+            'dado de baja': 'fas fa-ban',
+            'robado': 'fas fa-user-secret'
+        };
+        return icons[estado] || 'fas fa-question-circle';
     }
     
     // ===== EVENT LISTENERS =====
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(performInstantSearch, 300);
+            const query = this.value.trim();
+            
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => fetchAutocomplete(query), 300);
+            } else {
+                hideSuggestions();
+            }
             
             // Mostrar/ocultar botón de limpiar
             if (this.value.length > 0) {
                 clearSearchBtn.style.display = 'flex';
             } else {
                 clearSearchBtn.style.display = 'none';
+                hideSuggestions();
             }
+        });
+        
+        searchInput.addEventListener('focus', function() {
+            const query = this.value.trim();
+            if (query.length >= 2) {
+                fetchAutocomplete(query);
+            }
+        });
+        
+        searchInput.addEventListener('blur', function() {
+            // Delay hiding suggestions to allow clicking on them
+            setTimeout(() => hideSuggestions(), 150);
         });
     }
     
@@ -737,85 +605,30 @@ document.addEventListener('DOMContentLoaded', function() {
         clearSearchBtn.addEventListener('click', function() {
             searchInput.value = '';
             this.style.display = 'none';
-            hideSearchResults();
+            hideSuggestions();
         });
     }
     
-    if (toggleFiltersBtn) {
-        toggleFiltersBtn.addEventListener('click', function() {
-            const isVisible = filtersPanel.style.display !== 'none';
-            filtersPanel.style.display = isVisible ? 'none' : 'block';
-            this.classList.toggle('active', !isVisible);
-            
-            const filterText = this.querySelector('.filter-text');
-            if (filterText) {
-                filterText.textContent = isVisible ? 'Mostrar Filtros' : 'Ocultar Filtros';
-            }
-        });
-    }
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+            hideSuggestions();
+        }
+    });
     
-    if (applyFiltersBtn) {
-        applyFiltersBtn.addEventListener('click', performInstantSearch);
-    }
-    
-    if (clearFiltersBtn) {
-        clearFiltersBtn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-select').forEach(select => {
-                select.value = '';
-            });
-            hideSearchResults();
-        });
-    }
-    
-    // Event listeners para botones de vista de resultados de búsqueda
-    if (searchGridToggle) {
-        searchGridToggle.addEventListener('click', function() {
-            applyGlobalView('grid');
-        });
-    }
-    
-    if (searchTableToggle) {
-        searchTableToggle.addEventListener('click', function() {
-            applyGlobalView('table');
-        });
-    }
+
     
     // Event listeners para botones de vista de elementos de categoría
     categoryToggleBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const viewType = this.getAttribute('data-view');
             applyCategoryView(viewType);
+            // Guardar preferencia
+            localStorage.setItem('global-view-preference', viewType);
         });
     });
     
-    // ===== SISTEMA DE VISTA GLOBAL =====
-    function applyGlobalView(viewType) {
-        // Aplicar vista a resultados de búsqueda
-        if (instantSearchGrid) {
-            instantSearchGrid.style.display = viewType === 'grid' ? 'block' : 'none';
-        }
-        if (instantSearchTable) {
-            instantSearchTable.style.display = viewType === 'table' ? 'block' : 'none';
-        }
-        
-        // Actualizar botones de resultados de búsqueda
-        if (searchGridToggle && searchTableToggle) {
-            if (viewType === 'grid') {
-                searchGridToggle.classList.add('active');
-                searchTableToggle.classList.remove('active');
-            } else {
-                searchGridToggle.classList.remove('active');
-                searchTableToggle.classList.add('active');
-            }
-        }
-        
-        // Aplicar también a la vista de categoría
-        applyCategoryView(viewType);
-        
-        // Guardar preferencia global
-        globalViewPreference = viewType;
-        localStorage.setItem('global-view-preference', viewType);
-    }
+
     
     function applyCategoryView(viewType) {
         // Actualizar botones de vista de categoría
@@ -844,8 +657,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar lazy loading para imágenes existentes
     initializeLazyLoading();
-    
-    console.log('Sistema de búsqueda instantánea y filtros para categoría inicializado');
 });
 
 // ===== FUNCIÓN GLOBAL PARA EXPANDIR UBICACIONES =====
@@ -970,484 +781,6 @@ function initializeLazyLoading() {
 </script>
 @endpush
 
-@push('scripts')
-<script>
-// Variables globales
-let currentView = localStorage.getItem('categoryView') || 'grid';
-let searchTimeout;
-let isSearching = false;
-let currentFilters = {
-    search: '',
-    elemento: '',
-    marca: '',
-    estado: '',
-    ubicacion: ''
-};
-
-// Referencias a elementos del DOM
-const searchInput = document.getElementById('searchInput');
-const searchResults = document.getElementById('searchResults');
-const categoryElements = document.getElementById('categoryElements');
-const filtersPanel = document.getElementById('filtersPanel');
-const activeFiltersContainer = document.getElementById('activeFilters');
-const toggleFiltersBtn = document.getElementById('toggleFilters');
-const clearSearchBtn = document.getElementById('clearSearch');
-const searchLoading = document.getElementById('searchLoading');
-const viewToggleButtons = document.querySelectorAll('.view-toggle-btn');
-const viewToggleButtonsSmall = document.querySelectorAll('.view-toggle-btn-small');
-
-// Función de búsqueda instantánea
-function performInstantSearch(query) {
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-    
-    searchTimeout = setTimeout(() => {
-        if (query.trim() === '') {
-            hideSearchResults();
-            return;
-        }
-        
-        showSearchLoading();
-        
-        // Simular búsqueda con delay
-        setTimeout(() => {
-            const results = generateMockResults(query);
-            displaySearchResults(results, query);
-            hideSearchLoading();
-        }, 300);
-    }, 300);
-}
-
-// Generar resultados mock
-function generateMockResults(query) {
-    const mockResults = [
-        {
-            id: 1,
-            nombre: 'Laptop Dell Inspiron 15',
-            codigo: 'LAP-001',
-            categoria: 'Computadoras',
-            marca: 'Dell',
-            modelo: 'Inspiron 15 3000',
-            estado: 'disponible',
-            ubicaciones: [
-                { nombre: 'Oficina Principal - Piso 2', cantidad: 1 },
-                { nombre: 'Almacén Central', cantidad: 2 }
-            ],
-            imagen: '/images/laptop-dell.jpg'
-        },
-        {
-            id: 2,
-            nombre: 'Monitor Samsung 24"',
-            codigo: 'MON-002',
-            categoria: 'Monitores',
-            marca: 'Samsung',
-            modelo: 'S24F350',
-            estado: 'en-uso',
-            ubicaciones: [
-                { nombre: 'Sala de Conferencias A', cantidad: 2 }
-            ],
-            imagen: '/images/monitor-samsung.jpg'
-        },
-        {
-            id: 3,
-            nombre: 'Impresora HP LaserJet',
-            codigo: 'IMP-003',
-            categoria: 'Impresoras',
-            marca: 'HP',
-            modelo: 'LaserJet Pro M404n',
-            estado: 'en-mantenimiento',
-            ubicaciones: [
-                { nombre: 'Centro de Servicios', cantidad: 1 }
-            ],
-            imagen: '/images/impresora-hp.jpg'
-        }
-    ];
-    
-    return mockResults.filter(item => 
-        item.nombre.toLowerCase().includes(query.toLowerCase()) ||
-        item.codigo.toLowerCase().includes(query.toLowerCase()) ||
-        item.marca.toLowerCase().includes(query.toLowerCase())
-    );
-}
-
-// Mostrar resultados de búsqueda
-function displaySearchResults(results, query) {
-    if (results.length === 0) {
-        showNoResults(query);
-        return;
-    }
-    
-    const resultsHtml = currentView === 'grid' ? 
-        generateGridResults(results) : 
-        generateTableResults(results);
-    
-    searchResults.innerHTML = `
-        <div class="search-results-section">
-            <div class="search-results-header">
-                <h3 class="search-results-title">
-                    <i class="fas fa-search"></i>
-                    Resultados para "${query}" (${results.length})
-                </h3>
-                <div class="view-toggle-buttons-small">
-                    <button class="view-toggle-btn-small ${currentView === 'grid' ? 'active' : ''}" data-view="grid">
-                        <i class="fas fa-th"></i> Cuadrícula
-                    </button>
-                    <button class="view-toggle-btn-small ${currentView === 'table' ? 'active' : ''}" data-view="table">
-                        <i class="fas fa-list"></i> Tabla
-                    </button>
-                </div>
-            </div>
-            ${resultsHtml}
-        </div>
-    `;
-    
-    searchResults.style.display = 'block';
-    categoryElements.style.display = 'none';
-    
-    // Agregar event listeners a los botones de vista
-    const newViewButtons = searchResults.querySelectorAll('.view-toggle-btn-small');
-    newViewButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const view = e.currentTarget.dataset.view;
-            setView(view);
-            displaySearchResults(results, query); // Refrescar con nueva vista
-        });
-    });
-    
-    // Inicializar lazy loading
-    initializeLazyLoading();
-}
-
-// Generar vista de cuadrícula
-function generateGridResults(results) {
-    return `
-        <div class="elements-grid-view">
-            <div class="elements-grid-compact">
-                ${results.map(item => `
-                    <div class="element-card-compact">
-                        <div class="element-image-compact">
-                            ${item.imagen ? 
-                                `<img src="${item.imagen}" alt="${item.nombre}" class="lazy-load" loading="lazy">` :
-                                `<div class="image-placeholder"><i class="fas fa-image"></i></div>`
-                            }
-                        </div>
-                        <div class="element-content-compact">
-                            <div class="element-header-compact">
-                                <h4 class="element-name-compact">${item.nombre}</h4>
-                                <span class="element-code-compact">${item.codigo}</span>
-                            </div>
-                            <div class="element-details-compact">
-                                <div class="detail-row-compact">
-                                    <span class="detail-label-compact">Marca:</span>
-                                    <span class="detail-value-compact">${item.marca}</span>
-                                </div>
-                                <div class="detail-row-compact">
-                                    <span class="detail-label-compact">Modelo:</span>
-                                    <span class="detail-value-compact">${item.modelo}</span>
-                                </div>
-                            </div>
-                            <div class="element-locations-compact">
-                                ${item.ubicaciones.slice(0, 2).map(ubicacion => `
-                                    <div class="location-compact">
-                                        <div class="location-info-compact">
-                                            <span class="location-name-compact">${ubicacion.nombre}</span>
-                                            <span class="location-quantity-compact">${ubicacion.cantidad} unidad${ubicacion.cantidad !== 1 ? 'es' : ''}</span>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                                ${item.ubicaciones.length > 2 ? `
-                                    <div class="more-locations-compact" onclick="expandLocations(this, ${item.id})">
-                                        <i class="fas fa-plus"></i>
-                                        Ver ${item.ubicaciones.length - 2} ubicación${item.ubicaciones.length - 2 !== 1 ? 'es' : ''} más
-                                    </div>
-                                ` : ''}
-                            </div>
-                            <div class="status-badge-element-new status-${item.estado}">
-                                <i class="status-icon-compact ${getStatusIcon(item.estado)}"></i>
-                                <span class="status-text-compact">${getStatusText(item.estado)}</span>
-                            </div>
-                            <div class="element-actions-compact">
-                                <button class="btn btn-outline-primary btn-xs">
-                                    <i class="fas fa-eye"></i> Ver
-                                </button>
-                                <button class="btn btn-outline-secondary btn-xs">
-                                    <i class="fas fa-edit"></i> Editar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-}
-
-// Generar vista de tabla
-function generateTableResults(results) {
-    return `
-        <div class="elements-table-view">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Elemento</th>
-                            <th>Marca/Modelo</th>
-                            <th>Ubicaciones</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${results.map(item => `
-                            <tr>
-                                <td>
-                                    <div class="table-element-info">
-                                        <div class="table-element-name">${item.nombre}</div>
-                                        <div class="table-element-code">${item.codigo}</div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="table-brand-model">
-                                        <div class="table-brand">${item.marca}</div>
-                                        <div class="table-model">${item.modelo}</div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="table-locations">
-                                        ${item.ubicaciones.slice(0, 2).map(ubicacion => `
-                                            <div class="table-location-item">
-                                                <div class="table-location-name">${ubicacion.nombre}</div>
-                                                <div class="location-quantity-compact">${ubicacion.cantidad} unidad${ubicacion.cantidad !== 1 ? 'es' : ''}</div>
-                                            </div>
-                                        `).join('')}
-                                        ${item.ubicaciones.length > 2 ? `
-                                            <div class="more-locations-table" onclick="expandLocationsTable(this, ${item.id})">
-                                                <i class="fas fa-plus"></i>
-                                                ${item.ubicaciones.length - 2} más
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="table-status-badge status-${item.estado}">
-                                        <i class="table-status-icon ${getStatusIcon(item.estado)}"></i>
-                                        <span class="table-status-text">${getStatusText(item.estado)}</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="element-actions-compact">
-                                        <button class="btn btn-outline-primary btn-xs">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn btn-outline-secondary btn-xs">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `;
-}
-
-// Mostrar estado de carga
-function showSearchLoading() {
-    if (searchLoading) {
-        searchLoading.style.display = 'block';
-    }
-}
-
-// Ocultar estado de carga
-function hideSearchLoading() {
-    if (searchLoading) {
-        searchLoading.style.display = 'none';
-    }
-}
-
-// Mostrar mensaje de sin resultados
-function showNoResults(query) {
-    searchResults.innerHTML = `
-        <div class="search-results-section">
-            <div class="search-results-header">
-                <h3 class="search-results-title">
-                    <i class="fas fa-search"></i>
-                    Sin resultados para "${query}"
-                </h3>
-            </div>
-            <div class="elements-grid-view">
-                <div class="text-center py-5">
-                    <i class="fas fa-search text-muted" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                    <h4 class="text-muted">No se encontraron elementos</h4>
-                    <p class="text-muted">Intenta con otros términos de búsqueda</p>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    searchResults.style.display = 'block';
-    categoryElements.style.display = 'none';
-}
-
-// Ocultar resultados de búsqueda
-function hideSearchResults() {
-    if (searchResults) {
-        searchResults.style.display = 'none';
-    }
-    if (categoryElements) {
-        categoryElements.style.display = 'block';
-    }
-}
-
-// Aplicar vista actual
-function applyCurrentView() {
-    // Aplicar a elementos de categoría
-    const gridView = document.getElementById('elementsGridView');
-    const tableView = document.getElementById('elementsTableView');
-    
-    if (gridView && tableView) {
-        if (currentView === 'grid') {
-            gridView.style.display = 'block';
-            tableView.style.display = 'none';
-        } else {
-            gridView.style.display = 'none';
-            tableView.style.display = 'block';
-        }
-    }
-    
-    // Actualizar botones
-    viewToggleButtons.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.view === currentView);
-    });
-}
-
-// Event Listeners
-if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value;
-        currentFilters.search = query;
-        
-        if (clearSearchBtn) {
-            clearSearchBtn.style.display = query ? 'flex' : 'none';
-        }
-        
-        performInstantSearch(query);
-    });
-}
-
-if (clearSearchBtn) {
-    clearSearchBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        currentFilters.search = '';
-        clearSearchBtn.style.display = 'none';
-        hideSearchResults();
-    });
-}
-
-if (toggleFiltersBtn) {
-    toggleFiltersBtn.addEventListener('click', () => {
-        const isVisible = filtersPanel.style.display !== 'none';
-        filtersPanel.style.display = isVisible ? 'none' : 'block';
-        toggleFiltersBtn.innerHTML = isVisible ? 
-            '<i class="fas fa-filter"></i> Mostrar Filtros' : 
-            '<i class="fas fa-filter"></i> Ocultar Filtros';
-    });
-}
-
-// Event listeners para botones de vista
-viewToggleButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const view = e.currentTarget.dataset.view;
-        setView(view);
-    });
-});
-
-// Sistema de vista global
-function setView(view) {
-    currentView = view;
-    localStorage.setItem('categoryView', view);
-    applyCurrentView();
-    
-    // Si hay resultados de búsqueda activos, refrescarlos
-    if (searchResults.style.display === 'block' && searchInput.value.trim()) {
-        const results = generateMockResults(searchInput.value);
-        displaySearchResults(results, searchInput.value);
-    }
-}
-
-// Función para expandir ubicaciones (vista compacta)
-function expandLocations(element, elementId) {
-    // Aquí iría la lógica para expandir ubicaciones
-    console.log('Expandir ubicaciones para elemento:', elementId);
-}
-
-// Función para expandir ubicaciones (vista tabla)
-function expandLocationsTable(element, elementId) {
-    // Aquí iría la lógica para expandir ubicaciones en tabla
-    console.log('Expandir ubicaciones tabla para elemento:', elementId);
-}
-
-// Función para obtener icono de estado
-function getStatusIcon(estado) {
-    const icons = {
-        'disponible': 'fas fa-check-circle',
-        'en-uso': 'fas fa-user-circle',
-        'en-mantenimiento': 'fas fa-tools',
-        'dado-de-baja': 'fas fa-times-circle',
-        'robado': 'fas fa-exclamation-triangle'
-    };
-    return icons[estado] || 'fas fa-question-circle';
-}
-
-// Función para obtener texto de estado
-function getStatusText(estado) {
-    const texts = {
-        'disponible': 'Disponible',
-        'en-uso': 'En Uso',
-        'en-mantenimiento': 'Mantenimiento',
-        'dado-de-baja': 'Dado de Baja',
-        'robado': 'Robado'
-    };
-    return texts[estado] || 'Desconocido';
-}
-
-// Función para lazy loading de imágenes
-function initializeLazyLoading() {
-    const lazyImages = document.querySelectorAll('.lazy-load');
-    
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                img.onload = () => img.classList.add('loaded');
-                img.onerror = () => {
-                    img.classList.add('error');
-                    img.parentElement.innerHTML = '<div class="image-placeholder"><i class="fas fa-image"></i></div>';
-                };
-                observer.unobserve(img);
-            }
-        });
-    });
-    
-    lazyImages.forEach(img => imageObserver.observe(img));
-}
-
-// Inicialización
-document.addEventListener('DOMContentLoaded', function() {
-    applyCurrentView();
-    initializeLazyLoading();
-    
-    // Ocultar panel de filtros inicialmente
-    if (filtersPanel) {
-        filtersPanel.style.display = 'none';
-    }
-});
-</script>
-@endpush
-
 @push('styles')
 <style>
 /* Incluir todos los estilos de categorias-old.blade.php */
@@ -1457,43 +790,105 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* Estilos para el acordeón de filtros */
+.filters-panel-accordion .btn-link {
+    color: inherit !important;
+    text-decoration: none !important;
+}
+
+.filters-panel-accordion .btn-link:hover {
+    color: var(--bs-primary) !important;
+}
+
+.transition-icon {
+    transition: transform 0.3s ease;
+}
+
+.transition-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.filters-panel-accordion .filters-subtitle {
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+}
+
+.filters-panel-accordion .collapse {
+    transition: all 0.3s ease;
+}
+
+/* Mejorar el espaciado cuando el acordeón está colapsado */
+.filters-panel-accordion .collapsed + .collapse {
+    margin-top: 0;
+}
+
+/* Reducir el espacio entre filtros y elementos */
+.category-elements-section {
+    margin-top: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 1.5rem;
+}
+
+/* Color para el icono de elementos */
+.category-elements-title i {
+    color: #3b82f6;
+}
+
+/* Color para el icono del header */
+.header-icon i {
+    color: #3b82f6;
+}
+
 /* Header Profesional */
 .header-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 16px;
-    padding: 2rem;
-    color: white;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    margin-bottom: 2rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    margin-bottom: 1rem;
 }
 
 .header-main {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 1rem;
+}
+
+.header-top {
+    display: flex;
     justify-content: space-between;
-    flex-wrap: wrap;
+    align-items: flex-start;
     gap: 2rem;
+}
+
+.header-info {
+    flex: 1;
 }
 
 .header-title-section {
     display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    flex: 1;
-    min-width: 300px;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
 .header-icon {
-    width: 80px;
-    height: 80px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
+    width: 60px;
+    height: 60px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #64748b;
+    font-size: 1.5rem;
+    flex-shrink: 0;
 }
 
 .header-text {
@@ -1501,116 +896,373 @@ body {
 }
 
 .header-title {
-    font-size: 2.5rem;
+    font-size: 1.875rem;
     font-weight: 700;
-    margin: 0 0 1rem 0;
+    color: #1e293b;
+    margin: 0 0 0.75rem 0;
     line-height: 1.2;
 }
 
 .header-badges {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
     flex-wrap: wrap;
 }
 
 .header-badge {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 0.5rem 1rem;
-    border-radius: 25px;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
     font-size: 0.875rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.header-badge-primary {
-    background: rgba(59, 130, 246, 0.3);
-}
-
-.header-badge-secondary {
-    background: rgba(107, 114, 128, 0.3);
+    font-weight: 500;
+    border: 1px solid #e2e8f0;
 }
 
 .header-stats {
-    display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 0;
+    padding: 0;
+    justify-items: stretch;
+    width: 100%;
+}
+
+@media (min-width: 1400px) {
+    .header-stats {
+        grid-template-columns: repeat(5, 1fr);
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+@media (max-width: 1399px) and (min-width: 1200px) {
+    .header-stats {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 1199px) and (min-width: 900px) {
+    .header-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 899px) and (min-width: 600px) {
+    .header-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.875rem;
+    }
+}
+
+@media (max-width: 599px) {
+    .header-stats {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
 }
 
 .stat-item {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    min-width: 120px;
+    gap: 0.875rem;
+    padding: 1rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.stat-item-clickable {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.stat-item-clickable:hover {
+    text-decoration: none;
+    color: inherit;
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.stat-item-clickable:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-item-clickable:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     flex-shrink: 0;
 }
 
 .stat-icon-success {
-    background: rgba(34, 197, 94, 0.2);
-    color: #22c55e;
+    color: #22c55e !important;
 }
 
 .stat-icon-primary {
-    background: rgba(59, 130, 246, 0.2);
-    color: #3b82f6;
+    color: #3b82f6 !important;
 }
 
 .stat-icon-warning {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
+    color: #f59e0b !important;
 }
 
 .stat-icon-danger {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    color: #ef4444 !important;
 }
 
 .stat-icon-dark {
-    background: rgba(107, 114, 128, 0.2);
-    color: #6b7280;
+    color: #4b5563 !important;
 }
 
 .stat-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    flex: 1;
 }
 
 .stat-number {
-    font-size: 1.875rem;
-    font-weight: 700;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #1e293b;
     line-height: 1;
+    margin-bottom: 0.25rem;
 }
 
 .stat-label {
-    font-size: 0.875rem;
-    opacity: 0.9;
-    font-weight: 500;
+    font-size: 0.8rem;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+    }
+    
+    .stat-item {
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+    }
+    
+    .stat-number {
+        font-size: 1.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.65rem;
+    }
+    
+    .stat-item {
+        padding: 0.875rem;
+        gap: 0.625rem;
+    }
 }
 
 .header-actions {
     display: flex;
+    flex-direction: column;
     gap: 1rem;
+    flex-shrink: 0;
+}
+
+.header-actions .btn {
+    display: flex;
     align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    min-width: 180px;
+    justify-content: center;
+}
+
+.header-actions .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+}
+
+.header-actions .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px 0 rgba(102, 126, 234, 0.4);
+}
+
+.header-actions .btn-outline-secondary {
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: #64748b;
+}
+
+.header-actions .btn-outline-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #475569;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para botones compactos en header */
+.quick-actions-compact {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.quick-action-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    color: inherit;
+}
+
+.quick-action-icon-small {
+    width: 40px;
+    height: 40px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.quick-action-icon-small i {
+    font-size: 1.125rem;
+    color: #64748b;
+}
+
+/* Colores específicos para iconos de acción */
+.quick-action-btn:first-child .quick-action-icon-small {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.quick-action-btn:first-child .quick-action-icon-small i {
+    color: #22c55e;
+}
+
+.quick-action-btn:last-child .quick-action-icon-small {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.quick-action-btn:last-child .quick-action-icon-small i {
+    color: #3b82f6;
+}
+
+.quick-action-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.quick-action-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.quick-action-subtitle {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.2;
+}
+
+/* Responsive para botones compactos */
+@media (max-width: 768px) {
+    .quick-actions-compact {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    
+    .quick-action-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.625rem 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .quick-action-btn {
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+    
+    .quick-action-icon-small {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .quick-action-icon-small i {
+        font-size: 0.875rem;
+    }
+    
+    .quick-action-title {
+        font-size: 0.8125rem;
+    }
+    
+    .quick-action-subtitle {
+        font-size: 0.6875rem;
+    }
 }
 
 .btn {
@@ -1654,63 +1306,52 @@ body {
 /* Sistema de Búsqueda y Filtros Avanzados */
 .advanced-search-container {
     background: white;
+    border: 1px solid #e2e8f0;
     border-radius: 16px;
+    overflow: visible;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    overflow: hidden;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 10;
 }
 
-.search-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2rem;
+.search-header-and-main {
+    padding: 1rem;
     background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
 }
 
 .search-title {
-    color: #1e293b;
-    font-weight: 600;
-    margin: 0;
-    font-size: 1.25rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+}
+
+.search-title h5 {
+    color: #1e293b;
+    font-weight: 600;
 }
 
 .toggle-filters {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    transition: all 0.3s ease;
 }
 
 .toggle-filters:hover {
-    background: #5a67d8;
-    transform: translateY(-1px);
-}
-
-.toggle-filters.active {
-    background: #4c51bf;
-}
-
-.main-search-container {
-    padding: 2rem;
-    background: white;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #475569;
 }
 
 .search-input-group {
     position: relative;
-    max-width: 800px;
+    max-width: 100%;
     margin: 0 auto;
+}
+
+.search-input-container {
+    position: relative;
+    width: 100%;
 }
 
 .search-input-wrapper {
@@ -1720,57 +1361,69 @@ body {
 }
 
 .search-input-modern {
-    width: 100%;
-    padding: 1rem 3.5rem 1rem 3rem;
-    border: 2px solid #e2e8f0;
+    height: 56px;
+    font-size: 1.125rem;
     border-radius: 12px;
-    font-size: 1rem;
+    padding-left: 56px;
+    padding-right: 100px;
+    border: 2px solid #e2e8f0;
     transition: all 0.3s ease;
     background: white;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .search-input-modern:focus {
-    outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 0.125rem rgba(102, 126, 234, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.1);
+    outline: none;
 }
 
 .search-icon {
     position: absolute;
-    left: 1rem;
-    color: #9ca3af;
-    font-size: 1.125rem;
-    pointer-events: none;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-size: 1.25rem;
+    z-index: 2;
 }
 
 .search-loading {
     position: absolute;
-    right: 3.5rem;
+    right: 50px;
+    top: 50%;
+    transform: translateY(-50%);
     color: #667eea;
     font-size: 1rem;
+    z-index: 2;
 }
 
 .btn-clear-search-modern {
     position: absolute;
-    right: 0.75rem;
-    background: #f3f4f6;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #f1f5f9;
     border: none;
-    border-radius: 6px;
-    width: 2rem;
-    height: 2rem;
+    color: #64748b;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    z-index: 2;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6b7280;
-    cursor: pointer;
-    transition: all 0.2s ease;
 }
 
 .btn-clear-search-modern:hover {
     background: #e2e8f0;
     color: #dc2626;
 }
+
+
 
 .search-suggestions {
     position: absolute;
@@ -1786,17 +1439,158 @@ body {
     overflow-y: auto;
 }
 
-/* Panel de Filtros */
-.filters-panel {
-    padding: 2rem;
+/* Estilos del Autocompletado */
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 12px;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+    background: #f8fafc;
+    border-left: 3px solid #3b82f6;
+}
+
+.suggestion-icon {
+    width: 32px;
+    height: 32px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.suggestion-item.active .suggestion-icon {
+    background: #dbeafe;
+    color: #3b82f6;
+}
+
+.suggestion-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.suggestion-text {
+    font-weight: 500;
+    color: #1e293b;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.suggestion-subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.suggestion-type {
+    flex-shrink: 0;
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.type-inventario {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.type-categoria {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.type-codigo {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.type-ubicacion {
+    background: #fce7f3;
+    color: #be185d;
+}
+
+.type-estado {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.suggestion-loading {
+    padding: 16px;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.suggestion-empty {
+    padding: 16px;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+/* Panel de Filtros Siempre Visible */
+.filters-panel-always-visible {
+    padding: 1.5rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.filters-header {
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.75rem;
+}
+
+.filters-subtitle {
+    color: #374151;
+    font-weight: 600;
+    margin: 0;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.search-and-filters-wrapper {
     background: white;
-    border-top: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 1.5rem;
+}
+
+.search-input-section {
+    margin-bottom: 1.5rem;
 }
 
 .filters-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
     align-items: end;
 }
 
@@ -1808,10 +1602,16 @@ body {
 
 .filter-label {
     font-weight: 600;
-    color: #374151;
+    color: #000;
     font-size: 0.875rem;
     display: flex;
     align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.filter-label i {
+    color: #007bff;
+    margin-right: 0.5rem;
 }
 
 .filter-select {
@@ -1821,11 +1621,15 @@ body {
     background: white;
     height: 44px;
     font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
 }
+
+
 
 .filter-select:focus {
     border-color: #667eea;
     box-shadow: 0 0 0 0.125rem rgba(102, 126, 234, 0.1);
+    outline: none;
 }
 
 .filter-select:disabled {
@@ -1836,14 +1640,58 @@ body {
 
 .filter-actions {
     display: flex;
-    gap: 0.75rem;
-    align-items: end;
+    gap: 1rem;
+    align-items: center;
     flex-wrap: wrap;
+    justify-content: center;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.filter-actions .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    color: #1e293b;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    min-width: 120px;
+    max-width: 120px;
+    width: 120px;
+    justify-content: center;
+    flex: 0 0 120px;
+    font-size: 0.875rem;
+}
+
+.filter-actions .btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #1e293b;
+    text-decoration: none;
+}
+
+.filter-actions .btn i {
+    font-size: 1rem;
+}
+
+.filter-actions .btn-primary i {
+    color: #3b82f6;
+}
+
+.filter-actions .btn-secondary i {
+    color: #64748b;
 }
 
 /* Filtros Activos */
 .active-filters {
-    padding: 1.5rem 2rem;
+    padding: 1rem 1.5rem;
     background: #f8fafc;
     border-top: 1px solid #e2e8f0;
 }
@@ -1908,7 +1756,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem 2rem;
+    padding: 1rem 1.5rem;
     background: #f8fafc;
     border-bottom: 1px solid #e2e8f0;
 }
@@ -2026,7 +1874,7 @@ body {
 
 /* Grid de Elementos */
 .elements-grid-view {
-    padding: 2rem;
+    padding: 1rem;
 }
 
 .elements-grid-compact {
@@ -2290,7 +2138,7 @@ body {
 
 /* Vista Tabla */
 .elements-table-view {
-    padding: 2rem;
+    padding: 1rem;
 }
 
 .table {
@@ -2508,6 +2356,24 @@ body {
     .filters-grid {
         grid-template-columns: 1fr;
     }
+    
+    .search-and-filters-wrapper {
+        padding: 1rem;
+    }
+    
+    .filters-panel-always-visible {
+        padding: 1rem;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 @media (max-width: 480px) {
@@ -2524,6 +2390,36 @@ body {
         align-items: flex-start;
     }
     
+    .search-and-filters-wrapper {
+        padding: 0.75rem;
+    }
+    
+    .filters-panel-always-visible {
+        padding: 0.75rem;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .filter-item {
+        margin-bottom: 0.5rem;
+    }
+    
+    .filter-actions {
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .search-title h5 {
+        font-size: 1.1rem;
+    }
+    
+    .filters-subtitle {
+        font-size: 0.9rem;
+    }
+    
     .main-search-container {
         padding: 1.5rem;
     }
@@ -2538,4 +2434,425 @@ body {
     }
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables para el sistema de autocompletado y filtros
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearch');
+    const filtersForm = document.getElementById('filtersForm');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    const hiddenSearchInput = document.getElementById('hiddenSearchInput');
+    
+    let searchTimeout;
+    
+    // ===== FUNCIONES DE AUTOCOMPLETADO =====
+    function fetchAutocomplete(query) {
+        if (query.length < 2) {
+            hideSuggestions();
+            return;
+        }
+        
+        fetch(`{{ route('inventarios.categoria.autocomplete', $categoria->id) }}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                displaySuggestions(data);
+            })
+            .catch(error => {
+                console.error('Error fetching autocomplete:', error);
+                hideSuggestions();
+            });
+    }
+    
+    function displaySuggestions(suggestions) {
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        
+        if (!suggestions || suggestions.length === 0) {
+            hideSuggestions();
+            return;
+        }
+        
+        const suggestionsHTML = suggestions.map(suggestion => `
+            <div class="suggestion-item" data-url="${suggestion.url}">
+                <div class="suggestion-icon">
+                    <i class="${getSuggestionIcon(suggestion.type)}"></i>
+                </div>
+                <div class="suggestion-content">
+                    <div class="suggestion-text">${suggestion.text}</div>
+                    <div class="suggestion-subtitle">${suggestion.subtitle}</div>
+                </div>
+                <div class="suggestion-type">${getSuggestionTypeText(suggestion.type)}</div>
+            </div>
+        `).join('');
+        
+        searchSuggestions.innerHTML = suggestionsHTML;
+        searchSuggestions.style.display = 'block';
+        
+        // Agregar event listeners a las sugerencias
+        document.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const url = this.getAttribute('data-url');
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+    }
+    
+    function hideSuggestions() {
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        if (searchSuggestions) {
+            searchSuggestions.style.display = 'none';
+            searchSuggestions.innerHTML = '';
+        }
+    }
+    
+    function getSuggestionIcon(type) {
+        const icons = {
+            'inventario': 'fas fa-cube',
+            'marca': 'fas fa-tag',
+            'estado': 'fas fa-info-circle'
+        };
+        return icons[type] || 'fas fa-search';
+    }
+    
+    function getSuggestionTypeText(type) {
+        const types = {
+            'inventario': 'Elemento',
+            'marca': 'Marca',
+            'estado': 'Estado'
+        };
+        return types[type] || 'Resultado';
+    }
+    
+    // ===== EVENT LISTENERS PARA AUTOCOMPLETADO =====
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            // Mostrar/ocultar botón de limpiar
+            if (clearSearchBtn) {
+                clearSearchBtn.style.display = query.length > 0 ? 'flex' : 'none';
+            }
+            
+            // Sincronizar con campo oculto del formulario
+            if (hiddenSearchInput) {
+                hiddenSearchInput.value = query;
+            }
+            
+            // Autocompletado solo si hay al menos 2 caracteres
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => fetchAutocomplete(query), 300);
+            } else {
+                hideSuggestions();
+            }
+        });
+        
+        searchInput.addEventListener('focus', function() {
+            const query = this.value.trim();
+            if (query.length >= 2) {
+                fetchAutocomplete(query);
+            }
+        });
+        
+        searchInput.addEventListener('blur', function() {
+            // Delay hiding suggestions to allow clicking on them
+            setTimeout(() => hideSuggestions(), 150);
+        });
+    }
+    
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            if (hiddenSearchInput) {
+                hiddenSearchInput.value = '';
+            }
+            this.style.display = 'none';
+            hideSuggestions();
+        });
+    }
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        if (searchInput && searchSuggestions && 
+            !searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+            hideSuggestions();
+        }
+    });
+    
+    // ===== FILTROS EN CASCADA =====
+    const filterElemento = document.getElementById('filterElemento');
+    const filterMarca = document.getElementById('filterMarca');
+    const filterProveedor = document.getElementById('filterProveedor');
+    const filterUbicacion = document.getElementById('filterUbicacion');
+    const filterEstado = document.getElementById('filterEstado');
+    
+    // Función para actualizar proveedores
+    // Variable para controlar actualizaciones concurrentes
+    let isUpdating = false;
+    
+    // Función unificada para actualizar todos los filtros (API Unificada - Opción 2)
+    function actualizarFiltrosUnificados() {
+        if (isUpdating) {
+            return;
+        }
+        
+        isUpdating = true;
+        
+        const elementoSeleccionado = filterElemento ? filterElemento.value : '';
+        const marcaSeleccionada = filterMarca ? filterMarca.value : '';
+        
+        // Guardar valores actuales
+        const valoresActuales = {
+            proveedor: filterProveedor ? filterProveedor.value : '',
+            ubicacion: filterUbicacion ? filterUbicacion.value : '',
+            estado: filterEstado ? filterEstado.value : ''
+        };
+        
+        const params = new URLSearchParams({
+            categoria_id: '{{ $categoria->id }}'
+        });
+        
+        if (elementoSeleccionado) {
+            params.append('elemento', elementoSeleccionado);
+        }
+        
+        if (marcaSeleccionada) {
+            params.append('marca', marcaSeleccionada);
+        }
+        
+        const url = `/api/filtros-unificados?${params.toString()}`;
+        
+        // Mostrar estado de carga
+        if (filterProveedor) filterProveedor.innerHTML = '<option value="">Cargando...</option>';
+        if (filterUbicacion) filterUbicacion.innerHTML = '<option value="">Cargando...</option>';
+        if (filterEstado) filterEstado.innerHTML = '<option value="">Cargando...</option>';
+        
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                
+                // Actualizar proveedores
+                if (filterProveedor && data.proveedores) {
+                    filterProveedor.innerHTML = '<option value="">Todos los proveedores</option>';
+                    data.proveedores.forEach(proveedor => {
+                        const selected = valoresActuales.proveedor == proveedor.id ? 'selected' : '';
+                        filterProveedor.innerHTML += `<option value="${proveedor.id}" ${selected}>${proveedor.nombre}</option>`;
+                    });
+                }
+                
+                // Actualizar ubicaciones
+                if (filterUbicacion && data.ubicaciones) {
+                    filterUbicacion.innerHTML = '<option value="">Todas las ubicaciones</option>';
+                    data.ubicaciones.forEach(ubicacion => {
+                        const selected = valoresActuales.ubicacion == ubicacion.id ? 'selected' : '';
+                        filterUbicacion.innerHTML += `<option value="${ubicacion.id}" ${selected}>${ubicacion.nombre}</option>`;
+                    });
+                }
+                
+                // Actualizar estados
+                if (filterEstado && data.estados) {
+                    filterEstado.innerHTML = '<option value="">Todos los estados</option>';
+                    data.estados.forEach(estado => {
+                        const selected = valoresActuales.estado == estado.value ? 'selected' : '';
+                        filterEstado.innerHTML += `<option value="${estado.value}" ${selected}>${estado.label}</option>`;
+                    });
+                }
+                
+
+            })
+            .catch(error => {
+                
+                // Mostrar error en los filtros
+                if (filterProveedor) filterProveedor.innerHTML = '<option value="">Error al cargar proveedores</option>';
+                if (filterUbicacion) filterUbicacion.innerHTML = '<option value="">Error al cargar ubicaciones</option>';
+                if (filterEstado) filterEstado.innerHTML = '<option value="">Error al cargar estados</option>';
+            })
+            .finally(() => {
+                isUpdating = false;
+            });
+    }
+    
+    // Funciones individuales para compatibilidad (llaman a la función unificada)
+    function actualizarProveedores() {
+        actualizarFiltrosUnificados();
+    }
+    
+    function actualizarUbicaciones() {
+        actualizarFiltrosUnificados();
+    }
+    
+    function actualizarEstados() {
+        actualizarFiltrosUnificados();
+    }
+    
+    if (filterElemento && filterMarca) {
+        
+        // Botón de test para marcas
+
+        
+        filterElemento.addEventListener('change', function() {
+            const elementoSeleccionado = this.value;
+
+            
+            if (elementoSeleccionado) {
+                filterMarca.disabled = false;
+                filterMarca.innerHTML = '<option value="">Cargando marcas...</option>';
+                
+                const url = `/api/marcas-por-elemento?elemento=${encodeURIComponent(elementoSeleccionado)}&categoria_id={{ $categoria->id }}`;
+
+                
+                fetch(url)
+                    .then(response => {
+
+                        return response.json();
+                    })
+                    .then(data => {
+
+                        filterMarca.innerHTML = '<option value="">Todas las marcas</option>';
+                        data.forEach(marca => {
+                            filterMarca.innerHTML += `<option value="${marca}">${marca}</option>`;
+                        });
+                        // Actualizar todos los filtros después de cargar marcas
+
+                        actualizarProveedores();
+                        actualizarUbicaciones();
+                        actualizarEstados();
+                    })
+                    .catch(error => {
+                        filterMarca.innerHTML = '<option value="">Error al cargar marcas</option>';
+                    });
+            } else {
+                filterMarca.disabled = true;
+                filterMarca.innerHTML = '<option value="">Selecciona un elemento primero</option>';
+                // Actualizar todos los filtros cuando no hay elemento seleccionado
+                actualizarProveedores();
+                actualizarUbicaciones();
+                actualizarEstados();
+            }
+        });
+        
+        // Event listener para cuando cambia la marca
+        filterMarca.addEventListener('change', function() {
+            actualizarProveedores();
+            actualizarUbicaciones();
+            actualizarEstados();
+        });
+    }
+    
+    // ===== LIMPIAR FILTROS =====
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', function() {
+            // Redirigir a la URL base de la categoría sin filtros
+            window.location.href = '{{ route("inventarios.categoria", $categoria->id) }}';
+        });
+    }
+    
+    // ===== SUBMIT HANDLER DEL FORMULARIO =====
+    if (filtersForm) {
+        
+        filtersForm.addEventListener('submit', function(e) {
+            
+            // Sincronizar el campo oculto con el valor visible antes de enviar
+            const visible = document.getElementById('searchInput');
+            const hidden = document.getElementById('hiddenSearchInput');
+            if (visible && hidden) {
+                hidden.value = visible.value.trim();
+            }
+        });
+    }
+    
+    // ===== VISTA TOGGLE PARA ELEMENTOS DE CATEGORÍA =====
+    const viewToggleButtons = document.querySelectorAll('.view-toggle-btn');
+    const elementsGridView = document.getElementById('elements-grid-category');
+    const elementsTableView = document.getElementById('elements-table-category');
+    
+    viewToggleButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const viewType = this.getAttribute('data-view');
+            
+            // Actualizar botones activos
+            viewToggleButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Cambiar vista
+            if (elementsGridView && elementsTableView) {
+                if (viewType === 'grid') {
+                    elementsGridView.style.display = 'block';
+                    elementsTableView.style.display = 'none';
+                } else {
+                    elementsGridView.style.display = 'none';
+                    elementsTableView.style.display = 'block';
+                }
+            }
+        });
+    });
+
+    // Restaurar valores de filtros después de cargar la página
+    function restaurarFiltros() {
+        const elementoSeleccionado = '{{ request("elemento") }}';
+        const marcaSeleccionada = '{{ request("marca") }}';
+        const proveedorSeleccionado = '{{ request("proveedor") }}';
+        
+        if (elementoSeleccionado) {
+
+            const filterElemento = document.getElementById('filterElemento');
+            if (filterElemento) {
+
+                filterElemento.value = elementoSeleccionado;
+                
+                // Cargar marcas para el elemento seleccionado
+                const categoriaId = '{{ $categoria->id }}';
+                const marcasUrl = `/api/marcas-por-elemento?elemento=${encodeURIComponent(elementoSeleccionado)}&categoria_id=${categoriaId}`;
+
+                fetch(marcasUrl)
+                    .then(response => response.json())
+                     .then(data => {
+
+                         const filterMarca = document.getElementById('filterMarca');
+                         if (filterMarca) {
+
+                             filterMarca.innerHTML = '<option value="">Todas las marcas</option>';
+                             data.forEach(marca => {
+                                 const option = document.createElement('option');
+                                 option.value = marca;
+                                 option.textContent = marca;
+                                 if (marca === marcaSeleccionada) {
+
+                                     option.selected = true;
+                                 }
+                                 filterMarca.appendChild(option);
+                             });
+                             filterMarca.disabled = false;
+                             
+                             // Actualizar proveedores después de restaurar marca
+                             if (marcaSeleccionada) {
+                                 actualizarProveedores();
+                             }
+                         }
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar marcas:', error);
+                    });
+            }
+        }
+    }
+
+    // Llamar a la función de restauración después de que todo esté cargado
+    restaurarFiltros();
+    
+    // El acordeón ya no necesita JavaScript para iconos
+});
+</script>
 @endpush

@@ -29,7 +29,7 @@
                         <i class="fas fa-th me-1"></i>
                         Vista Principal
                     </a>
-                    <a href="{{ route('inventarios.search') }}" class="btn btn-primary">
+                    <a href="{{ route('inventarios.categoria') }}" class="btn btn-primary">
                         <i class="fas fa-search me-1"></i>
                         Buscar Elementos
                     </a>

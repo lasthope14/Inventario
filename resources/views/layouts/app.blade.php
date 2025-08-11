@@ -622,9 +622,7 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
 <script>
-    console.log('app.blade.php script started');
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('app.blade.php DOMContentLoaded event fired');
         // Inicializar dropdowns
         var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
         var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {

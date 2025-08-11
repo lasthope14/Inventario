@@ -44,6 +44,8 @@ Route::post('/email/verification-notification', function (Request $request) {
 // Rutas protegidas que requieren autenticación y verificación de correo
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+
 
     Route::controller(ProfileController::class)->group(function () {
         Route::get('/profile', 'edit')->name('profile.edit');
@@ -65,19 +67,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('importlogs.revert');
 
     // Rutas específicas de inventarios (DEBEN IR ANTES del resource)
-    Route::get('/inventarios/buscar', [InventarioController::class, 'search'])->name('inventarios.search');
-    Route::get('/inventarios/categoria/{categoria}', [InventarioController::class, 'showCategoria'])->name('inventarios.categoria');
+    Route::get('/inventarios/categoria/{categoria?}', [InventarioController::class, 'showCategoria'])->name('inventarios.categoria');
     Route::get('/inventarios/categorias', [InventarioController::class, 'showCategorias'])->name('inventarios.categorias');
     
     // Rutas AJAX y API
     Route::get('/inventarios/elementos-por-categoria/{categoria}', [InventarioController::class, 'getElementosPorCategoria']);
-    Route::post('/inventarios/search-ai', [InventarioController::class, 'searchWithAI'])->name('inventarios.search-ai');
     Route::get('/inventarios/filtros-ajax', [InventarioController::class, 'getFiltrosAjax'])->name('inventarios.filtros-ajax');
-    Route::get('/inventarios/search-instantaneo', [InventarioController::class, 'searchInstantaneo'])->name('inventarios.search-instantaneo');
     Route::get('/inventarios/filtros-cascada', [InventarioController::class, 'getFiltrosCascada'])->name('inventarios.filtros-cascada');
     Route::get('/inventarios/autocomplete', [InventarioController::class, 'autocomplete'])->name('inventarios.autocomplete');
+    Route::get('/inventarios/categoria/{categoria}/autocomplete', [InventarioController::class, 'autocompleteCategoria'])->name('inventarios.categoria.autocomplete');
+    Route::get('/api/marcas-por-elemento', [InventarioController::class, 'getMarcasPorElemento'])->name('api.marcas-por-elemento');
+    Route::get('/api/proveedores-por-elemento-marca', [InventarioController::class, 'getProveedoresPorElementoMarca'])->name('api.proveedores-por-elemento-marca');
+    Route::get('/api/ubicaciones-por-elemento', [InventarioController::class, 'getUbicacionesPorElemento'])->name('api.ubicaciones-por-elemento');
+    Route::get('/api/estados-por-elemento', [InventarioController::class, 'getEstadosPorElemento'])->name('api.estados-por-elemento');
 
-    // Ruta resource de inventarios
+// API unificada para filtros (Opción 2 - Más eficiente)
+Route::get('/api/filtros-unificados', [InventarioController::class, 'getFiltrosUnificados'])->name('api.filtros-unificados');
+
+// Ruta resource de inventarios
     Route::resource('inventarios', InventarioController::class)->parameters([
         'inventarios' => 'inventario'
     ]);

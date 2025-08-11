@@ -25,7 +25,7 @@ class MovimientoMasivoController extends Controller
     {
         $this->authorize('create', Movimiento::class);
         
-        $inventarios = Inventario::with(['categoria', 'ubicaciones.ubicacion'])
+        $inventarios = Inventario::with(['categoria', 'ubicaciones'])
             ->whereHas('ubicaciones', function($query) {
                 $query->where('cantidad', '>', 0);
             })
@@ -277,7 +277,7 @@ class MovimientoMasivoController extends Controller
     public function getInventarioData(Request $request)
     {
         try {
-            $query = Inventario::with(['categoria', 'ubicaciones.ubicacion'])
+            $query = Inventario::with(['categoria', 'ubicaciones'])
                 ->whereHas('ubicaciones', function($q) {
                     $q->where('cantidad', '>', 0);
                 });
@@ -503,4 +503,4 @@ class MovimientoMasivoController extends Controller
             ], 500);
         }
     }
-} 
+}

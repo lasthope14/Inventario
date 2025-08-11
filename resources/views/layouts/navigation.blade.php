@@ -984,7 +984,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Theme Toggle Functionality
     function initThemeToggle() {
-        console.log('Inicializando theme toggle...');
         
         const themeToggle = document.getElementById('themeToggle');
         const themeToggleMobile = document.getElementById('themeToggleMobile');
@@ -996,12 +995,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const migratedTheme = oldDarkMode === 'true' ? 'dark' : 'light';
             localStorage.setItem('app-theme', migratedTheme);
             localStorage.removeItem('darkMode');
-            console.log('Migrado tema desde darkMode:', migratedTheme);
+
         }
 
         // Get saved theme from localStorage or default to light
         const savedTheme = localStorage.getItem('app-theme') || 'light';
-        console.log('Tema guardado:', savedTheme);
         
         function updateIcons(theme) {
             const desktopIcon = document.getElementById('theme-icon-desktop');
@@ -1039,7 +1037,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         function setTheme(theme) {
-            console.log('Cambiando tema a:', theme);
+
             
             // Cambiar el atributo data-bs-theme en html (Bootstrap 5.3+ estándar)
             html.setAttribute('data-bs-theme', theme);
@@ -1064,16 +1062,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Guardar en localStorage
             localStorage.setItem('app-theme', theme);
             
-            console.log('Tema aplicado:', html.getAttribute('data-bs-theme'));
-            console.log('Logos configurados - Light:', logoLight ? logoLight.style.display : 'No encontrado', '| Dark:', logoDark ? logoDark.style.display : 'No encontrado');
+
         }
 
         function toggleTheme() {
-            console.log('Toggle theme clicked');
             // Obtener el tema actual del localStorage en lugar del DOM
             const currentTheme = localStorage.getItem('app-theme') || 'light';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            console.log('Cambiando de', currentTheme, 'a', newTheme);
             setTheme(newTheme);
         }
 
@@ -1082,24 +1077,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Add event listeners
         if (themeToggle) {
-            console.log('Agregando listener al botón desktop');
             themeToggle.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('Click en botón desktop');
                 toggleTheme();
             });
         }
         
         if (themeToggleMobile) {
-            console.log('Agregando listener al botón mobile');
             themeToggleMobile.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('Click en botón mobile');
                 toggleTheme();
             });
         }
         
-        console.log('Theme toggle inicializado correctamente');
+
     }
 
     // Initialize theme toggle

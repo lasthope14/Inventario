@@ -85,35 +85,35 @@
             </div>
                 
                 <div class="header-stats">
-                    <a href="{{ route('inventarios.search', ['estado' => 'disponible']) }}" class="stat-item stat-item-clickable">
+                    <a href="{{ route('inventarios.categoria', ['estado' => 'disponible']) }}" class="stat-item stat-item-clickable">
                         <i class="fas fa-check-circle stat-icon stat-icon-success"></i>
                         <div class="stat-content">
                             <div class="stat-number">{{ $statsGlobales->disponibles ?? 0 }}</div>
                             <div class="stat-label">Disponibles</div>
                         </div>
                     </a>
-                    <a href="{{ route('inventarios.search', ['estado' => 'en uso']) }}" class="stat-item stat-item-clickable">
+                    <a href="{{ route('inventarios.categoria', ['estado' => 'en uso']) }}" class="stat-item stat-item-clickable">
                         <i class="fas fa-play-circle stat-icon stat-icon-primary"></i>
                         <div class="stat-content">
                             <div class="stat-number">{{ $statsGlobales->en_uso ?? 0 }}</div>
                             <div class="stat-label">En Uso</div>
                         </div>
                     </a>
-                    <a href="{{ route('inventarios.search', ['estado' => 'en mantenimiento']) }}" class="stat-item stat-item-clickable">
+                    <a href="{{ route('inventarios.categoria', ['estado' => 'en mantenimiento']) }}" class="stat-item stat-item-clickable">
                         <i class="fas fa-tools stat-icon stat-icon-warning"></i>
                         <div class="stat-content">
                             <div class="stat-number">{{ $statsGlobales->en_mantenimiento ?? 0 }}</div>
                             <div class="stat-label">Mantenimiento</div>
                         </div>
                     </a>
-                    <a href="{{ route('inventarios.search', ['estado' => 'dado de baja']) }}" class="stat-item stat-item-clickable">
+                    <a href="{{ route('inventarios.categoria', ['estado' => 'dado de baja']) }}" class="stat-item stat-item-clickable">
                         <i class="fas fa-ban stat-icon stat-icon-danger"></i>
                         <div class="stat-content">
                             <div class="stat-number">{{ $statsGlobales->dados_de_baja ?? 0 }}</div>
                             <div class="stat-label">Dados de Baja</div>
                         </div>
                     </a>
-                    <a href="{{ route('inventarios.search', ['estado' => 'robado']) }}" class="stat-item stat-item-clickable">
+                    <a href="{{ route('inventarios.categoria', ['estado' => 'robado']) }}" class="stat-item stat-item-clickable">
                         <i class="fas fa-user-secret stat-icon stat-icon-dark"></i>
                         <div class="stat-content">
                             <div class="stat-number">{{ $statsGlobales->robados ?? 0 }}</div>
@@ -666,8 +666,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar lazy loading para imágenes existentes
     initializeLazyLoading();
-    
-    console.log('Sistema de búsqueda instantánea y filtros en cascada inicializado');
 });
 
 // ===== FUNCIONES DE AUTOCOMPLETADO =====

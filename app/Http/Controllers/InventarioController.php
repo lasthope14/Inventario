@@ -21,7 +21,7 @@ class InventarioController extends Controller
     public function index(Request $request)
     {
         // Si hay parámetros de filtro, redirigir al método search
-        if ($request->hasAny(['search', 'categoria', 'marca', 'proveedor', 'estado', 'ubicacion', 'precio_min', 'precio_max'])) {
+        if ($request->hasAny(['search', 'categoria', 'marca', 'estado', 'ubicacion'])) {
             return $this->search($request);
         }
 
@@ -53,127 +53,7 @@ class InventarioController extends Controller
         return view('inventarios.index', compact('categorias', 'statsGlobales'));
     }
 
-    public function search(Request $request)
-    {
-        // Método de búsqueda similar a Homecenter
-        $search = $request->get('search');
-        $categoria = $request->get('categoria');
-        $marca = $request->get('marca');
-        $proveedor = $request->get('proveedor');
-        $estado = $request->get('estado');
-        $ubicacion = $request->get('ubicacion');
-        $precio_min = $request->get('precio_min');
-        $precio_max = $request->get('precio_max');
-        $sort = $request->get('sort', 'nombre');
-        $order = $request->get('order', 'asc');
-        $per_page = $request->get('per_page', 12);
 
-        // Construir query base
-        $query = Inventario::with(['categoria', 'proveedor', 'ubicaciones'])
-            ->select('inventarios.*')
-            ->distinct();
-
-        // Aplicar filtros
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nombre', 'LIKE', "%{$search}%")
-                  ->orWhere('descripcion', 'LIKE', "%{$search}%")
-                  ->orWhere('codigo', 'LIKE', "%{$search}%")
-                  ->orWhere('marca', 'LIKE', "%{$search}%")
-                  ->orWhere('modelo', 'LIKE', "%{$search}%")
-                  ->orWhereHas('categoria', function ($q) use ($search) {
-                      $q->where('nombre', 'LIKE', "%{$search}%");
-                  });
-            });
-        }
-
-        if ($categoria) {
-            $query->where('categoria_id', $categoria);
-        }
-
-        if ($marca) {
-            $query->where('marca', 'LIKE', "%{$marca}%");
-        }
-
-        if ($proveedor) {
-            $query->where('proveedor_id', $proveedor);
-        }
-
-        if ($estado) {
-            $query->whereHas('ubicaciones', function ($q) use ($estado) {
-                $q->where('estado', $estado);
-            });
-        }
-
-        if ($ubicacion) {
-            $query->whereHas('ubicaciones', function ($q) use ($ubicacion) {
-                $q->where('ubicacion_id', $ubicacion);
-            });
-        }
-
-        if ($precio_min) {
-            $query->where('valor_unitario', '>=', $precio_min);
-        }
-
-        if ($precio_max) {
-            $query->where('valor_unitario', '<=', $precio_max);
-        }
-
-        // Aplicar ordenamiento
-        switch ($sort) {
-            case 'precio':
-                $query->orderBy('valor_unitario', $order);
-                break;
-            case 'fecha':
-                $query->orderBy('created_at', $order);
-                break;
-            case 'categoria':
-                $query->join('categorias', 'inventarios.categoria_id', '=', 'categorias.id')
-                      ->orderBy('categorias.nombre', $order);
-                break;
-            default:
-                $query->orderBy('nombre', $order);
-        }
-
-        // Obtener resultados paginados
-        $inventarios = $query->paginate($per_page)->withQueryString();
-
-        // Obtener datos para filtros
-        $categorias = Categoria::orderBy('nombre')->get();
-        $proveedores = Proveedor::orderBy('nombre')->get();
-        $ubicaciones = Ubicacion::orderBy('nombre')->get();
-        $marcas = Inventario::select('marca')
-            ->whereNotNull('marca')
-            ->where('marca', '!=', '')
-            ->distinct()
-            ->orderBy('marca')
-            ->pluck('marca');
-
-        // Estadísticas de búsqueda
-        $totalResultados = $inventarios->total();
-        $categoriaActual = $categoria ? Categoria::find($categoria) : null;
-
-        return view('inventarios.search', compact(
-            'inventarios',
-            'categorias',
-            'proveedores',
-            'ubicaciones',
-            'marcas',
-            'search',
-            'categoria',
-            'categoriaActual',
-            'marca',
-            'proveedor',
-            'estado',
-            'ubicacion',
-            'precio_min',
-            'precio_max',
-            'sort',
-            'order',
-            'per_page',
-            'totalResultados'
-        ));
-    }
 
     public function showCategorias(Request $request)
     {
@@ -242,7 +122,7 @@ class InventarioController extends Controller
         // Obtener elementos por categoría para la vista integrada
         $elementosPorCategoria = collect();
         foreach ($categorias as $categoria) {
-            $elementos = Inventario::with(['ubicaciones.ubicacion', 'categoria', 'proveedor'])
+            $elementos = Inventario::with(['ubicaciones', 'categoria', 'proveedor'])
                 ->where('categoria_id', $categoria->id)
                 ->orderBy('nombre')
                 ->get();
@@ -256,14 +136,31 @@ class InventarioController extends Controller
     /**
      * Mostrar vista de catálogo para una categoría específica (estilo Homecenter)
      */
-    public function showCategoria(Request $request, $categoriaId)
+    public function showCategoria(Request $request, $categoriaId = null)
     {
-        // Obtener la categoría
-        $categoria = Categoria::findOrFail($categoriaId);
+        // Si no se proporciona categoría, mostrar todos los inventarios
+        if ($categoriaId === null) {
+            $categoria = (object) ['id' => null, 'nombre' => 'Todos los Inventarios'];
+            $query = Inventario::with(['ubicaciones', 'categoria', 'proveedor']);
+        } else {
+            // Obtener la categoría específica
+            $categoria = Categoria::findOrFail($categoriaId);
+            $query = Inventario::with(['ubicaciones', 'categoria', 'proveedor'])
+                ->where('categoria_id', $categoriaId);
+        }
         
-        // Query base para inventarios de esta categoría
-        $query = Inventario::with(['ubicaciones.ubicacion', 'categoria', 'proveedor'])
-            ->where('categoria_id', $categoriaId);
+        // Log de filtros aplicados
+        \Log::info('Filtros aplicados en showCategoria:', [
+            'categoria_id' => $categoriaId,
+            'search' => $request->get('search'),
+            'elemento' => $request->get('elemento'),
+            'marca' => $request->get('marca'),
+            'proveedor' => $request->get('proveedor'),
+            'estado' => $request->get('estado'),
+            'ubicacion' => $request->get('ubicacion')
+        ]);
+        
+        \Log::info('Request completo:', $request->all());
         
         // Aplicar filtros de búsqueda si existen
         if ($request->filled('search')) {
@@ -282,8 +179,8 @@ class InventarioController extends Controller
             $query->where('marca', $request->marca);
         }
         
-        if ($request->filled('proveedor_id')) {
-            $query->where('proveedor_id', $request->proveedor_id);
+        if ($request->filled('proveedor')) {
+            $query->where('proveedor_id', $request->proveedor);
         }
         
         if ($request->filled('estado')) {
@@ -299,83 +196,109 @@ class InventarioController extends Controller
         }
         
         if ($request->filled('elemento')) {
-            $query->where('nombre', $request->elemento);
+            $query->where('nombre', 'LIKE', '%' . $request->elemento . '%');
         }
         
-        // Filtros de rango de valores
-        if ($request->filled('valor_min')) {
-            $query->where('valor_unitario', '>=', $request->valor_min);
-        }
+        // Ordenación simple por nombre
+        $query->orderBy('nombre', 'asc');
         
-        if ($request->filled('valor_max')) {
-            $query->where('valor_unitario', '<=', $request->valor_max);
-        }
-        
-        // Ordenación
-        $sortBy = $request->get('sort', 'nombre');
-        $sortOrder = $request->get('order', 'asc');
-        
-        switch ($sortBy) {
-            case 'precio':
-                $query->orderBy('valor_unitario', $sortOrder);
-                break;
-            case 'fecha':
-                $query->orderBy('fecha_compra', $sortOrder);
-                break;
-            case 'marca':
-                $query->orderBy('marca', $sortOrder);
-                break;
-            default:
-                $query->orderBy('nombre', $sortOrder);
-        }
-        
-        // Paginación
-        $perPage = $request->get('per_page', 24); // 24 elementos por página (6x4 grid)
-        $inventarios = $query->paginate($perPage)->withQueryString();
+        // Paginación fija
+        $inventarios = $query->paginate(24)->withQueryString();
         
         // Obtener datos para filtros
-        $marcas = Inventario::where('categoria_id', $categoriaId)
-            ->whereNotNull('marca')
-            ->where('marca', '!=', '')
-            ->distinct()
-            ->pluck('marca')
-            ->sort()
-            ->values();
+        if ($categoriaId === null) {
+            // Para todos los inventarios
+            $marcas = Inventario::whereNotNull('marca')
+                ->where('marca', '!=', '')
+                ->distinct()
+                ->pluck('marca')
+                ->sort()
+                ->values();
             
-        $proveedores = Proveedor::whereHas('inventarios', function($q) use ($categoriaId) {
-            $q->where('categoria_id', $categoriaId);
-        })->orderBy('nombre')->get();
-        
-        $ubicaciones = Ubicacion::whereHas('inventarios', function($q) use ($categoriaId) {
-            $q->where('categoria_id', $categoriaId);
-        })->orderBy('nombre')->get();
-        
-        // Obtener elementos únicos de la categoría
-        $elementos = Inventario::where('categoria_id', $categoriaId)
-            ->whereNotNull('nombre')
-            ->where('nombre', '!=', '')
-            ->distinct()
-            ->pluck('nombre')
-            ->sort()
-            ->values();
-        
-        // Estadísticas de la categoría
-        $stats = DB::table('inventario_ubicaciones')
-            ->join('inventarios', 'inventario_ubicaciones.inventario_id', '=', 'inventarios.id')
-            ->where('inventarios.categoria_id', $categoriaId)
-            ->select([
-                DB::raw('COUNT(DISTINCT inventarios.id) as total_elementos'),
-                DB::raw('SUM(inventario_ubicaciones.cantidad) as total_unidades'),
-                DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "disponible" THEN inventario_ubicaciones.cantidad ELSE 0 END) as disponibles'),
-                DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "en uso" THEN inventario_ubicaciones.cantidad ELSE 0 END) as en_uso'),
-                DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "en mantenimiento" THEN inventario_ubicaciones.cantidad ELSE 0 END) as en_mantenimiento'),
-                DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "dado de baja" THEN inventario_ubicaciones.cantidad ELSE 0 END) as dados_de_baja'),
-                DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "robado" THEN inventario_ubicaciones.cantidad ELSE 0 END) as robados')
-            ])
-            ->first();
+            $proveedores = Proveedor::whereHas('inventarios')->orderBy('nombre')->get();
+            $ubicaciones = Ubicacion::whereHas('inventarios')->orderBy('nombre')->get();
+            
+            $elementos = Inventario::whereNotNull('nombre')
+                ->where('nombre', '!=', '')
+                ->distinct()
+                ->orderBy('nombre')
+                ->pluck('nombre');
+            
+            // Obtener estados disponibles de todos los inventarios
+            $estadosDisponibles = DB::table('inventario_ubicaciones')
+                ->distinct()
+                ->pluck('estado')
+                ->filter()
+                ->sort()
+                ->values();
+            
+            // Estadísticas globales
+            $stats = DB::table('inventario_ubicaciones')
+                ->join('inventarios', 'inventario_ubicaciones.inventario_id', '=', 'inventarios.id')
+                ->select([
+                    DB::raw('COUNT(DISTINCT inventarios.id) as total_elementos'),
+                    DB::raw('SUM(inventario_ubicaciones.cantidad) as total_unidades'),
+                    DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "disponible" THEN inventario_ubicaciones.cantidad ELSE 0 END) as disponibles'),
+                    DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "en uso" THEN inventario_ubicaciones.cantidad ELSE 0 END) as en_uso'),
+                    DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "en mantenimiento" THEN inventario_ubicaciones.cantidad ELSE 0 END) as en_mantenimiento'),
+                    DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "dado de baja" THEN inventario_ubicaciones.cantidad ELSE 0 END) as dados_de_baja'),
+                    DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "robado" THEN inventario_ubicaciones.cantidad ELSE 0 END) as robados')
+                ])
+                ->first();
+        } else {
+            // Para una categoría específica
+            $marcas = Inventario::where('categoria_id', $categoriaId)
+                ->whereNotNull('marca')
+                ->where('marca', '!=', '')
+                ->distinct()
+                ->pluck('marca')
+                ->sort()
+                ->values();
+                
+            $proveedores = Proveedor::whereHas('inventarios', function($q) use ($categoriaId) {
+                $q->where('categoria_id', $categoriaId);
+            })->orderBy('nombre')->get();
+            
+            $ubicaciones = Ubicacion::whereHas('inventarios', function($q) use ($categoriaId) {
+                $q->where('categoria_id', $categoriaId);
+            })->orderBy('nombre')->get();
+            
+            // Obtener elementos únicos de la categoría
+            $elementos = Inventario::where('categoria_id', $categoriaId)
+                ->whereNotNull('nombre')
+                ->where('nombre', '!=', '')
+                ->distinct()
+                ->orderBy('nombre')
+                ->pluck('nombre');
+            
+            // Obtener estados disponibles específicos para esta categoría
+            $estadosDisponibles = DB::table('inventario_ubicaciones')
+                ->join('inventarios', 'inventario_ubicaciones.inventario_id', '=', 'inventarios.id')
+                ->where('inventarios.categoria_id', $categoriaId)
+                ->distinct()
+                ->pluck('inventario_ubicaciones.estado')
+                ->filter()
+                ->sort()
+                ->values();
+            
+            // Estadísticas de la categoría
+            $stats = DB::table('inventario_ubicaciones')
+                ->join('inventarios', 'inventario_ubicaciones.inventario_id', '=', 'inventarios.id')
+                ->where('inventarios.categoria_id', $categoriaId)
+                ->select([
+                    DB::raw('COUNT(DISTINCT inventarios.id) as total_elementos'),
+                    DB::raw('SUM(inventario_ubicaciones.cantidad) as total_unidades'),
+                    DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "disponible" THEN inventario_ubicaciones.cantidad ELSE 0 END) as disponibles'),
+                    DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "en uso" THEN inventario_ubicaciones.cantidad ELSE 0 END) as en_uso'),
+                    DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "en mantenimiento" THEN inventario_ubicaciones.cantidad ELSE 0 END) as en_mantenimiento'),
+                    DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "dado de baja" THEN inventario_ubicaciones.cantidad ELSE 0 END) as dados_de_baja'),
+                    DB::raw('SUM(CASE WHEN inventario_ubicaciones.estado = "robado" THEN inventario_ubicaciones.cantidad ELSE 0 END) as robados')
+                ])
+                ->first();
+        }
         
         return view('inventarios.categoria', compact(
-            'categoria', 'inventarios', 'marcas', 'proveedores', 'ubicaciones', 'elementos', 'stats'
+            'categoria', 'inventarios', 'marcas', 'proveedores', 'ubicaciones', 'elementos', 'stats', 'estadosDisponibles'
         ));
     }
 
@@ -383,7 +306,7 @@ class InventarioController extends Controller
     {
         $searchTerm = mb_strtolower(trim($request->search));
         
-        $query = Inventario::with(['ubicaciones.ubicacion', 'categoria', 'proveedor']);
+        $query = Inventario::with(['ubicaciones', 'categoria', 'proveedor']);
         
         // Aplicar búsqueda por texto si existe
         if (!empty($searchTerm)) {
@@ -546,7 +469,7 @@ class InventarioController extends Controller
         $queryLower = strtolower($query);
         
         // Buscar en inventarios por nombre, código único, número de serie, marca y modelo
-        $inventarios = Inventario::with(['ubicaciones.ubicacion'])
+        $inventarios = Inventario::with(['ubicaciones'])
             ->where(function($q) use ($query, $queryLower) {
                 $q->where('nombre', 'LIKE', "%{$query}%")
                   ->orWhere('codigo_unico', 'LIKE', "%{$query}%")
@@ -664,11 +587,131 @@ class InventarioController extends Controller
     }
 
     /**
+     * API endpoint para autocompletado de búsqueda específico de categoría
+     */
+    public function autocompleteCategoria(Request $request, $categoriaId)
+    {
+        $query = trim($request->get('q', ''));
+        
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+        
+        $suggestions = [];
+        $queryLower = strtolower($query);
+        
+        // Buscar solo en inventarios de esta categoría específica
+        $inventarios = Inventario::with(['ubicaciones', 'categoria'])
+            ->where('categoria_id', $categoriaId)
+            ->where(function($q) use ($query, $queryLower) {
+                $q->where('nombre', 'LIKE', "%{$query}%")
+                  ->orWhere('codigo_unico', 'LIKE', "%{$query}%")
+                  ->orWhere('numero_serie', 'LIKE', "%{$query}%")
+                  ->orWhere('marca', 'LIKE', "%{$query}%")
+                  ->orWhere('modelo', 'LIKE', "%{$query}%");
+            })
+            ->orderByRaw("CASE 
+                WHEN LOWER(nombre) LIKE ? THEN 1
+                WHEN LOWER(codigo_unico) LIKE ? THEN 2
+                WHEN LOWER(numero_serie) LIKE ? THEN 3
+                ELSE 4
+            END", [
+                "%{$queryLower}%", 
+                "%{$queryLower}%", 
+                "%{$queryLower}%"
+            ])
+            ->limit(20)
+            ->get(['id', 'nombre', 'codigo_unico', 'numero_serie', 'marca', 'modelo']);
+            
+        foreach ($inventarios as $inventario) {
+            // Crear subtítulo más informativo
+            $subtitle_parts = [];
+            
+            // Manejar múltiples ubicaciones y estados
+            $ubicaciones = $inventario->ubicaciones;
+            if ($ubicaciones->count() > 0) {
+                $primeraUbicacion = $ubicaciones->first();
+                if ($primeraUbicacion && $primeraUbicacion->ubicacion) {
+                    // Agregar ubicación
+                    if ($ubicaciones->count() > 1) {
+                        $adicionales = $ubicaciones->count() - 1;
+                        $subtitle_parts[] = 'Ubicación: ' . $primeraUbicacion->ubicacion->nombre . ' y ' . $adicionales . ' más';
+                    } else {
+                        $subtitle_parts[] = 'Ubicación: ' . $primeraUbicacion->ubicacion->nombre;
+                    }
+                    
+                    // Agregar estado
+                    if ($primeraUbicacion->estado) {
+                        $subtitle_parts[] = 'Estado: ' . ucfirst($primeraUbicacion->estado);
+                    }
+                }
+            }
+            
+            if ($inventario->numero_serie) {
+                $subtitle_parts[] = 'Serie: ' . $inventario->numero_serie;
+            }
+            if ($inventario->marca) {
+                $subtitle_parts[] = $inventario->marca;
+            }
+            
+            $subtitle = implode(' • ', $subtitle_parts);
+            
+            $suggestions[] = [
+                'type' => 'inventario',
+                'id' => $inventario->id,
+                'text' => $inventario->nombre,
+                'subtitle' => $subtitle ?: 'Elemento de inventario',
+                'url' => route('inventarios.show', $inventario->id)
+            ];
+        }
+        
+        // Buscar por marcas específicas de esta categoría
+        $marcas = Inventario::where('categoria_id', $categoriaId)
+            ->where('marca', 'LIKE', "%{$query}%")
+            ->whereNotNull('marca')
+            ->where('marca', '!=', '')
+            ->distinct()
+            ->pluck('marca')
+            ->take(5);
+            
+        foreach ($marcas as $marca) {
+            $suggestions[] = [
+                'type' => 'marca',
+                'id' => $marca,
+                'text' => $marca,
+                'subtitle' => 'Marca en esta categoría',
+                'url' => route('inventarios.categoria', ['categoria' => $categoriaId, 'marca' => $marca])
+            ];
+        }
+        
+        // Buscar por estados si coincide
+        $estados = ['disponible', 'en uso', 'en mantenimiento', 'dado de baja', 'robado'];
+        $estadosCoincidentes = array_filter($estados, function($estado) use ($queryLower) {
+            return strpos(strtolower($estado), $queryLower) !== false;
+        });
+        
+        foreach ($estadosCoincidentes as $estado) {
+            $suggestions[] = [
+                'type' => 'estado',
+                'id' => $estado,
+                'text' => ucfirst($estado),
+                'subtitle' => 'Estado en esta categoría',
+                'url' => route('inventarios.categoria', ['categoria' => $categoriaId, 'estado' => $estado])
+            ];
+        }
+        
+        // Limitar el total de sugerencias
+        $suggestions = array_slice($suggestions, 0, 25);
+        
+        return response()->json($suggestions);
+    }
+
+    /**
      * Obtiene los filtros disponibles de forma dinámica
      */
     public function getFiltrosDisponibles(Request $request)
     {
-        $baseQuery = Inventario::with(['categoria', 'proveedor', 'ubicaciones.ubicacion']);
+        $baseQuery = Inventario::with(['categoria', 'proveedor', 'ubicaciones']);
         
         // Aplicar búsqueda por texto si existe para filtrar opciones
         $searchTerm = mb_strtolower(trim($request->search));
@@ -687,9 +730,7 @@ class InventarioController extends Controller
                 (clone $baseQuery)->distinct()->pluck('categoria_id')
             )->orderBy('nombre')->get(),
             
-            'proveedores' => Proveedor::whereIn('id', 
-                (clone $baseQuery)->distinct()->pluck('proveedor_id')
-            )->orderBy('nombre')->get(),
+
             
             'marcas' => (clone $baseQuery)->whereNotNull('marca')
                 ->distinct()
@@ -710,10 +751,7 @@ class InventarioController extends Controller
                 ->filter()
                 ->sort(),
             
-            'rango_valores' => [
-                'min' => (clone $baseQuery)->whereNotNull('valor_unitario')->min('valor_unitario') ?? 0,
-                'max' => (clone $baseQuery)->whereNotNull('valor_unitario')->max('valor_unitario') ?? 0
-            ],
+
             
             'rango_fechas' => [
                 'min' => (clone $baseQuery)->whereNotNull('fecha_compra')->min('fecha_compra'),
@@ -734,90 +772,7 @@ class InventarioController extends Controller
     /**
      * Búsqueda instantánea vía AJAX
      */
-    public function searchInstantaneo(Request $request)
-    {
-        $query = Inventario::with(['categoria', 'ubicaciones.ubicacion']);
-        
-        // Búsqueda por texto
-        if ($request->filled('search')) {
-            $searchTerm = mb_strtolower(trim($request->search));
-            $query->where(function($q) use ($searchTerm) {
-                $q->whereRaw('LOWER(nombre) LIKE ?', ['%' . $searchTerm . '%'])
-                  ->orWhereRaw('LOWER(numero_serie) LIKE ?', ['%' . $searchTerm . '%'])
-                  ->orWhereRaw('LOWER(codigo_unico) LIKE ?', ['%' . $searchTerm . '%'])
-                  ->orWhereRaw('LOWER(marca) LIKE ?', ['%' . $searchTerm . '%'])
-                  ->orWhereRaw('LOWER(modelo) LIKE ?', ['%' . $searchTerm . '%'])
-                  ->orWhereHas('categoria', function($q) use ($searchTerm) {
-                      $q->whereRaw('LOWER(nombre) LIKE ?', ['%' . $searchTerm . '%']);
-                  });
-            });
-        }
 
-        // Filtros en cascada
-        if ($request->filled('categoria_id')) {
-            $query->where('categoria_id', $request->categoria_id);
-        }
-
-        if ($request->filled('elemento_nombre')) {
-            $query->where('nombre', $request->elemento_nombre);
-        }
-
-        if ($request->filled('marca')) {
-            $query->where('marca', $request->marca);
-        }
-        
-        if ($request->filled('estado')) {
-            $query->whereHas('ubicaciones', function($q) use ($request) {
-                $q->where('estado', $request->estado);
-            });
-        }
-
-        if ($request->filled('ubicacion_id')) {
-            $query->whereHas('ubicaciones', function($q) use ($request) {
-                $q->where('ubicacion_id', $request->ubicacion_id);
-            });
-        }
-
-        $inventarios = $query->limit(50)->get();
-
-        // Obtener permisos del usuario actual
-        $user = auth()->user();
-
-        return response()->json([
-            'inventarios' => $inventarios->map(function($inventario) use ($user) {
-                return [
-                    'id' => $inventario->id,
-                    'nombre' => $inventario->nombre,
-                    'codigo_unico' => $inventario->codigo_unico,
-                    'marca' => $inventario->marca,
-                    'modelo' => $inventario->modelo,
-                    'numero_serie' => $inventario->numero_serie,
-                    'propietario' => $inventario->propietario,
-                    'categoria' => $inventario->categoria->nombre,
-                    'imagen_principal' => $inventario->imagen_principal ? \Storage::url($inventario->imagen_principal) : null,
-                    'ubicaciones' => $inventario->ubicaciones->map(function($ubicacion) {
-                        return [
-                            'ubicacion_nombre' => $ubicacion->ubicacion ? $ubicacion->ubicacion->nombre : 'Sin Ubicación',
-                            'cantidad' => $ubicacion->cantidad,
-                            'estado' => $ubicacion->estado
-                        ];
-                    }),
-                    // Incluir permisos para este inventario específico
-                    'permisos' => [
-                        'puede_editar' => $user->can('update', $inventario),
-                        'puede_eliminar' => $user->can('delete', $inventario),
-                        'puede_ver' => $user->can('view', $inventario)
-                    ]
-                ];
-            }),
-            'total' => $inventarios->count(),
-            // Incluir permisos generales del usuario
-            'permisos_usuario' => [
-                'puede_crear' => $user->can('create', Inventario::class),
-                'es_administrador' => $user->role->name === 'administrador'
-            ]
-        ]);
-    }
 
     /**
      * Obtener opciones en cascada para filtros
@@ -901,7 +856,7 @@ class InventarioController extends Controller
         $inventario->load(['categoria', 'proveedor', 'ubicacion', 'mantenimientos', 'documentos', 'media']);
         
         // Cargar las ubicaciones con sus cantidades
-        $ubicaciones = $inventario->ubicaciones()->with('ubicacion')->get();
+        $ubicaciones = $inventario->ubicaciones()->get();
         
         // Calcular la cantidad total
         $cantidadTotal = $ubicaciones->sum('cantidad');
@@ -1393,6 +1348,358 @@ class InventarioController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return redirect()->route('inventarios.index')->with('error', 'No se pudo eliminar el elemento de inventario. Por favor, inténtelo de nuevo.');
+        }
+    }
+
+
+    
+    /**
+     * API endpoint para obtener marcas por elemento
+     */
+    public function getMarcasPorElemento(Request $request)
+    {
+        try {
+            $elemento = $request->get('elemento');
+            $categoriaId = $request->get('categoria_id');
+            
+            if (!$elemento || !$categoriaId) {
+                return response()->json([]);
+            }
+            
+            // Obtener marcas y modelos únicos (incluyendo elementos que tengan al menos marca O modelo)
+            $inventarios = Inventario::where('categoria_id', $categoriaId)
+                ->where('nombre', $elemento)
+                ->where(function($query) {
+                    $query->where(function($q) {
+                        $q->whereNotNull('marca')
+                          ->where('marca', '!=', '')
+                          ->where('marca', '!=', 'N/A');
+                    })->orWhere(function($q) {
+                        $q->whereNotNull('modelo')
+                          ->where('modelo', '!=', '')
+                          ->where('modelo', '!=', 'N/A');
+                    });
+                })
+                ->select('marca', 'modelo')
+                ->get();
+            
+
+            
+            $marcasModelos = collect();
+            
+            foreach ($inventarios as $inventario) {
+                // Si tiene marca, agregarla
+                if (!empty($inventario->marca) && $inventario->marca !== 'N/A') {
+                    $marcasModelos->push($inventario->marca);
+                }
+                // Si tiene modelo, agregarlo
+                if (!empty($inventario->modelo) && $inventario->modelo !== 'N/A') {
+                    $marcasModelos->push($inventario->modelo);
+                }
+            }
+            
+            // Obtener valores únicos y ordenados
+            $marcasUnicas = $marcasModelos->unique()->filter()->sort()->values();
+            
+
+                
+            return response()->json($marcasUnicas);
+            
+        } catch (\Exception $e) {
+            return response()->json([], 500);
+        }
+    }
+
+    /**
+     * API endpoint para obtener proveedores por elemento y marca
+     */
+    public function getProveedoresPorElementoMarca(Request $request)
+    {
+        try {
+            $elemento = $request->get('elemento');
+            $marca = $request->get('marca');
+            $categoriaId = $request->get('categoria_id');
+            
+            if (!$categoriaId) {
+                return response()->json([]);
+            }
+            
+            $query = Inventario::where('categoria_id', $categoriaId)
+                ->whereNotNull('proveedor_id');
+            
+            if ($elemento) {
+                $query->where('nombre', $elemento);
+            }
+            
+            if ($marca) {
+                $query->where(function($q) use ($marca) {
+                    $q->where('marca', $marca)
+                      ->orWhere('modelo', $marca);
+                });
+            }
+            
+            $proveedores = $query->with('proveedor')
+                ->distinct()
+                ->get()
+                ->pluck('proveedor')
+                ->filter()
+                ->unique('id')
+                ->sortBy('nombre')
+                ->values()
+                ->map(function($proveedor) {
+                    return [
+                        'id' => $proveedor->id,
+                        'nombre' => $proveedor->nombre
+                    ];
+                });
+                
+            return response()->json($proveedores);
+            
+        } catch (\Exception $e) {
+            return response()->json([], 500);
+        }
+    }
+
+    /**
+     * API endpoint para obtener ubicaciones por elemento
+     */
+    public function getUbicacionesPorElemento(Request $request)
+    {
+        try {
+            $elemento = $request->get('elemento');
+            $categoriaId = $request->get('categoria_id');
+            
+            if (!$categoriaId) {
+                return response()->json([]);
+            }
+            
+            $query = Inventario::where('categoria_id', $categoriaId);
+            
+            if ($elemento) {
+                $query->where('nombre', $elemento);
+            }
+            
+            $ubicaciones = $query->with('ubicaciones')
+                ->get()
+                ->pluck('ubicaciones')
+                ->flatten()
+                ->unique('id')
+                ->sortBy('nombre')
+                ->values()
+                ->map(function($ubicacion) {
+                    return [
+                        'id' => $ubicacion->id,
+                        'nombre' => $ubicacion->nombre
+                    ];
+                });
+                
+            return response()->json($ubicaciones);
+            
+        } catch (\Exception $e) {
+            return response()->json([], 500);
+        }
+    }
+
+    /**
+     * API endpoint para obtener estados por elemento
+     */
+    public function getEstadosPorElemento(Request $request)
+    {
+        try {
+            $elemento = $request->get('elemento');
+            $categoriaId = $request->get('categoria_id');
+            
+            if (!$categoriaId) {
+                return response()->json([]);
+            }
+            
+            $query = Inventario::where('categoria_id', $categoriaId);
+            
+            if ($elemento) {
+                $query->where('nombre', $elemento);
+            }
+            
+            // Obtener estados únicos de la tabla pivot
+            $estados = $query->with('ubicaciones')
+                ->get()
+                ->pluck('ubicaciones')
+                ->flatten()
+                ->pluck('pivot.estado')
+                ->filter()
+                ->unique()
+                ->sort()
+                ->values()
+                ->map(function($estado) {
+                    $estadoLabels = [
+                        'disponible' => 'Disponible',
+                        'en uso' => 'En Uso',
+                        'en mantenimiento' => 'En Mantenimiento',
+                        'dado de baja' => 'Dado de Baja',
+                        'robado' => 'Robado'
+                    ];
+                    
+                    return [
+                        'value' => $estado,
+                        'label' => $estadoLabels[$estado] ?? ucfirst($estado)
+                    ];
+                });
+                
+            return response()->json($estados);
+            
+        } catch (\Exception $e) {
+            return response()->json([], 500);
+        }
+    }
+
+    /**
+     * API unificada para obtener todos los filtros de una vez
+     * Reduce de 4 peticiones HTTP a 1 sola
+     */
+    public function getFiltrosUnificados(Request $request)
+    {
+        try {
+            $elemento = $request->get('elemento');
+            $marca = $request->get('marca');
+            $categoriaId = $request->get('categoria_id');
+            
+            if (!$categoriaId) {
+                return response()->json([
+                    'marcas' => [],
+                    'proveedores' => [],
+                    'ubicaciones' => [],
+                    'estados' => []
+                ]);
+            }
+            
+            $resultado = [];
+            
+            // 1. Obtener marcas si hay elemento seleccionado
+            if ($elemento) {
+                $inventarios = Inventario::where('categoria_id', $categoriaId)
+                    ->where('nombre', $elemento)
+                    ->where(function($query) {
+                        $query->where(function($q) {
+                            $q->whereNotNull('marca')
+                              ->where('marca', '!=', '')
+                              ->where('marca', '!=', 'N/A');
+                        })->orWhere(function($q) {
+                            $q->whereNotNull('modelo')
+                              ->where('modelo', '!=', '')
+                              ->where('modelo', '!=', 'N/A');
+                        });
+                    })
+                    ->select('marca', 'modelo')
+                    ->distinct()
+                    ->get();
+                
+                $marcasModelos = collect();
+                foreach ($inventarios as $inventario) {
+                    if (!empty($inventario->marca) && $inventario->marca !== 'N/A') {
+                        $marcasModelos->push($inventario->marca);
+                    }
+                    if (!empty($inventario->modelo) && $inventario->modelo !== 'N/A' && $inventario->modelo !== $inventario->marca) {
+                        $marcasModelos->push($inventario->modelo);
+                    }
+                }
+                
+                $resultado['marcas'] = $marcasModelos->unique()->sort()->values();
+            } else {
+                $resultado['marcas'] = [];
+            }
+            
+            // 2. Obtener proveedores
+            $queryProveedores = Inventario::where('categoria_id', $categoriaId)
+                ->whereNotNull('proveedor_id');
+            
+            if ($elemento) {
+                $queryProveedores->where('nombre', $elemento);
+            }
+            
+            if ($marca) {
+                $queryProveedores->where(function($q) use ($marca) {
+                    $q->where('marca', $marca)
+                      ->orWhere('modelo', $marca);
+                });
+            }
+            
+            $resultado['proveedores'] = $queryProveedores->with('proveedor')
+                ->distinct()
+                ->get()
+                ->pluck('proveedor')
+                ->filter()
+                ->unique('id')
+                ->sortBy('nombre')
+                ->values()
+                ->map(function($proveedor) {
+                    return [
+                        'id' => $proveedor->id,
+                        'nombre' => $proveedor->nombre
+                    ];
+                });
+            
+            // 3. Obtener ubicaciones
+            $queryUbicaciones = Inventario::where('categoria_id', $categoriaId);
+            
+            if ($elemento) {
+                $queryUbicaciones->where('nombre', $elemento);
+            }
+            
+            $resultado['ubicaciones'] = $queryUbicaciones->with('ubicaciones')
+                ->get()
+                ->pluck('ubicaciones')
+                ->flatten()
+                ->unique('id')
+                ->sortBy('nombre')
+                ->values()
+                ->map(function($ubicacion) {
+                    return [
+                        'id' => $ubicacion->id,
+                        'nombre' => $ubicacion->nombre
+                    ];
+                });
+            
+            // 4. Obtener estados
+            $queryEstados = Inventario::where('categoria_id', $categoriaId);
+            
+            if ($elemento) {
+                $queryEstados->where('nombre', $elemento);
+            }
+            
+            $estadosUnicos = $queryEstados->with('ubicaciones')
+                ->get()
+                ->pluck('ubicaciones')
+                ->flatten()
+                ->pluck('pivot.estado')
+                ->filter()
+                ->unique()
+                ->sort()
+                ->values();
+            
+            $estadoLabels = [
+                'disponible' => 'Disponible',
+                'en uso' => 'En Uso',
+                'en mantenimiento' => 'En Mantenimiento',
+                'dado de baja' => 'Dado de Baja',
+                'robado' => 'Robado'
+            ];
+            
+            $resultado['estados'] = $estadosUnicos->map(function($estado) use ($estadoLabels) {
+                return [
+                    'value' => $estado,
+                    'label' => $estadoLabels[$estado] ?? ucfirst($estado)
+                ];
+            });
+            
+            return response()->json($resultado);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en getFiltrosUnificados: ' . $e->getMessage());
+            return response()->json([
+                'marcas' => [],
+                'proveedores' => [],
+                'ubicaciones' => [],
+                'estados' => []
+            ], 500);
         }
     }
 }
