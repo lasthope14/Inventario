@@ -485,7 +485,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        fetch(`{{ route('inventarios.categoria.autocomplete', $categoria->id) }}?q=${encodeURIComponent(query)}`)
+        @if(isset($categoria) && $categoria->id)
+            fetch(`{{ route('inventarios.categoria.autocomplete', $categoria->id) }}?q=${encodeURIComponent(query)}`)
+        @else
+            fetch(`{{ route('inventarios.autocomplete') }}?q=${encodeURIComponent(query)}`)
+        @endif
             .then(response => response.json())
             .then(data => {
                 displaySuggestions(data);
@@ -2448,84 +2452,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let searchTimeout;
     
-    // ===== FUNCIONES DE AUTOCOMPLETADO =====
-    function fetchAutocomplete(query) {
-        if (query.length < 2) {
-            hideSuggestions();
-            return;
-        }
-        
-        fetch(`{{ route('inventarios.categoria.autocomplete', $categoria->id) }}?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                displaySuggestions(data);
-            })
-            .catch(error => {
-                console.error('Error fetching autocomplete:', error);
-                hideSuggestions();
-            });
-    }
-    
-    function displaySuggestions(suggestions) {
-        const searchSuggestions = document.getElementById('searchSuggestions');
-        
-        if (!suggestions || suggestions.length === 0) {
-            hideSuggestions();
-            return;
-        }
-        
-        const suggestionsHTML = suggestions.map(suggestion => `
-            <div class="suggestion-item" data-url="${suggestion.url}">
-                <div class="suggestion-icon">
-                    <i class="${getSuggestionIcon(suggestion.type)}"></i>
-                </div>
-                <div class="suggestion-content">
-                    <div class="suggestion-text">${suggestion.text}</div>
-                    <div class="suggestion-subtitle">${suggestion.subtitle}</div>
-                </div>
-                <div class="suggestion-type">${getSuggestionTypeText(suggestion.type)}</div>
-            </div>
-        `).join('');
-        
-        searchSuggestions.innerHTML = suggestionsHTML;
-        searchSuggestions.style.display = 'block';
-        
-        // Agregar event listeners a las sugerencias
-        document.querySelectorAll('.suggestion-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const url = this.getAttribute('data-url');
-                if (url) {
-                    window.location.href = url;
-                }
-            });
-        });
-    }
-    
-    function hideSuggestions() {
-        const searchSuggestions = document.getElementById('searchSuggestions');
-        if (searchSuggestions) {
-            searchSuggestions.style.display = 'none';
-            searchSuggestions.innerHTML = '';
-        }
-    }
-    
-    function getSuggestionIcon(type) {
-        const icons = {
-            'inventario': 'fas fa-cube',
-            'marca': 'fas fa-tag',
-            'estado': 'fas fa-info-circle'
-        };
-        return icons[type] || 'fas fa-search';
-    }
-    
-    function getSuggestionTypeText(type) {
-        const types = {
-            'inventario': 'Elemento',
-            'marca': 'Marca',
-            'estado': 'Estado'
-        };
-        return types[type] || 'Resultado';
-    }
+
     
     // ===== EVENT LISTENERS PARA AUTOCOMPLETADO =====
     if (searchInput) {
@@ -2853,6 +2780,18 @@ document.addEventListener('DOMContentLoaded', function() {
     restaurarFiltros();
     
     // El acordeón ya no necesita JavaScript para iconos
+    
+    // Guardar URL actual cuando se hace clic en enlaces 'Ver' o 'Editar'
+    document.querySelectorAll('a[href*="inventarios/"]').forEach(link => {
+        if (link.textContent.includes('Ver') || link.querySelector('.fa-eye') || 
+            link.textContent.includes('Editar') || link.querySelector('.fa-edit')) {
+            link.addEventListener('click', function() {
+                // Guardar la URL actual completa con todos los filtros
+                sessionStorage.setItem('categoria_return_url', window.location.href);
+                sessionStorage.setItem('from_categoria_view', 'true');
+            });
+        }
+    });
 });
 </script>
 @endpush

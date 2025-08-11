@@ -1799,17 +1799,30 @@ document.addEventListener('DOMContentLoaded', function() {
         volverBtn.addEventListener('click', function(e) {
             e.preventDefault();
             
+            // Verificar si venimos de la vista categoria
+            if (sessionStorage.getItem('from_categoria_view') === 'true') {
+                const categoriaReturnUrl = sessionStorage.getItem('categoria_return_url');
+                if (categoriaReturnUrl) {
+                    // Ir a la URL de categoria con filtros
+                    window.location.href = categoriaReturnUrl;
+                } else {
+                    // Fallback: usar historial del navegador
+                    history.back();
+                }
+                // Limpiar las marcas de categoria
+                sessionStorage.removeItem('from_categoria_view');
+                sessionStorage.removeItem('categoria_return_url');
+            }
             // Verificar si venimos de la lista de inventarios
-            if (sessionStorage.getItem('from_inventarios_list') === 'true') {
+            else if (sessionStorage.getItem('from_inventarios_list') === 'true') {
                 // Usar el historial del navegador para volver (mantiene el estado)
                 history.back();
+                // Limpiar la marca
+                sessionStorage.removeItem('from_inventarios_list');
             } else {
-                // Si no venimos de la lista, ir directamente
+                // Si no venimos de ninguna vista específica, ir directamente
                 window.location.href = '/inventarios';
             }
-            
-            // Limpiar la marca
-            sessionStorage.removeItem('from_inventarios_list');
         });
     }
 });

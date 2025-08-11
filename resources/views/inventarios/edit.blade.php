@@ -23,10 +23,10 @@
                                 </div>
                             </div>
                             <div class="d-flex gap-2">
-                                <a href="{{ route('inventarios.show', $inventario->id) }}" class="btn" style="background-color: #6c757d; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 500;">
+                                <a href="{{ route('inventarios.show', $inventario->id) }}" id="verShowBtn" class="btn" style="background-color: #6c757d; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 500;">
                                     <i class="fas fa-eye me-1"></i>Ver
                                 </a>
-                                <button type="button" onclick="history.back()" class="btn" style="background-color: #495057; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 500;">
+                                <button type="button" id="volverEditBtn" class="btn" style="background-color: #495057; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 500;">
                                     <i class="fas fa-arrow-left me-1"></i>Volver
                                 </button>
                             </div>
@@ -699,6 +699,42 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Calcular cantidad total inicial
     calcularCantidadTotal();
+    
+    // Manejar botón Volver
+    const volverEditBtn = document.getElementById('volverEditBtn');
+    if (volverEditBtn) {
+        volverEditBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Verificar si venimos de la vista categoria
+            if (sessionStorage.getItem('from_categoria_view') === 'true') {
+                const categoriaReturnUrl = sessionStorage.getItem('categoria_return_url');
+                if (categoriaReturnUrl) {
+                    // Ir a la URL de categoria con filtros
+                    window.location.href = categoriaReturnUrl;
+                } else {
+                    // Fallback: usar historial del navegador
+                    history.back();
+                }
+                // Limpiar las marcas de categoria
+                sessionStorage.removeItem('from_categoria_view');
+                sessionStorage.removeItem('categoria_return_url');
+            } else {
+                // Usar historial del navegador por defecto
+                history.back();
+            }
+        });
+     }
+     
+     // Manejar enlace Ver para limpiar sessionStorage de categoria
+     const verShowBtn = document.getElementById('verShowBtn');
+     if (verShowBtn) {
+         verShowBtn.addEventListener('click', function() {
+             // Limpiar sessionStorage de categoria para evitar navegación incorrecta
+             sessionStorage.removeItem('from_categoria_view');
+             sessionStorage.removeItem('categoria_return_url');
+         });
+     }
 });
 </script>
 @endsection
