@@ -274,11 +274,11 @@
                 @foreach($inventarios as $inventario)
                     <div class="element-card-compact">
                         <div class="element-image-compact">
-                            @if($inventario->imagen)
-                                <img src="{{ asset('storage/' . $inventario->imagen) }}" 
+                            @if($inventario->imagen_principal)
+                                <img src="{{ asset('storage/' . $inventario->imagen_principal) }}" 
                                      alt="{{ $inventario->nombre }}" 
                                      class="lazy-load" 
-                                     data-src="{{ asset('storage/' . $inventario->imagen) }}">
+                                     data-src="{{ asset('storage/' . $inventario->imagen_principal) }}">
                             @else
                                 <div class="image-placeholder">
                                     <i class="fas fa-image"></i>
@@ -372,8 +372,8 @@
                         @foreach($inventarios as $inventario)
                             <tr>
                                 <td>
-                                    @if($inventario->imagen)
-                                        <img src="{{ asset('storage/' . $inventario->imagen) }}" 
+                                    @if($inventario->imagen_principal)
+                                        <img src="{{ asset('storage/' . $inventario->imagen_principal) }}" 
                                              alt="{{ $inventario->nombre }}" 
                                              style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
                                     @else
