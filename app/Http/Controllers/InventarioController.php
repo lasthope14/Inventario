@@ -564,7 +564,7 @@ class InventarioController extends Controller
                 "%{$queryLower}%", 
                 "%{$queryLower}%"
             ])
-            ->limit(8)
+            ->limit(20)
             ->get(['id', 'nombre', 'codigo_unico', 'numero_serie', 'marca', 'modelo']);
             
         foreach ($inventarios as $inventario) {
@@ -658,7 +658,7 @@ class InventarioController extends Controller
         }
         
         // Limitar el total de sugerencias
-        $suggestions = array_slice($suggestions, 0, 12);
+        $suggestions = array_slice($suggestions, 0, 25);
         
         return response()->json($suggestions);
     }
