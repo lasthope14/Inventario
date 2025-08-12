@@ -3,86 +3,115 @@
 @section('title', 'Detalle del Equipo - ' . $inventario->nombre)
 
 @section('content')
-<div class="container-fluid py-4">
+<div class="container-fluid py-2">
+
+    
     <!-- Contenedor Bootstrap principal -->
     <div class="container-fluid px-0">
-        
         <!-- Header Section -->
         <div class="row mb-4 mx-0">
             <div class="col-12 px-0">
-                <div class="card">
-                    <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #007bff; border-radius: 50%; color: white;">
-                                    <i class="fas fa-box" style="font-size: 1.2rem;"></i>
+                <div class="card shadow-sm">
+                    <div class="card-header position-relative" style="background: #ffffff; padding: 1.5rem; padding-bottom: 100px;">
+                        
+                        <!-- Botones de Acción y QR Code -->
+                        <div class="position-absolute" style="top: 10px; right: 15px; z-index: 10;">
+                            <div class="d-flex flex-column align-items-center gap-2">
+                                <!-- Botones -->
+                                <div class="d-flex gap-2">
+                                    @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'almacenista')
+                                        <a href="{{ route('inventarios.edit', $inventario->id) }}" class="quick-action-btn text-decoration-none" style="border-radius: 10px; padding: 8px 16px; font-weight: 500; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057; transition: all 0.3s ease; font-size: 0.9rem;">
+                                            <i class="fas fa-edit me-2" style="color: #007bff;"></i>Editar
+                                        </a>
+                                    @endif
+                                    <a href="{{ route('inventarios.index') }}" id="volverInventarioBtn" class="quick-action-btn text-decoration-none" style="border-radius: 10px; padding: 8px 16px; font-weight: 500; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057; transition: all 0.3s ease; font-size: 0.9rem;">
+                                        <i class="fas fa-arrow-left me-2" style="color: #6c757d;"></i>Volver
+                                    </a>
                                 </div>
+                                <!-- QR Code -->
                                 <div>
-                                    <h2 class="mb-1" style="color: #212529; font-size: 1.5rem;">{{ $inventario->nombre }}</h2>
-                                    <p class="mb-0" style="color: #212529; font-size: 0.9rem;">Información detallada del equipo</p>
+                                    @if($inventario->qr_code)
+                                        <img src="{{ asset('storage/' . $inventario->qr_code) }}" alt="QR Personalizado" style="width: 120px; height: 120px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                                    @else
+                                        @php
+                                            $nasUrl = 'http://nas.empresa.local/documentos/inventario/' . $inventario->id;
+                                        @endphp
+                                        <div id="qrcode-header-{{ $inventario->id }}" style="width: 120px; height: 120px;"></div>
+                                    @endif
                                 </div>
-                            </div>
-                            <div>
-                                @php
-                                    // Obtener todos los estados únicos de las ubicaciones
-                                    $estadosUnicos = $ubicaciones ? $ubicaciones->pluck('estado')->unique()->values() : collect(['disponible']);
-                                    
-                                    // Función para obtener configuración de estado
-                                    function getStatusConfig($estado) {
-                                        return match($estado) {
-                                            'disponible' => ['bg' => '#e8f5e8', 'color' => '#2d5a2d', 'icon' => 'fas fa-check-circle', 'iconColor' => '#28a745', 'text' => 'Disponible'],
-                                            'en uso' => ['bg' => '#e3f2fd', 'color' => '#1565c0', 'icon' => 'fas fa-user-clock', 'iconColor' => '#1976d2', 'text' => 'En Uso'],
-                                            'en mantenimiento' => ['bg' => '#fff8e1', 'color' => '#e65100', 'icon' => 'fas fa-tools', 'iconColor' => '#ff9800', 'text' => 'Mantenimiento'],
-                                            'dado de baja' => ['bg' => '#ffebee', 'color' => '#c62828', 'icon' => 'fas fa-times-circle', 'iconColor' => '#d32f2f', 'text' => 'Dado de Baja'],
-                                            'robado' => ['bg' => '#fafafa', 'color' => '#424242', 'icon' => 'fas fa-exclamation-triangle', 'iconColor' => '#757575', 'text' => 'Robado'],
-                                            default => ['bg' => '#f5f5f5', 'color' => '#424242', 'icon' => 'fas fa-question-circle', 'iconColor' => '#757575', 'text' => ucfirst(str_replace('_', ' ', $estado))]
-                                        };
-                                    }
-                                @endphp
-                                
-                                @if($estadosUnicos->count() == 1)
-                                    @php $statusConfig = getStatusConfig($estadosUnicos->first()); @endphp
-                                    <span class="badge px-3 py-2 d-flex align-items-center status-badge" style="background-color: {{ $statusConfig['bg'] }}; color: {{ $statusConfig['color'] }}; font-size: 0.9rem; gap: 0.5rem; border: 1px solid {{ $statusConfig['iconColor'] }}; font-weight: 600;">
-                                        <i class="{{ $statusConfig['icon'] }}" style="font-size: 1rem; color: {{ $statusConfig['iconColor'] }};"></i>
-                                        {{ $statusConfig['text'] }}
-                                    </span>
-                                @else
-                                    <!-- Múltiples estados -->
-                                    <div class="d-flex flex-wrap gap-1">
-                                        @foreach($estadosUnicos as $estado)
-                                            @php $statusConfig = getStatusConfig($estado); @endphp
-                                            <span class="badge px-2 py-1 d-flex align-items-center" style="background-color: {{ $statusConfig['bg'] }}; color: {{ $statusConfig['color'] }}; font-size: 0.75rem; gap: 0.3rem; border: 1px solid {{ $statusConfig['iconColor'] }}; font-weight: 600;">
-                                                <i class="{{ $statusConfig['icon'] }}" style="font-size: 0.8rem; color: {{ $statusConfig['iconColor'] }};"></i>
-                                                {{ $statusConfig['text'] }}
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                @endif
                             </div>
                         </div>
+                        
+                        <!-- Fila Principal del Header -->
+                        <div class="row align-items-center g-4">
+                            <!-- Columna Izquierda: Información Principal -->
+                            <div class="col-lg-6 col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(0,123,255,0.3);">
+                                        <i class="fas fa-box" style="font-size: 1.4rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h1 class="mb-1" style="color: #212529; font-size: 1.75rem; font-weight: 700; line-height: 1.2;">{{ $inventario->nombre }}</h1>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-light text-dark px-2 py-1" style="font-size: 0.75rem; border: 1px solid #dee2e6;">
+                                                <i class="fas fa-layer-group me-1"></i>{{ $inventario->categoria->nombre ?? 'Sin categoría' }}
+                                            </span>
+                                            <span class="text-muted" style="font-size: 0.85rem;">ID: {{ $inventario->id }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Columna Derecha: Estados -->
+                            <div class="col-lg-6 col-md-6">
+                                <div class="text-end">
+                                    @php
+                                        // Obtener todos los estados únicos de las ubicaciones
+                                        $estadosUnicos = $ubicaciones ? $ubicaciones->pluck('estado')->filter()->unique()->values() : collect(['disponible']);
+                                        
+                                        // Función para obtener configuración de estado
+                                        function getStatusConfig($estado) {
+                                            return match($estado) {
+                                                'disponible' => ['bg' => '#d4edda', 'color' => '#155724', 'icon' => 'fas fa-check-circle', 'iconColor' => '#28a745', 'text' => 'Disponible'],
+                                                'en uso' => ['bg' => '#cce7ff', 'color' => '#004085', 'icon' => 'fas fa-user-clock', 'iconColor' => '#007bff', 'text' => 'En Uso'],
+                                                'en mantenimiento' => ['bg' => '#fff3cd', 'color' => '#856404', 'icon' => 'fas fa-tools', 'iconColor' => '#ffc107', 'text' => 'Mantenimiento'],
+                                                'dado de baja' => ['bg' => '#f8d7da', 'color' => '#721c24', 'icon' => 'fas fa-times-circle', 'iconColor' => '#dc3545', 'text' => 'Dado de Baja'],
+                                                'robado' => ['bg' => '#e2e3e5', 'color' => '#383d41', 'icon' => 'fas fa-exclamation-triangle', 'iconColor' => '#6c757d', 'text' => 'Robado'],
+                                                default => ['bg' => '#f8f9fa', 'color' => '#495057', 'icon' => 'fas fa-question-circle', 'iconColor' => '#6c757d', 'text' => ucfirst(str_replace('_', ' ', $estado))]
+                                            };
+                                        }
+                                    @endphp
+                                    
+                                    @if($estadosUnicos->count() == 1)
+                                        @php $statusConfig = getStatusConfig($estadosUnicos->first()); @endphp
+                                        <div class="d-inline-flex align-items-center px-3 py-2 rounded-pill status-badge" style="background-color: {{ $statusConfig['bg'] }}; color: {{ $statusConfig['color'] }}; font-size: 0.9rem; gap: 0.5rem; border: 2px solid {{ $statusConfig['iconColor'] }}; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                            <i class="{{ $statusConfig['icon'] }}" style="font-size: 1rem; color: {{ $statusConfig['iconColor'] }};"></i>
+                                            {{ $statusConfig['text'] }}
+                                        </div>
+                                    @else
+                                        <!-- Múltiples estados -->
+                                        <div class="d-flex flex-wrap justify-content-end gap-1">
+                                            @foreach($estadosUnicos as $estado)
+                                                @php $statusConfig = getStatusConfig($estado); @endphp
+                                                <span class="badge d-flex align-items-center px-2 py-1 rounded-pill" style="background-color: {{ $statusConfig['bg'] }}; color: {{ $statusConfig['color'] }}; font-size: 0.75rem; gap: 0.3rem; border: 1px solid {{ $statusConfig['iconColor'] }}; font-weight: 600;">
+                                                    <i class="{{ $statusConfig['icon'] }}" style="font-size: 0.8rem; color: {{ $statusConfig['iconColor'] }};"></i>
+                                                    {{ $statusConfig['text'] }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                                
+
+                            </div>
+
+                        </div>
+                        
+
                     </div>
                     
-                    <!-- Botones de Acción - Ubicados en la parte superior para mejor UX -->
-                    <div class="card-body p-3" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
-                        <div class="d-flex justify-content-center">
-                            <div class="d-flex gap-3 flex-wrap justify-content-center">
-                                @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'almacenista')
-                                    <a href="{{ route('movimientos.create', ['inventario_id' => $inventario->id]) }}" class="btn btn-primary" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
-                                        <i class="fas fa-exchange-alt me-2"></i>Movimiento
-                                    </a>
-                                    <a href="{{ route('mantenimientos.create', ['inventario_id' => $inventario->id]) }}" class="btn btn-warning" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
-                                        <i class="fas fa-tools me-2"></i>Mantenimiento
-                                    </a>
-                                @endif
-                                <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn btn-outline-secondary" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
-                                    <i class="fas fa-edit me-2"></i>Editar
-                                </a>
-                                <a href="{{ route('inventarios.index') }}" class="btn btn-outline-primary" id="volverInventarioBtn" style="border-radius: 8px; min-width: 140px; padding: 10px 16px;">
-                                    <i class="fas fa-arrow-left me-2"></i>Volver a Inventario
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Línea divisora debajo del QR -->
+                    <div style="border-bottom: 1px solid #dee2e6;"></div>
                     
                     <div class="card-body p-4">
                         <style>
@@ -227,13 +256,13 @@
                                 color: #ffffff;
                             }
                         </style>
-                        <div class="row">
-                            <!-- Information Section (50%) -->
-                            <div class="col-lg-6 col-md-6">
+                        <div class="row g-4">
+                            <!-- Information Section (Left Column) -->
+                            <div class="col-xl-8 col-lg-7">
                                 <!-- Equipment Details -->
                                 <div class="row g-3 mb-4">
-                                    <!-- Primera fila: Categoría, Código y Valor con el mismo tamaño -->
-                                    <div class="col-md-4">
+                                    <!-- Primera fila: Categoría, Marca y Serial -->
+                                    <div class="col-lg-4 col-md-6">
                                         <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; height: 100%;">
                                             <div class="me-3">
                                                 <i class="fas fa-layer-group" style="font-size: 1.5rem; color: #28a745;"></i>
@@ -244,55 +273,55 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-lg-4 col-md-6">
                                         <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; height: 100%;">
                                             <div class="me-3">
-                                                <i class="fas fa-barcode" style="font-size: 1.5rem; color: #007bff;"></i>
+                                                <i class="fas fa-tag" style="font-size: 1.5rem; color: #6f42c1;"></i>
                                             </div>
                                             <div>
-                                                <small style="color: #6c757d; font-size: 0.8rem;">Código</small>
-                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $inventario->codigo_unico ?? $inventario->codigo }}</div>
+                                                <small style="color: #6c757d; font-size: 0.8rem;">Marca</small>
+                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $inventario->marca ?? 'No especificada' }}</div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-lg-4 col-md-12">
                                         <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; height: 100%;">
                                             <div class="me-3">
-                                                <i class="fas fa-dollar-sign" style="font-size: 1.5rem; color: #ffc107;"></i>
+                                                <i class="fas fa-hashtag" style="font-size: 1.5rem; color: #fd7e14;"></i>
                                             </div>
                                             <div>
-                                                <small style="color: #6c757d; font-size: 0.8rem;">Valor</small>
-                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">${{ number_format($inventario->valor_unitario * $cantidadTotal, 2) }}</div>
+                                                <small style="color: #6c757d; font-size: 0.8rem;">Serial</small>
+                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $inventario->numero_serie ?? 'No especificado' }}</div>
                                             </div>
                                         </div>
                                     </div>
                                     
                                     <!-- Segunda fila: Ubicaciones ocupando todo el ancho -->
                                     <div class="col-12">
-                                        <div class="p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="me-3">
-                                                    <i class="fas fa-map-marker-alt" style="font-size: 1.5rem; color: #17a2b8;"></i>
+                                        <div class="p-4 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
+                                            <div class="d-flex align-items-center mb-4">
+                                                <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #17a2b8; border-radius: 50%; color: white;">
+                                                    <i class="fas fa-map-marker-alt" style="font-size: 1.2rem;"></i>
                                                 </div>
                                                 <div>
-                                                    <small style="color: #6c757d; font-size: 0.8rem;">Distribución por Ubicaciones</small>
-                                                    <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $ubicaciones ? $ubicaciones->count() : 0 }} ubicación(es) asignada(s)</div>
+                                                    <h5 style="color: #212529; font-size: 1.1rem; font-weight: 600; margin: 0;">Distribución por Ubicaciones</h5>
+                                                    <div class="info-value" style="color: #6c757d; font-size: 0.9rem; font-weight: 500; margin-top: 2px;">{{ $ubicaciones ? $ubicaciones->count() : 0 }} ubicación(es) asignada(s)</div>
                                                 </div>
                                             </div>
                                             @if($ubicaciones && $ubicaciones->count() > 0)
-                                                <div class="row g-2">
+                                                <div class="row g-3">
                                                     @foreach($ubicaciones as $ubicacion)
-                                                        <div class="col-md-6 col-lg-4">
-                                                            <div class="d-flex align-items-center justify-content-between p-2" style="background-color: white; border: 1px solid #e9ecef; border-radius: 6px; min-height: 60px;">
-                                                    <div class="flex-grow-1">
-                                                        <div style="font-weight: 600; color: #212529; font-size: 0.85rem; line-height: 1.2; word-break: break-word;">
-                                                            {{ $ubicacion->nombre }}
+                                                        <div class="col-12 col-sm-6 col-lg-4">
+                                                            <div class="d-flex align-items-center justify-content-between p-3" style="background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; min-height: 70px; transition: all 0.2s ease; overflow: hidden;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                                                    <div class="flex-grow-1" style="min-width: 0; overflow: hidden;">
+                                                        <div style="font-weight: 600; color: #212529; font-size: 0.95rem; line-height: 1.3; word-break: break-word; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis;">
+                                                            <i class="fas fa-building me-2" style="color: #17a2b8; font-size: 0.85rem;"></i>{{ $ubicacion->nombre }}
                                                         </div>
-                                                        <div style="color: #6c757d; font-size: 0.75rem; line-height: 1.1;">
-                                                            Cantidad: {{ $ubicacion->pivot->cantidad }}
+                                                        <div style="color: #6c757d; font-size: 0.8rem; line-height: 1.2; font-weight: 500; overflow: hidden; text-overflow: ellipsis;">
+                                                            <i class="fas fa-cubes me-1" style="color: #28a745; font-size: 0.75rem;"></i>Cantidad: <strong>{{ $ubicacion->pivot->cantidad }}</strong>
                                                         </div>
                                                     </div>
-                                                                <div class="ms-2 flex-shrink-0">
+                                                                <div class="ms-2 flex-shrink-0" style="max-width: 120px;">
                                                                     @php
                                                                         $estadoConfig = match($ubicacion->pivot->estado) {
                                                                             'disponible' => ['bg' => '#28a745', 'text' => 'Disponible'],
@@ -303,7 +332,7 @@
                                                                             default => ['bg' => '#6c757d', 'text' => ucfirst(str_replace('_', ' ', $ubicacion->pivot->estado))]
                                                                         };
                                                                     @endphp
-                                                                    <span class="badge" style="background-color: {{ $estadoConfig['bg'] }}; color: white; font-size: 0.65rem; padding: 3px 6px; white-space: nowrap;">
+                                                                    <span class="badge" style="background-color: {{ $estadoConfig['bg'] }}; color: white; font-size: 0.85rem; padding: 6px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: inline-block; font-weight: 600; border-radius: 6px;">
                                                                         {{ $estadoConfig['text'] }}
                                                                     </span>
                                                                 </div>
@@ -312,10 +341,11 @@
                                                     @endforeach
                                                 </div>
                                             @else
-                                                <div class="text-center py-3">
-                                                    <div class="text-muted" style="font-size: 0.9rem;">
-                                                        <i class="fas fa-map-marker-alt me-2" style="opacity: 0.5;"></i>
-                                                        Sin ubicaciones asignadas
+                                                <div class="text-center py-4">
+                                                    <div class="p-4" style="background-color: #f8f9fa; border: 1px dashed #dee2e6; border-radius: 8px;">
+                                                        <i class="fas fa-map-marker-alt mb-3" style="font-size: 2rem; color: #6c757d; opacity: 0.6;"></i>
+                                                        <h6 style="color: #6c757d; font-size: 0.95rem; font-weight: 600; margin: 0;">Sin ubicaciones asignadas</h6>
+                                                        <p style="color: #adb5bd; font-size: 0.8rem; margin: 8px 0 0 0;">Este elemento aún no ha sido asignado a ninguna ubicación</p>
                                                     </div>
                                                 </div>
                                             @endif
@@ -323,69 +353,58 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Additional Information -->
-                                @if($inventario->marca || $inventario->numero_serie)
+                                <!-- Tercera fila: Código y Valor -->
                                 <div class="row g-3 mb-4">
-                                    @if($inventario->marca)
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
-                                            <div class="me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; background-color: #6f42c1; border-radius: 50%; color: white;">
-                                                <i class="fas fa-tag" style="font-size: 0.9rem;"></i>
+                                    <div class="col-lg-6 col-md-6">
+                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; height: 100%;">
+                                            <div class="me-3">
+                                                <i class="fas fa-barcode" style="font-size: 1.5rem; color: #007bff;"></i>
                                             </div>
                                             <div>
-                                                <small style="color: #6c757d; font-size: 0.8rem;">Marca</small>
-                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $inventario->marca }}</div>
+                                                <small style="color: #6c757d; font-size: 0.8rem;">Código</small>
+                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $inventario->codigo_unico ?? $inventario->codigo }}</div>
                                             </div>
                                         </div>
                                     </div>
-                                    @endif
-                                    @if($inventario->numero_serie)
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
-                                            <div class="me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; background-color: #fd7e14; border-radius: 50%; color: white;">
-                                                <i class="fas fa-hashtag" style="font-size: 0.9rem;"></i>
+                                    <div class="col-lg-6 col-md-6">
+                                        <div class="d-flex align-items-center p-3 info-card" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; height: 100%;">
+                                            <div class="me-3">
+                                                <i class="fas fa-dollar-sign" style="font-size: 1.5rem; color: #ffc107;"></i>
                                             </div>
                                             <div>
-                                                <small style="color: #6c757d; font-size: 0.8rem;">Serie</small>
-                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">{{ $inventario->numero_serie }}</div>
+                                                <small style="color: #6c757d; font-size: 0.8rem;">Valor</small>
+                                                <div class="info-value" style="color: #212529; font-size: 0.9rem; font-weight: 600;">${{ number_format($inventario->valor_unitario ?? 0, 2) }}</div>
                                             </div>
                                         </div>
                                     </div>
-                                    @endif
                                 </div>
-                                @endif
                                 
 
                             </div>
                             
-                            <!-- Image Section (50%) -->
-                            <div class="col-lg-6 col-md-6">
-                                <div class="text-center">
+                            <!-- Right Column: Image and QR -->
+                            <div class="col-xl-4 col-lg-5">
+                                <!-- Main Image -->
+                                <div class="mb-3">
                                     @php
                                         $imageUrl = null;
                                         if($inventario->imagen_principal && file_exists(storage_path('app/public/' . $inventario->imagen_principal))) {
                                             $imageUrl = asset('storage/' . $inventario->imagen_principal);
-                                        }
-                                        elseif($inventario->getFirstMediaUrl('imagenes') && $inventario->getMedia('imagenes')->count() > 0) {
-                                            $media = $inventario->getMedia('imagenes')->first();
-                                            if(file_exists($media->getPath())) {
-                                                $imageUrl = $inventario->getFirstMediaUrl('imagenes');
-                                            }
-                                        }
-                                        elseif($inventario->imagen && file_exists(storage_path('app/public/inventario_imagenes/' . $inventario->imagen))) {
-                                            $imageUrl = asset('storage/inventario_imagenes/' . $inventario->imagen);
+                                        } elseif($inventario->getFirstMediaUrl('imagenes') && $inventario->getMedia('imagenes')->count() > 0) {
+                                            $imageUrl = $inventario->getFirstMediaUrl('imagenes');
                                         }
                                     @endphp
+                                    
                                     @if($imageUrl)
-                                        <div class="image-container" style="border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; background-color: #f8f9fa; min-height: 450px; display: flex; align-items: center; justify-content: center;">
-                                            <img src="{{ $imageUrl }}" alt="{{ $inventario->nombre }}" class="img-fluid" style="width: 100%; height: 450px; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                        <div class="image-container position-relative" style="border: 2px solid #e9ecef; border-radius: 12px; overflow: hidden; background-color: #ffffff; height: 600px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: all 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onclick="openImageModal('{{ $imageUrl }}', '{{ $inventario->nombre }}')">
+                                            <img src="{{ $imageUrl }}" alt="{{ $inventario->nombre }}" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;">
                                         </div>
                                     @else
-                                        <div class="d-flex align-items-center justify-content-center no-image-placeholder" style="height: 450px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
+                                        <div class="d-flex align-items-center justify-content-center no-image-placeholder" style="height: 600px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px dashed #dee2e6; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                                             <div class="text-center">
-                                                <i class="fas fa-image" style="color: #6c757d; font-size: 3rem; margin-bottom: 1rem;"></i>
-                                                <h4 style="color: #6c757d; font-size: 1.2rem;">Sin imagen disponible</h4>
-                                                <p style="color: #6c757d; font-size: 0.9rem;">No se ha adjuntado imagen para este equipo</p>
+                                                <i class="fas fa-image" style="color: #adb5bd; font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                                                <h4 style="color: #6c757d; font-size: 1rem; margin-bottom: 0.25rem;">Sin imagen</h4>
+                                                <p style="color: #adb5bd; font-size: 0.8rem; margin: 0;">No hay imagen disponible</p>
                                             </div>
                                         </div>
                                     @endif
@@ -430,6 +449,20 @@
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <span class="info-value" style="color: #212529; font-size: 0.8rem; text-transform: uppercase;">Propietario</span>
                                                 <span class="info-value" style="color: #212529; font-size: 0.9rem;">{{ $inventario->propietario ?? 'HIDROOBRAS' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="p-2 mb-2" style="border-bottom: 1px solid #e9ecef;">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="info-value" style="color: #212529; font-size: 0.8rem; text-transform: uppercase;">Tipo de Propiedad</span>
+                                                <div class="d-flex align-items-center">
+                                                    @if($inventario->tipo_propiedad == 'alquiler')
+                                                        <i class="fas fa-handshake me-2" style="color: #ffc107; font-size: 0.9rem;"></i>
+                                                        <span style="color: #000; font-size: 0.85rem; font-weight: 500; line-height: 1;">ALQUILER</span>
+                                                    @else
+                                                        <i class="fas fa-home me-2" style="color: #28a745; font-size: 0.9rem;"></i>
+                                                        <span style="color: #000; font-size: 0.85rem; font-weight: 500; line-height: 1;">PROPIO</span>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="p-2 mb-2" style="border-bottom: 1px solid #e9ecef;">
@@ -540,12 +573,7 @@
                                                 <span class="badge bg-success" style="font-size: 0.8rem;">${{ number_format($inventario->valor_unitario * $cantidadTotal, 2) }}</span>
                                             </div>
                                         </div>
-                                        <div class="p-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="info-value" style="color: #212529; font-size: 0.8rem; text-transform: uppercase;">Depreciación</span>
-                                                <span class="info-value" style="color: #212529; font-size: 0.9rem;">{{ $inventario->depreciacion ?? 'No calculada' }}</span>
-                                            </div>
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -577,21 +605,7 @@
                                                 <span class="info-value" style="color: #212529; font-size: 0.9rem;">{{ $inventario->proveedor->nombre ?? $inventario->propietario ?? 'No registrado' }}</span>
                                             </div>
                                         </div>
-                                        <div class="p-2">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="info-value" style="color: #212529; font-size: 0.8rem; text-transform: uppercase;">Estado Financiero</span>
-                                                @if($inventario->estado_financiero)
-                                                    <span class="badge" style="background-color: 
-                                                        @if($inventario->estado_financiero == 'activo') #28a745
-                                                        @elseif($inventario->estado_financiero == 'depreciado') #ffc107
-                                                        @elseif($inventario->estado_financiero == 'dado_de_baja') #dc3545
-                                                        @else #6c757d
-                                                        @endif; color: white; font-size: 0.8rem;">{{ ucfirst(str_replace('_', ' ', $inventario->estado_financiero)) }}</span>
-                                                @else
-                                                    <span class="badge" style="background-color: {{ $inventario->valor_unitario > 0 ? '#28a745' : '#6c757d' }}; color: white; font-size: 0.8rem;">{{ $inventario->valor_unitario > 0 ? 'Valorizado' : 'Sin valorizar' }}</span>
-                                                @endif
-                                            </div>
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -601,106 +615,7 @@
             </div>
         </div>
 
-        <!-- Contenedor 3: Documentación Visual -->
-        <div class="row mb-4 mx-0">
-            <div class="col-12 px-0">
-                <div class="card">
-                    <div class="card-header info-card" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
-                        <div class="d-flex align-items-center">
-                            <div class="me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #ffc107; border-radius: 50%; color: #212529;">
-                                <i class="fas fa-images" style="font-size: 1.2rem;"></i>
-                            </div>
-                            <div>
-                                <h2 class="mb-1 info-value" style="color: #212529; font-size: 1.5rem;">Galería de Imágenes</h2>
-                                <p class="mb-0 info-value" style="color: #212529; font-size: 0.9rem;">Fotografías del equipo y documentación visual</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body p-4">
-                        @php
-                            $imagenes = $inventario->getMedia('imagenes');
-                            $todasLasImagenes = collect();
-                            
-                            // Determinar imagen principal
-                            $imagenPrincipalUrl = null;
-                            $imagenPrincipalFileName = null;
-                            
-                            if($inventario->imagen_principal && file_exists(storage_path('app/public/' . $inventario->imagen_principal))) {
-                                $imagenPrincipalUrl = asset('storage/' . $inventario->imagen_principal);
-                                $imagenPrincipalFileName = basename($inventario->imagen_principal);
-                            }
-                            elseif($inventario->getFirstMediaUrl('imagenes') && $inventario->getMedia('imagenes')->count() > 0) {
-                                $media = $inventario->getMedia('imagenes')->first();
-                                if(file_exists($media->getPath())) {
-                                    $imagenPrincipalUrl = asset('storage/inventario_imagenes/' . $media->file_name);
-                                    $imagenPrincipalFileName = $media->file_name;
-                                }
-                            }
-                            elseif($inventario->imagen && file_exists(storage_path('app/public/inventario_imagenes/' . $inventario->imagen))) {
-                                $imagenPrincipalUrl = asset('storage/inventario_imagenes/' . $inventario->imagen);
-                                $imagenPrincipalFileName = $inventario->imagen;
-                            }
-                            
-                            // Agregar imagen principal a la colección si existe
-                            if($imagenPrincipalUrl) {
-                                $todasLasImagenes->push((object)[
-                                    'url' => $imagenPrincipalUrl,
-                                    'file_name' => $imagenPrincipalFileName,
-                                    'es_principal' => true,
-                                    'titulo' => 'Imagen Principal'
-                                ]);
-                            }
-                            
-                            // Agregar imágenes adicionales (excluyendo la principal si ya está en media)
-                            foreach($imagenes as $imagen) {
-                                if($imagen->file_name !== $imagenPrincipalFileName) {
-                                    $todasLasImagenes->push((object)[
-                                        'url' => asset('storage/inventario_imagenes/' . $imagen->file_name),
-                                        'file_name' => $imagen->file_name,
-                                        'es_principal' => false,
-                                        'titulo' => 'Imagen Secundaria'
-                                    ]);
-                                }
-                            }
-                            
-                            $totalImagenes = $todasLasImagenes->count();
-                        @endphp
-                        
-                        @if($totalImagenes > 0)
-                            <div class="row g-3">
-                                @foreach($todasLasImagenes as $index => $imagen)
-                                    <div class="col-md-6 col-sm-6">
-                                        <div class="position-relative image-container info-card" style="border: {{ $imagen->es_principal ? '3px solid #007bff' : '1px solid #e9ecef' }}; border-radius: 8px; overflow: hidden; background-color: #f8f9fa; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                                            <img src="{{ $imagen->url }}" alt="{{ $imagen->titulo }}" class="img-fluid" style="width: 100%; height: 200px; object-fit: cover; cursor: pointer;" onclick="openImageModal('{{ $imagen->url }}', '{{ $inventario->nombre }} - {{ $imagen->titulo }}')">
-                                            <div class="position-absolute top-0 end-0 m-2">
-                                                <span class="badge {{ $imagen->es_principal ? 'bg-primary' : 'bg-success' }}" style="font-size: 0.7rem;">{{ $index + 1 }}/{{ $totalImagenes }}</span>
-                                            </div>
-                                            @if($imagen->es_principal)
-                                                <div class="position-absolute top-0 start-0 m-2">
-                                                    <span class="badge bg-primary" style="font-size: 0.75rem; font-weight: bold;">PRINCIPAL</span>
-                                                </div>
-                                            @endif
-                                            <div class="position-absolute bottom-0 start-0 end-0 p-2" style="background: linear-gradient(transparent, rgba(0,0,0,0.7)); color: white;">
-                                                <small class="d-block text-truncate">{{ $inventario->nombre }}</small>
-                                                <small class="text-muted">{{ $imagen->titulo }} - Clic para ampliar</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="text-center py-5 no-image-placeholder info-card" style="border: 2px dashed #dee2e6; border-radius: 12px; background-color: #f8f9fa;">
-                                <i class="fas fa-camera" style="color: #6c757d; font-size: 3rem; margin-bottom: 1rem;"></i>
-                                <h4 class="info-value" style="color: #6c757d; font-size: 1.2rem;">Sin imágenes disponibles</h4>
-                                <p class="info-value" style="color: #6c757d; font-size: 0.9rem;">No se han adjuntado fotografías para este equipo</p>
-                                <small class="info-value" style="color: #adb5bd;">Las imágenes ayudan a identificar y documentar el estado del equipo</small>
-                            </div>
-                        @endif
 
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- Contenedor 4: Bitácora de Observaciones -->
         <div class="row mb-4 mx-0">
@@ -947,12 +862,14 @@
                                 <p class="mb-0 info-value" style="color: #6c757d; font-size: 0.9rem;">Movimientos, mantenimientos y documentos del equipo</p>
                             </div>
                             @php
-                                $totalRegistros = $movimientos->count() + $inventario->mantenimientos->count() + $documentos->count();
+                                $totalRegistros = $movimientos->count() + $inventario->mantenimientos->count();
                             @endphp
                             <span class="badge bg-secondary ms-2" style="font-size: 0.8rem;">{{ $totalRegistros }}</span>
                         </div>
                     </div>
                     <div class="card-body p-4">
+
+                                
                                 <!-- Navegación por pestañas -->
                                 <ul class="nav nav-tabs mb-4 d-flex" id="historyTabs" role="tablist" style="border-bottom: 2px solid #e9ecef;">
                                     <li class="nav-item flex-fill" role="presentation">
@@ -969,13 +886,6 @@
                                             <span class="badge ms-2" style="background-color: #f8f9fa; color: #495057; border: 1px solid #dee2e6; font-size: 0.75rem;">{{ $inventario->mantenimientos->count() }}</span>
                                         </button>
                                     </li>
-                                    <li class="nav-item flex-fill" role="presentation">
-                                        <button class="nav-link text-center w-100" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false" style="color: #212529; border: none; background: none; font-weight: 600; padding: 16px 20px; border-bottom: 3px solid transparent; transition: all 0.3s ease;">
-                                            <i class="fas fa-file-alt me-2" style="color: #6f42c1; font-size: 1.1rem;"></i>
-                                            Documentos
-                                            <span class="badge ms-2" style="background-color: #f8f9fa; color: #495057; border: 1px solid #dee2e6; font-size: 0.75rem;">{{ $documentos->count() }}</span>
-                                        </button>
-                                    </li>
                                 </ul>
                                 
                                 <style>
@@ -990,16 +900,21 @@
                                 #maintenance-tab:hover {
                                     border-bottom-color: #28a745 !important;
                                 }
-                                #documents-tab:hover {
-                                    border-bottom-color: #6f42c1 !important;
-                                }
                                 </style>
 
                                 <!-- Contenido de las pestañas -->
                                 <div class="tab-content" id="historyTabsContent">
                                     <!-- Pestaña de Movimientos -->
                                     <div class="tab-pane fade show active" id="movements" role="tabpanel" aria-labelledby="movements-tab">
-
+                                        
+                                        <!-- Botón Nuevo Movimiento -->
+                                        @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'almacenista')
+                                            <div class="d-flex justify-content-end mb-3">
+                                                <a href="{{ route('movimientos.create', ['inventario_id' => $inventario->id]) }}" class="quick-action-btn text-decoration-none" style="border-radius: 8px; padding: 12px 20px; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057; font-weight: 500; transition: all 0.3s ease;">
+                                    <i class="fas fa-plus me-2" style="color: #007bff;"></i>Nuevo Movimiento
+                                </a>
+                                            </div>
+                                        @endif
                                         
                                         @if($movimientos->count() > 0)
                                             <div class="table-responsive">
@@ -1102,7 +1017,15 @@
 
                                     <!-- Pestaña de Mantenimientos -->
                                     <div class="tab-pane fade" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
-
+                                        
+                                        <!-- Botón Nuevo Mantenimiento -->
+                                        @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'almacenista')
+                                            <div class="d-flex justify-content-end mb-3">
+                                                <a href="{{ route('mantenimientos.create', ['inventario_id' => $inventario->id]) }}" class="quick-action-btn text-decoration-none" style="border-radius: 8px; padding: 12px 20px; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057; font-weight: 500; transition: all 0.3s ease;">
+                                    <i class="fas fa-plus me-2" style="color: #ffc107;"></i>Nuevo Mantenimiento
+                                </a>
+                                            </div>
+                                        @endif
                                         
                                         @if($inventario->mantenimientos->count() > 0)
                                             <div class="table-responsive">
@@ -1221,122 +1144,7 @@
                                         @endif
                                     </div>
 
-                                    <!-- Pestaña de Documentos -->
-                                    <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-                                        <div class="card" style="border: 1px solid #dee2e6; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 12px;">
-                                            <div class="card-body" style="padding: 40px;">
-                                                <div class="row align-items-center">
-                                                    <!-- Sección del QR Code -->
-                                                    <div class="col-md-5">
-                                                        <div class="text-center">
-                                                            <div style="background-color: #007bff; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                                                                 <i class="fas fa-server" style="color: white; font-size: 2rem;"></i>
-                                                             </div>
-                                                            <h4 style="color: #212529; font-weight: 700; margin-bottom: 16px; font-size: 1.4rem;">Documentación del Equipo</h4>
-                                                             <p style="color: #6c757d; margin-bottom: 24px; font-size: 0.95rem; line-height: 1.5;">Escanea el código QR para acceso rápido desde dispositivos móviles</p>
-                                                            
-                                                            <!-- QR Code Container -->
-                                                            <div style="background-color: #f8f9fa; border: 2px solid #dee2e6; border-radius: 12px; padding: 20px; margin-bottom: 20px; display: inline-block;">
-                                                                @php
-                                                                    // Generar URL del NAS para este equipo específico
-                                                                    $nasUrl = 'http://nas.empresa.local/documentos/inventario/' . $inventario->id;
-                                                                @endphp
-                                                                <div id="qrcode-{{ $inventario->id }}" style="margin: 0 auto;"></div>
-                                                            </div>
-                                                            
-                                                            <div>
-                                                                <a href="{{ $nasUrl }}" target="_blank" class="btn btn-primary" style="font-weight: 600; padding: 12px 24px; border-radius: 8px; font-size: 0.9rem; width: 100%;">
-                                                                     <i class="fas fa-external-link-alt me-2" style="font-size: 0.8rem;"></i>Documentación de {{ $inventario->nombre }}
-                                                                 </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <!-- Separador vertical -->
-                                                     <div class="col-md-1 d-flex justify-content-center">
-                                                         <div style="width: 2px; height: 300px; background-color: #dee2e6;"></div>
-                                                     </div>
-                                                    
-                                                    <!-- Sección de tipos de documentos -->
-                                                    <div class="col-md-6">
-                                                        <h5 style="color: #212529; font-weight: 700; margin-bottom: 24px; font-size: 1.3rem;">Tipos de Documentos Disponibles</h5>
-                                                        <p style="color: #6c757d; margin-bottom: 32px; font-size: 0.9rem; line-height: 1.6;">Encuentra toda la documentación técnica organizada por categorías en nuestro servidor centralizado.</p>
-                                                        
-                                                        <div class="row g-3">
-                                                            <div class="col-12">
-                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 10px; border-left: 4px solid #dc3545; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateX(5px)';" onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateX(0)';">
-                                                                    <div style="background-color: #dc3545; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
-                                                                        <i class="fas fa-file-pdf" style="color: white; font-size: 1.2rem;"></i>
-                                                                    </div>
-                                                                    <div>
-                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 1rem;">Manuales Técnicos</h6>
-                                                                        <small style="color: #6c757d; font-size: 0.85rem;">Guías de instalación, operación y mantenimiento</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-12">
-                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 10px; border-left: 4px solid #28a745; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateX(5px)';" onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateX(0)';">
-                                                                    <div style="background-color: #28a745; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
-                                                                        <i class="fas fa-receipt" style="color: white; font-size: 1.2rem;"></i>
-                                                                    </div>
-                                                                    <div>
-                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 1rem;">Facturas y Comprobantes</h6>
-                                                                        <small style="color: #6c757d; font-size: 0.85rem;">Documentos de compra y transacciones financieras</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-12">
-                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 10px; border-left: 4px solid #ffc107; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateX(5px)';" onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateX(0)';">
-                                                                    <div style="background-color: #ffc107; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
-                                                                        <i class="fas fa-shield-alt" style="color: white; font-size: 1.2rem;"></i>
-                                                                    </div>
-                                                                    <div>
-                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 1rem;">Garantías y Certificados</h6>
-                                                                        <small style="color: #6c757d; font-size: 0.85rem;">Documentos de garantía y certificaciones técnicas</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-12">
-                                                                <div class="d-flex align-items-center p-3" style="background-color: #f8f9fa; border-radius: 10px; border-left: 4px solid #007bff; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateX(5px)';" onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateX(0)';">
-                                                                    <div style="background-color: #007bff; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
-                                                                        <i class="fas fa-id-card" style="color: white; font-size: 1.2rem;"></i>
-                                                                    </div>
-                                                                    <div>
-                                                                        <h6 style="color: #212529; font-weight: 600; margin: 0; font-size: 1rem;">Hoja de Vida del Equipo</h6>
-                                                                        <small style="color: #6c757d; font-size: 0.85rem;">Historial completo y registros de mantenimiento</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Script para generar QR -->
-                                        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-                                        <script>
-                                            document.addEventListener('DOMContentLoaded', function() {
-                                                const qrContainer = document.getElementById('qrcode-{{ $inventario->id }}');
-                                                if (qrContainer) {
-                                                    QRCode.toCanvas(qrContainer, '{{ $nasUrl }}', {
-                                                        width: 200,
-                                                        height: 200,
-                                                        margin: 2,
-                                                        color: {
-                                                            dark: '#212529',
-                                                            light: '#ffffff'
-                                                        }
-                                                    }, function (error) {
-                                                        if (error) {
-                                                            console.error('Error generando QR:', error);
-                                                            qrContainer.innerHTML = '<div style="width: 200px; height: 200px; background-color: #f8f9fa; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center; color: #6c757d;"><i class="fas fa-qrcode" style="font-size: 3rem;"></i></div>';
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        </script>
-                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -1344,51 +1152,28 @@
                 </div>
             </div>
 
-            <!-- Contenedor adicional: QR Personalizado y Enlace de Documentación -->
-            @if($inventario->qr_code || $inventario->enlace_documentacion)
+            <!-- Sección de enlace de documentación (si existe) -->
+            @if($inventario->enlace_documentacion)
             <div class="row mb-4 mx-0">
                 <div class="col-12 px-0">
                     <div class="card" style="border: 1px solid #dee2e6; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 12px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                         <div class="card-header" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border-radius: 12px 12px 0 0; padding: 20px; border: none;">
                             <div class="d-flex align-items-center">
                                 <div style="background-color: rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
-                                    <i class="fas fa-qrcode" style="color: white; font-size: 1.5rem;"></i>
+                                    <i class="fas fa-external-link-alt" style="color: white; font-size: 1.5rem;"></i>
                                 </div>
                                 <div>
-                                    <h4 style="margin: 0; font-weight: 700; font-size: 1.4rem;">Documentación Personalizada</h4>
-                                    <p style="margin: 0; opacity: 0.9; font-size: 0.9rem;">QR y enlaces personalizados del equipo</p>
+                                    <h4 style="margin: 0; font-weight: 700; font-size: 1.4rem;">Enlace de Documentación</h4>
+                                    <p style="margin: 0; opacity: 0.9; font-size: 0.9rem;">Acceso directo a documentación externa</p>
                                 </div>
                             </div>
                         </div>
                         <div class="card-body" style="padding: 30px;">
-                            <div class="row">
-                                @if($inventario->qr_code)
-                                <div class="col-md-6">
-                                    <div class="p-3" style="background-color: white; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <span class="info-label" style="color: #495057; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">QR Personalizado</span>
-                                        </div>
-                                        <div class="text-center">
-                                            <img src="{{ asset('storage/' . $inventario->qr_code) }}" alt="QR Personalizado" style="max-width: 200px; max-height: 200px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
-                                @if($inventario->enlace_documentacion)
-                                <div class="col-md-6">
-                                    <div class="p-3" style="background-color: white; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <span class="info-label" style="color: #495057; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Enlace de Documentación</span>
-                                        </div>
-                                        <div class="text-center">
-                                            <a href="{{ $inventario->enlace_documentacion }}" target="_blank" class="btn btn-primary" style="font-weight: 600; padding: 12px 24px; border-radius: 8px; font-size: 0.9rem; width: 100%;">
-                                                <i class="fas fa-external-link-alt me-2" style="font-size: 0.8rem;"></i>Acceder a Documentación
-                                            </a>
-                                            <small class="text-muted d-block mt-2" style="word-break: break-all;">{{ $inventario->enlace_documentacion }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
+                            <div class="text-center">
+                                <a href="{{ $inventario->enlace_documentacion }}" target="_blank" class="btn btn-primary" style="font-weight: 600; padding: 12px 24px; border-radius: 8px; font-size: 0.9rem; width: 100%; max-width: 300px;">
+                                    <i class="fas fa-external-link-alt me-2" style="font-size: 0.8rem;"></i>Acceder a Documentación
+                                </a>
+                                <small class="text-muted d-block mt-2" style="word-break: break-all;">{{ $inventario->enlace_documentacion }}</small>
                             </div>
                         </div>
                     </div>
@@ -1775,6 +1560,73 @@ document.addEventListener('DOMContentLoaded', function() {
     border-color: #495057;
 }
 
+/* Responsividad mejorada para el layout principal */
+@media (min-width: 1610px) {
+    /* Mantener layout de dos columnas para resoluciones mayores a 1609px */
+    .row.g-4 > .col-xl-6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+        min-height: auto;
+    }
+    
+    .image-container,
+    .no-image-placeholder {
+        height: auto !important;
+        min-height: 400px !important;
+        max-height: 600px !important;
+        aspect-ratio: 4/3;
+    }
+    
+    .image-container img {
+        width: 100%;
+        height: auto !important;
+        min-height: 400px !important;
+        max-height: 600px !important;
+        object-fit: contain;
+        aspect-ratio: 4/3;
+    }
+}
+
+@media (max-width: 1609px) {
+    /* Cambiar a layout vertical en resoluciones menores o iguales a 1609px */
+    .row.g-4 > .col-xl-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+        min-height: auto;
+    }
+    
+    .image-container,
+    .no-image-placeholder {
+        min-height: 300px !important;
+        max-height: 400px;
+    }
+    
+    .image-container img {
+        min-height: 300px !important;
+        max-height: 400px !important;
+    }
+    
+    /* Ajustar el grid de información para tablets */
+    .col-md-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    .col-md-4:last-child {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-top: 1rem;
+    }
+    
+    /* Prevenir desbordamiento de texto */
+    .info-value,
+    .badge {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+    }
+}
+
 @media (max-width: 768px) {
     .header-title {
         font-size: 2rem !important;
@@ -1787,10 +1639,154 @@ document.addEventListener('DOMContentLoaded', function() {
     .col-md-3 .p-3 {
         margin-top: 1rem;
     }
+    
+    /* Layout móvil - todo en una columna */
+    .col-md-4 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        margin-bottom: 0.75rem;
+    }
+    
+    .image-container,
+    .no-image-placeholder {
+        min-height: 200px !important;
+        max-height: 250px;
+    }
+    
+    .image-container img {
+        min-height: 200px !important;
+        max-height: 250px !important;
+    }
+    
+    /* Mejoras responsivas para móviles */
+    .info-card {
+        padding: 1rem !important;
+    }
+    
+    .info-card h5 {
+        font-size: 1rem !important;
+    }
+    
+    .info-card .info-value {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Ajustes para las tarjetas de ubicación */
+    .col-12.col-sm-6.col-lg-4 {
+        margin-bottom: 0.75rem;
+    }
+    
+    .col-12.col-sm-6.col-lg-4 > div {
+        min-height: 60px !important;
+        padding: 0.75rem !important;
+    }
+    
+    .col-12.col-sm-6.col-lg-4 .flex-grow-1 > div:first-child {
+        font-size: 0.9rem !important;
+    }
+    
+    .col-12.col-sm-6.col-lg-4 .flex-grow-1 > div:last-child {
+        font-size: 0.75rem !important;
+    }
+    
+    /* Ajustes para iconos en móviles */
+    .me-3[style*="width: 40px"] {
+        width: 35px !important;
+        height: 35px !important;
+    }
+    
+    .me-3[style*="width: 35px"] {
+        width: 30px !important;
+        height: 30px !important;
+    }
+    
+    /* Badges más pequeños en móviles */
+    .badge {
+        font-size: 0.55rem !important;
+        padding: 1px 4px !important;
+    }
+    
+    /* Espaciado mejorado para móviles */
+    .row.g-4 {
+        margin: 0 -0.5rem;
+    }
+    
+    .row.g-4 > * {
+        padding: 0 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Ajustes específicos para pantallas muy pequeñas */
+    .row.g-3 {
+        margin: 0 -0.5rem;
+    }
+    
+    .row.g-3 > * {
+        padding: 0 0.5rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem !important;
+    }
+    
+    .info-card {
+        padding: 0.75rem !important;
+    }
+    
+    /* Hacer que las ubicaciones ocupen todo el ancho en móviles pequeños */
+    .col-12.col-sm-6.col-lg-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    /* Ajustar el espaciado del contenido */
+    .d-flex.align-items-center.mb-4 {
+        margin-bottom: 1rem !important;
+    }
+    
+    .d-flex.align-items-center.mb-4 h5 {
+        font-size: 0.95rem !important;
+    }
+    
+    .d-flex.align-items-center.mb-4 .info-value {
+        font-size: 0.8rem !important;
+    }
+}
+
+/* Estilos para botones de acción rápida */
+.quick-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.quick-action-btn:hover {
+    background-color: #e9ecef !important;
+    border-color: #adb5bd !important;
+    color: #495057 !important;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.quick-action-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.quick-action-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
 }
 </style>
 
 <script>
+
 // Navegación simple usando historial del navegador
 document.addEventListener('DOMContentLoaded', function() {
     const volverBtn = document.getElementById('volverInventarioBtn');

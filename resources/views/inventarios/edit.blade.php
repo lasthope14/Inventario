@@ -188,6 +188,13 @@
                                                     <label for="propietario" class="form-label">Propietario</label>
                                                     <input type="text" class="form-control" id="propietario" name="propietario" value="{{ old('propietario', $inventario->propietario ?? 'HIDROOBRAS') }}">
                                                 </div>
+                                                <div class="col-md-6">
+                                                    <label for="tipo_propiedad" class="form-label">Tipo de Propiedad</label>
+                                                    <select class="form-select" id="tipo_propiedad" name="tipo_propiedad" required>
+                                                        <option value="propio" {{ old('tipo_propiedad', $inventario->tipo_propiedad) == 'propio' ? 'selected' : '' }}>Propio</option>
+                                                        <option value="alquiler" {{ old('tipo_propiedad', $inventario->tipo_propiedad) == 'alquiler' ? 'selected' : '' }}>Alquiler</option>
+                                                    </select>
+                                                </div>
                                                 <div class="col-12">
                                                     <label for="descripcion" class="form-label">Descripción</label>
                                                     <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ old('descripcion', $inventario->descripcion) }}</textarea>

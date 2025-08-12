@@ -19,7 +19,8 @@ class Inventario extends Model implements HasMedia
         'categoria_id', 'proveedor_id', 'nombre', 'propietario',
         'modelo', 'numero_serie', 'marca', 'fecha_compra', 'numero_factura',
         'valor_unitario', 'fecha_baja', 'fecha_inspeccion', 'observaciones',
-        'imagen_principal', 'imagen_secundaria', 'metadatos', 'codigo_unico', 'ubicacion_id'
+        'imagen_principal', 'imagen_secundaria', 'qr_code', 'enlace_documentacion',
+        'metadatos', 'codigo_unico', 'ubicacion_id', 'tipo_propiedad'
     ];
 
     protected $dates = ['fecha_compra', 'fecha_baja', 'fecha_inspeccion'];

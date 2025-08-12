@@ -45,6 +45,13 @@
                                     <label for="propietario" class="form-label"><i class="fas fa-user me-2"></i>Propietario</label>
                                     <input type="text" name="propietario" id="propietario" class="form-control" required>
                                 </div>
+                                <div class="mb-3">
+                                    <label for="tipo_propiedad" class="form-label"><i class="fas fa-home me-2"></i>Tipo de Propiedad</label>
+                                    <select name="tipo_propiedad" id="tipo_propiedad" class="form-select" required>
+                                        <option value="propio" selected>Propio</option>
+                                        <option value="alquiler">Alquiler</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>

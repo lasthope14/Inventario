@@ -50,6 +50,8 @@ class MovimientoMasivoController extends Controller
         // Validar datos básicos
         $request->validate([
             'ubicacion_destino_id' => 'required|exists:ubicaciones,id',
+            'usuario_origen_id' => 'required|exists:empleados,id',
+            'usuario_destino_id' => 'required|exists:empleados,id',
             'elementos' => 'required|string'
         ]);
 
@@ -151,8 +153,8 @@ class MovimientoMasivoController extends Controller
                             'inventario_id' => $elemento['id'],
                             'ubicacion_origen' => $ubicacionOrigen->ubicacion_id ?? $elemento['ubicacion_id'],
                             'ubicacion_destino' => $request->ubicacion_destino_id,
-                            'usuario_origen_id' => $request->usuario_origen_id ?? 1, // Empleado origen (desde el formulario o por defecto)
-                            'usuario_destino_id' => $request->usuario_destino_id ?? 1, // Empleado destino (desde el formulario o por defecto)
+                            'usuario_origen_id' => $request->usuario_origen_id, // Empleado origen
+                            'usuario_destino_id' => $request->usuario_destino_id, // Empleado destino
                             'cantidad' => $elemento['cantidad_mover'],
                             'motivo' => 'Movimiento masivo - ' . ($elemento['codigo'] ?? 'Sin código'),
                             'nuevo_estado' => isset($elemento['nuevo_estado']) ? $elemento['nuevo_estado'] : (isset($elemento['estado']) ? $elemento['estado'] : 'disponible'),
@@ -277,48 +279,49 @@ class MovimientoMasivoController extends Controller
     public function getInventarioData(Request $request)
     {
         try {
-            $query = Inventario::with(['categoria', 'ubicaciones'])
-                ->whereHas('ubicaciones', function($q) {
-                    $q->where('cantidad', '>', 0);
-                });
+            // Usar consulta directa a la tabla pivot (método 3 del test)
+            $query = \DB::table('inventario_ubicaciones')
+                ->join('inventarios', 'inventario_ubicaciones.inventario_id', '=', 'inventarios.id')
+                ->join('categorias', 'inventarios.categoria_id', '=', 'categorias.id')
+                ->join('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
+                ->where('inventario_ubicaciones.cantidad', '>', 0)
+                ->select(
+                    'inventarios.id',
+                    'inventarios.codigo_unico',
+                    'inventarios.nombre',
+                    'inventarios.observaciones',
+                    'inventarios.valor_unitario',
+                    'categorias.nombre as categoria_nombre',
+                    'inventario_ubicaciones.ubicacion_id',
+                    'ubicaciones.nombre as ubicacion_nombre',
+                    'inventario_ubicaciones.cantidad',
+                    'inventario_ubicaciones.estado'
+                );
                 
             // Filtrar por ubicación si se especifica
             if ($request->has('ubicacion_id') && $request->ubicacion_id) {
-                $query->whereHas('ubicaciones', function($q) use ($request) {
-                    $q->where('ubicacion_id', $request->ubicacion_id);
-                });
+                $query->where('inventario_ubicaciones.ubicacion_id', $request->ubicacion_id);
             }
             
-            $inventarios = $query->get();
+            $resultados = $query->get();
             
             $elementos = [];
             
-            foreach ($inventarios as $inventario) {
-                foreach ($inventario->ubicaciones as $ubicacionInventario) {
-                    // Solo incluir ubicaciones con cantidad > 0
-                    if ($ubicacionInventario->cantidad > 0) {
-                        // Si se filtró por ubicación, solo incluir esa ubicación
-                        if ($request->ubicacion_id && $ubicacionInventario->ubicacion_id != $request->ubicacion_id) {
-                            continue;
-                        }
-                        
-                        $elementos[] = [
-                            'id' => $inventario->id,
-                            'codigo' => $inventario->codigo_unico,
-                            'nombre' => $inventario->nombre,
-                            'descripcion' => $inventario->descripcion ?? '',
-                            'categoria' => $inventario->categoria->nombre ?? 'Sin categoría',
-                            'ubicacion_id' => $ubicacionInventario->ubicacion_id,
-                            'ubicacion_nombre' => $ubicacionInventario->ubicacion->nombre ?? 'Sin ubicación',
-                            'cantidad_disponible' => $ubicacionInventario->cantidad,
-                            'estado' => $ubicacionInventario->estado ?? 'disponible',
-                            'valor_unitario' => $inventario->valor_unitario ?? 0
-                        ];
-                    }
-                }
+            foreach ($resultados as $resultado) {
+                $elementos[] = [
+                    'id' => $resultado->id,
+                    'codigo' => $resultado->codigo_unico,
+                    'nombre' => $resultado->nombre,
+                    'descripcion' => $resultado->observaciones ?? '',
+                    'categoria' => $resultado->categoria_nombre ?? 'Sin categoría',
+                    'ubicacion_id' => $resultado->ubicacion_id,
+                    'ubicacion_nombre' => $resultado->ubicacion_nombre ?? 'Sin ubicación',
+                    'cantidad_disponible' => $resultado->cantidad,
+                    'estado' => $resultado->estado ?? 'disponible',
+                    'valor_unitario' => $resultado->valor_unitario ?? 0
+                ];
             }
             
-            // Devolver directamente el array de elementos
             return response()->json($elementos);
             
         } catch (\Exception $e) {

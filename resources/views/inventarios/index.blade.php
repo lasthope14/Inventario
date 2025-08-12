@@ -205,7 +205,104 @@
         </div>
     </div>
 
+    <!-- Resultados de Búsqueda del Servidor -->
+    @if(isset($inventarios) && isset($searchTerm))
+    <div class="search-results-section mb-4">
+        <div class="search-results-header">
+            <div class="search-results-info">
+                <h4 class="search-results-title">
+                    <i class="fas fa-search me-2"></i>
+                    Resultados de Búsqueda para "{{ $searchTerm }}"
+                </h4>
+                <span class="badge bg-primary ms-2">{{ $inventarios->total() }} elementos</span>
+            </div>
+            
+            <div class="search-results-controls">
+                <a href="{{ route('inventarios.index') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>Volver al inicio
+                </a>
+            </div>
+        </div>
+        
+        <!-- Vista Grid de Resultados -->
+        <div class="elements-grid-view">
+            <div class="elements-grid-compact">
+                @forelse($inventarios as $inventario)
+                <div class="element-card-compact">
+                    <div class="element-image-compact">
+                        @if($inventario->imagen)
+                            <img src="{{ asset('storage/' . $inventario->imagen) }}" alt="{{ $inventario->nombre }}" class="lazy-load">
+                        @else
+                            <div class="no-image-placeholder">
+                                <i class="fas fa-cube"></i>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="element-content-compact">
+                        <div class="element-header-compact">
+                            <h6 class="element-name-compact">{{ $inventario->nombre }}</h6>
+                            <span class="element-code-compact">{{ $inventario->codigo_unico }}</span>
+                        </div>
+                        <div class="element-details-compact">
+                            <div class="detail-row-compact">
+                                <span class="detail-label-compact">Marca/Modelo:</span>
+                                <span class="detail-value-compact">{{ $inventario->marca }} {{ $inventario->modelo }}</span>
+                            </div>
+                            <div class="detail-row-compact">
+                                <span class="detail-label-compact">Serie:</span>
+                                <span class="detail-value-compact">{{ $inventario->numero_serie }}</span>
+                            </div>
+                            <div class="detail-row-compact">
+                                <span class="detail-label-compact">Categoría:</span>
+                                <span class="detail-value-compact">{{ $inventario->categoria->nombre ?? 'N/A' }}</span>
+                            </div>
+                        </div>
+                        <div class="element-locations-compact">
+                            @foreach($inventario->ubicaciones->take(2) as $ubicacion)
+                            <div class="location-compact">
+                                <div class="location-info-compact">
+                                    <span class="location-name-compact">{{ $ubicacion->ubicacion->nombre ?? 'N/A' }}</span>
+                                    <span class="location-quantity-compact">{{ $ubicacion->cantidad }} unidades</span>
+                                </div>
+                                <div class="status-badge-element-new status-{{ str_replace(' ', '-', $ubicacion->estado) }}">
+                                    <span class="status-text-compact">{{ ucfirst($ubicacion->estado) }}</span>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="element-actions-compact">
+                            <a href="{{ route('inventarios.show', $inventario->id) }}" class="btn-action-compact btn-view-compact" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn-action-compact btn-edit-compact" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                @empty
+                <div class="col-12">
+                    <div class="empty-state text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h3 class="text-muted">No se encontraron resultados</h3>
+                        <p class="text-muted">Intenta con otros términos de búsqueda.</p>
+                    </div>
+                </div>
+                @endforelse
+            </div>
+        </div>
+        
+        <!-- Paginación de Resultados -->
+        @if($inventarios->hasPages())
+        <div class="d-flex justify-content-center mt-4">
+            {{ $inventarios->appends(request()->query())->links('pagination::bootstrap-4') }}
+        </div>
+        @endif
+    </div>
+    @endif
+
     <!-- Categorías Principales -->
+    @if(!isset($inventarios) || !isset($searchTerm))
     <div class="categories-section">
         <div class="section-header mb-4">
             <h2 class="section-title">
@@ -253,6 +350,7 @@
         </div>
         @endif
     </div>
+    @endif
 
 </div>
 
@@ -279,11 +377,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== FUNCIONES DE BÚSQUEDA =====
     function performInstantSearch() {
         const searchTerm = searchInput.value.trim();
-        const categoryFilter = document.getElementById('filterCategoria').value;
-        const elementFilter = document.getElementById('filterElemento').value;
-        const brandFilter = document.getElementById('filterMarca').value;
-        const statusFilter = document.getElementById('filterEstado').value;
-        const locationFilter = document.getElementById('filterUbicacion').value;
+        const categoryFilter = document.getElementById('filterCategoria')?.value || '';
+        const elementFilter = document.getElementById('filterElemento')?.value || '';
+        const brandFilter = document.getElementById('filterMarca')?.value || '';
+        const statusFilter = document.getElementById('filterEstado')?.value || '';
+        const locationFilter = document.getElementById('filterUbicacion')?.value || '';
         
         if (searchTerm.length === 0 && !categoryFilter && !elementFilter && !brandFilter && !statusFilter && !locationFilter) {
             hideSearchResults();
@@ -571,10 +669,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (url) {
                         window.location.href = url;
                     }
-                } else {
-                    // Búsqueda normal
-                    performInstantSearch();
                 }
+                // Eliminado el llamado a performInstantSearch para evitar errores
             } else if (e.key === 'Escape') {
                 hideSuggestions();
             }

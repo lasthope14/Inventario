@@ -64,7 +64,7 @@
                     </div>
                 </a>
                 <a href="{{ route('inventarios.categoria', ['categoria' => $categoria->id, 'estado' => 'en uso']) }}" class="stat-item stat-item-clickable">
-                    <i class="fas fa-play-circle stat-icon stat-icon-primary"></i>
+                    <i class="fas fa-user-clock stat-icon stat-icon-primary"></i>
                     <div class="stat-content">
                         <div class="stat-number">{{ $stats->en_uso ?? 0 }}</div>
                         <div class="stat-label">En Uso</div>
@@ -211,6 +211,18 @@
                             </select>
                         </div>
                         
+                        <!-- Filtro por Tipo de Propiedad -->
+                        <div class="filter-item">
+                            <label class="filter-label">
+                                <i class="fas fa-home me-1"></i>
+                                Tipo de Propiedad
+                            </label>
+                            <select name="tipo_propiedad" class="filter-select form-select" id="filterTipoPropiedad">
+                                <option value="">Todos los tipos</option>
+                                <option value="propio" {{ request('tipo_propiedad') == 'propio' ? 'selected' : '' }}>Propio</option>
+                                <option value="alquiler" {{ request('tipo_propiedad') == 'alquiler' ? 'selected' : '' }}>Alquiler</option>
+                            </select>
+                        </div>
 
 
                     </div>
@@ -288,7 +300,6 @@
                         <div class="element-content-compact">
                             <div class="element-header-compact">
                                 <h6 class="element-name-compact">{{ $inventario->nombre }}</h6>
-                                <span class="element-code-compact">{{ $inventario->codigo_unico ?? $inventario->codigo }}</span>
                             </div>
                             <div class="element-details-compact">
                                 <div class="detail-row-compact">
@@ -302,10 +313,6 @@
                                 <div class="detail-row-compact">
                                     <span class="detail-label-compact">Propietario:</span>
                                     <span class="detail-value-compact">{{ $inventario->propietario ?? 'No asignado' }}</span>
-                                </div>
-                                <div class="detail-row-compact">
-                                    <span class="detail-label-compact">Precio:</span>
-                                    <span class="detail-value-compact">${{ number_format($inventario->valor_unitario, 2) }}</span>
                                 </div>
                             </div>
                             <div class="element-locations-compact">
@@ -325,7 +332,7 @@
                                             $estado = $ubicacion->pivot ? ($ubicacion->pivot->estado ?? 'disponible') : 'disponible';
                                         @endphp
                                         <div class="status-badge-element-new status-{{ str_replace(' ', '-', strtolower($estado)) }}">
-                                            <i class="status-icon-compact {{ $estado == 'disponible' ? 'fas fa-check-circle' : ($estado == 'en_uso' ? 'fas fa-play-circle' : ($estado == 'en_mantenimiento' ? 'fas fa-tools' : ($estado == 'dado_de_baja' ? 'fas fa-ban' : 'fas fa-user-secret'))) }}"></i>
+                                            <i class="status-icon-compact {{ $estado == 'disponible' ? 'fas fa-check-circle' : (($estado == 'en_uso' || $estado == 'en uso') ? 'fas fa-user-clock' : (($estado == 'en_mantenimiento' || $estado == 'en mantenimiento') ? 'fas fa-tools' : (($estado == 'dado_de_baja' || $estado == 'dado de baja') ? 'fas fa-ban' : 'fas fa-user-secret'))) }}"></i>
                                             <span class="status-text-compact">{{ ucfirst(str_replace('_', ' ', $estado)) }}</span>
                                         </div>
                                     </div>
@@ -337,13 +344,23 @@
                                     </div>
                                 @endif
                             </div>
-                            <div class="element-actions-compact">
-                                <a href="{{ route('inventarios.show', $inventario->id) }}" class="btn btn-outline-primary btn-xs">
-                                    <i class="fas fa-eye"></i> Ver
+                            <div class="element-actions-compact d-flex gap-2 justify-content-center mt-3">
+                                <a href="{{ route('inventarios.show', $inventario->id) }}" class="btn btn-modern btn-view" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                    <span class="btn-text">Ver</span>
                                 </a>
-                                <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn btn-outline-secondary btn-xs">
-                                    <i class="fas fa-edit"></i> Editar
+                                <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn btn-modern btn-edit" title="Editar elemento">
+                                    <i class="fas fa-edit"></i>
+                                    <span class="btn-text">Editar</span>
                                 </a>
+                                <form action="{{ route('inventarios.destroy', $inventario->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este inventario?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-modern btn-delete" title="Eliminar elemento">
+                                        <i class="fas fa-trash"></i>
+                                        <span class="btn-text">Eliminar</span>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -357,39 +374,23 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Imagen</th>
                             <th>Elemento</th>
-                            <th>Código</th>
                             <th>Marca/Modelo</th>
                             <th>Serie</th>
                             <th>Propietario</th>
-                            <th>Precio</th>
+                            <th>Tipo</th>
                             <th>Ubicaciones</th>
-                            <th>Acciones</th>
+                            <th width="120" class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($inventarios as $inventario)
                             <tr>
                                 <td>
-                                    @if($inventario->imagen_principal)
-                                        <img src="{{ asset('storage/' . $inventario->imagen_principal) }}" 
-                                             alt="{{ $inventario->nombre }}" 
-                                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
-                                    @else
-                                        <div style="width: 50px; height: 50px; background: #f3f4f6; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #9ca3af;">
-                                            <i class="fas fa-image"></i>
-                                        </div>
-                                    @endif
-                                </td>
-                                <td>
                                     <div class="table-element-info">
                                         <h6 class="table-element-name">{{ $inventario->nombre }}</h6>
                                         <span class="table-element-code">{{ $inventario->codigo }}</span>
                                     </div>
-                                </td>
-                                <td>
-                                    <span class="table-code">{{ $inventario->codigo_unico ?? $inventario->codigo }}</span>
                                 </td>
                                 <td>
                                     <div class="table-brand-model">
@@ -401,7 +402,17 @@
                                     <span class="table-serial">{{ $inventario->numero_serie }}</span>
                                 </td>
                                 <td>{{ $inventario->propietario ?? 'No asignado' }}</td>
-                                <td>${{ number_format($inventario->valor_unitario, 2) }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if($inventario->tipo_propiedad == 'alquiler')
+                                            <i class="fas fa-handshake me-2" style="color: #ffc107; font-size: 0.9rem;"></i>
+                                            <span style="color: #000; font-size: 0.85rem; font-weight: 500; line-height: 1;">ALQUILER</span>
+                                        @else
+                                            <i class="fas fa-home me-2" style="color: #28a745; font-size: 0.9rem;"></i>
+                                            <span style="color: #000; font-size: 0.85rem; font-weight: 500; line-height: 1;">PROPIO</span>
+                                        @endif
+                                    </div>
+                                </td>
                                 <td>
                                     <div class="table-locations">
                                         @php
@@ -421,7 +432,7 @@
                                                 @endphp
                                                 <div class="table-status-badge status-{{ str_replace(' ', '-', strtolower($estadoTable)) }}">
                                                     <span class="table-quantity">{{ $cantidadTable }}</span>
-                                                    <i class="table-status-icon {{ $estadoTable == 'disponible' ? 'fas fa-check-circle' : ($estadoTable == 'en_uso' ? 'fas fa-play-circle' : ($estadoTable == 'en_mantenimiento' ? 'fas fa-tools' : ($estadoTable == 'dado_de_baja' ? 'fas fa-ban' : 'fas fa-user-secret'))) }}"></i>
+                                                    <i class="table-status-icon {{ $estadoTable == 'disponible' ? 'fas fa-check-circle' : (($estadoTable == 'en_uso' || $estadoTable == 'en uso') ? 'fas fa-user-clock' : (($estadoTable == 'en_mantenimiento' || $estadoTable == 'en mantenimiento') ? 'fas fa-tools' : (($estadoTable == 'dado_de_baja' || $estadoTable == 'dado de baja') ? 'fas fa-ban' : 'fas fa-user-secret'))) }}"></i>
                                                     <span class="table-status-text">{{ ucfirst(str_replace('_', ' ', $estadoTable)) }}</span>
                                                 </div>
                                             </div>
@@ -435,13 +446,20 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="{{ route('inventarios.show', $inventario->id) }}" class="btn btn-outline-primary btn-xs">
+                                    <div class="d-flex gap-1 justify-content-center">
+                                        <a href="{{ route('inventarios.show', $inventario->id) }}" class="btn btn-modern-sm btn-view" title="Ver detalles">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn btn-outline-secondary btn-xs">
+                                        <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn btn-modern-sm btn-edit" title="Editar elemento">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <form action="{{ route('inventarios.destroy', $inventario->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este inventario?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-modern-sm btn-delete" title="Eliminar elemento">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -463,6 +481,101 @@
 
 @push('scripts')
 <script>
+// ===== FUNCIONES GLOBALES =====
+function hideSuggestions() {
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    if (searchSuggestions) {
+        searchSuggestions.style.display = 'none';
+        searchSuggestions.innerHTML = '';
+    }
+}
+
+function expandTableLocations(element, additionalLocations) {
+    const container = element.parentElement;
+    
+    // Convertir a array si es un objeto
+    if (!Array.isArray(additionalLocations)) {
+        if (typeof additionalLocations === 'object' && additionalLocations !== null) {
+            additionalLocations = Object.values(additionalLocations);
+        } else {
+            console.error('additionalLocations is not valid:', additionalLocations);
+            return;
+        }
+    }
+    
+    // Almacenar los datos originales en el elemento para poder reutilizarlos
+    element.originalData = additionalLocations;
+    
+    // Marcar las ubicaciones adicionales para poder identificarlas después
+    const expandedItems = [];
+    
+    additionalLocations.forEach(ubicacion => {
+        // Acceder correctamente a los campos de la estructura de datos
+        const estado = ubicacion.pivot ? (ubicacion.pivot.estado || 'disponible') : 'disponible';
+        const cantidad = ubicacion.pivot ? (ubicacion.pivot.cantidad || 1) : 1;
+        const nombreUbicacion = ubicacion.nombre || 'Ubicación no definida';
+        
+        const estadoClass = estado.replace(/\s+/g, '-').toLowerCase();
+        const estadoIcon = getEstadoIcon(estado);
+        
+        const locationDiv = document.createElement('div');
+        locationDiv.className = 'table-location-item expanded-location';
+        locationDiv.innerHTML = `
+            <div class="table-location-info">
+                <span class="table-location-name">${nombreUbicacion}</span>
+            </div>
+            <div class="table-status-badge status-${estadoClass}">
+                <span class="table-quantity">${cantidad}</span>
+                <i class="table-status-icon ${estadoIcon}"></i>
+                <span class="table-status-text">${estado.charAt(0).toUpperCase() + estado.slice(1).replace('_', ' ')}</span>
+            </div>
+        `;
+        
+        container.insertBefore(locationDiv, element);
+        expandedItems.push(locationDiv);
+    });
+    
+    // Cambiar el botón a "colapsar" en lugar de eliminarlo
+    const cantidadUbicaciones = additionalLocations.length;
+    element.innerHTML = `
+        <i class="fas fa-minus-circle"></i> Ocultar ${cantidadUbicaciones} ubicaciones
+    `;
+    element.onclick = function() {
+        collapseTableLocations(this, expandedItems, cantidadUbicaciones);
+    };
+}
+
+function collapseTableLocations(element, expandedItems, cantidadUbicaciones) {
+    // Eliminar las ubicaciones expandidas
+    expandedItems.forEach(item => {
+        if (item.parentNode) {
+            item.parentNode.removeChild(item);
+        }
+    });
+    
+    // Restaurar el botón original
+    element.innerHTML = `
+        <i class="fas fa-plus-circle"></i> Ver ${cantidadUbicaciones} ubicaciones más
+    `;
+    element.onclick = function() {
+        expandTableLocations(this, this.originalData);
+    };
+}
+
+function getEstadoIcon(estado) {
+    const icons = {
+        'disponible': 'fas fa-check-circle',
+        'en_uso': 'fas fa-user-clock',
+        'en uso': 'fas fa-user-clock',
+        'en_mantenimiento': 'fas fa-tools',
+        'en mantenimiento': 'fas fa-tools',
+        'dado_de_baja': 'fas fa-ban',
+        'dado de baja': 'fas fa-ban',
+        'robado': 'fas fa-user-secret'
+    };
+    return icons[estado] || 'fas fa-user-secret';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // ===== VARIABLES GLOBALES =====
     let searchTimeout;
@@ -486,9 +599,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         @if(isset($categoria) && $categoria->id)
-            fetch(`{{ route('inventarios.categoria.autocomplete', $categoria->id) }}?q=${encodeURIComponent(query)}`)
+        fetch(`{{ route('inventarios.categoria.autocomplete', $categoria->id) }}?q=${encodeURIComponent(query)}`)
         @else
-            fetch(`{{ route('inventarios.autocomplete') }}?q=${encodeURIComponent(query)}`)
+        fetch(`{{ route('inventarios.autocomplete') }}?q=${encodeURIComponent(query)}`)
         @endif
             .then(response => response.json())
             .then(data => {
@@ -533,10 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    function hideSuggestions() {
-        searchSuggestions.style.display = 'none';
-        searchSuggestions.innerHTML = '';
-    }
+
     
     function getSuggestionIcon(type) {
         const icons = {
@@ -557,19 +667,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ===== FUNCIONES DE UTILIDAD =====
-    function getEstadoIcon(estado) {
-        const icons = {
-            'disponible': 'fas fa-check-circle',
-            'en_uso': 'fas fa-play-circle',
-            'en uso': 'fas fa-play-circle',
-            'en_mantenimiento': 'fas fa-tools',
-            'en mantenimiento': 'fas fa-tools',
-            'dado_de_baja': 'fas fa-ban',
-            'dado de baja': 'fas fa-ban',
-            'robado': 'fas fa-user-secret'
-        };
-        return icons[estado] || 'fas fa-question-circle';
-    }
     
     // ===== EVENT LISTENERS =====
     if (searchInput) {
@@ -602,6 +699,55 @@ document.addEventListener('DOMContentLoaded', function() {
         searchInput.addEventListener('blur', function() {
             // Delay hiding suggestions to allow clicking on them
             setTimeout(() => hideSuggestions(), 150);
+        });
+        
+        // Manejar navegación con teclado
+        searchInput.addEventListener('keydown', function(e) {
+            const suggestions = document.querySelectorAll('.suggestion-item');
+            const activeSuggestion = document.querySelector('.suggestion-item.active');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (activeSuggestion) {
+                    activeSuggestion.classList.remove('active');
+                    const next = activeSuggestion.nextElementSibling;
+                    if (next) {
+                        next.classList.add('active');
+                    } else {
+                        suggestions[0]?.classList.add('active');
+                    }
+                } else {
+                    suggestions[0]?.classList.add('active');
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (activeSuggestion) {
+                    activeSuggestion.classList.remove('active');
+                    const prev = activeSuggestion.previousElementSibling;
+                    if (prev) {
+                        prev.classList.add('active');
+                    } else {
+                        suggestions[suggestions.length - 1]?.classList.add('active');
+                    }
+                } else {
+                    suggestions[suggestions.length - 1]?.classList.add('active');
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (activeSuggestion) {
+                    const url = activeSuggestion.dataset.url;
+                    if (url) {
+                        window.location.href = url;
+                    }
+                } else {
+                    // Enviar formulario de filtros en lugar de búsqueda instantánea
+                    if (filtersForm) {
+                        filtersForm.submit();
+                    }
+                }
+            } else if (e.key === 'Escape') {
+                hideSuggestions();
+            }
         });
     }
     
@@ -667,67 +813,68 @@ document.addEventListener('DOMContentLoaded', function() {
 function expandLocations(element, additionalLocations) {
     const container = element.parentElement;
     
+    // Almacenar los datos originales en el elemento para poder reutilizarlos
+    element.originalData = additionalLocations;
+    
+    // Marcar las ubicaciones adicionales para poder identificarlas después
+    const expandedItems = [];
+    
     additionalLocations.forEach(ubicacion => {
-        const estadoClass = ubicacion.estado.replace(/\s+/g, '-').toLowerCase();
-        const estadoIcon = getEstadoIcon(ubicacion.estado);
+        // Acceder correctamente a los campos de la estructura de datos
+        const estado = ubicacion.pivot ? (ubicacion.pivot.estado || 'disponible') : 'disponible';
+        const cantidad = ubicacion.pivot ? (ubicacion.pivot.cantidad || 1) : 1;
+        const nombreUbicacion = ubicacion.nombre || 'Ubicación no definida';
+        
+        const estadoClass = estado.replace(/\s+/g, '-').toLowerCase();
+        const estadoIcon = getEstadoIcon(estado);
         
         const locationDiv = document.createElement('div');
-        locationDiv.className = 'location-compact';
+        locationDiv.className = 'location-compact expanded-location';
         locationDiv.innerHTML = `
             <div class="location-info-compact">
-                <span class="location-name-compact">${ubicacion.ubicacion_nombre}</span>
-                <span class="location-quantity-compact">${ubicacion.cantidad} unidades</span>
+                <span class="location-name-compact">${nombreUbicacion}</span>
+                <span class="location-quantity-compact">${cantidad} unidades</span>
             </div>
             <div class="status-badge-element-new status-${estadoClass}">
                 <i class="status-icon-compact ${estadoIcon}"></i>
-                <span class="status-text-compact">${ubicacion.estado.charAt(0).toUpperCase() + ubicacion.estado.slice(1).replace('_', ' ')}</span>
+                <span class="status-text-compact">${estado.charAt(0).toUpperCase() + estado.slice(1).replace('_', ' ')}</span>
             </div>
         `;
         
         container.insertBefore(locationDiv, element);
+        expandedItems.push(locationDiv);
     });
     
-    // Remover el botón "más ubicaciones"
-    element.remove();
+    // Cambiar el botón a "colapsar" en lugar de eliminarlo
+    const cantidadUbicaciones = additionalLocations.length;
+    element.innerHTML = `
+        <i class="fas fa-minus-circle"></i> Ocultar ${cantidadUbicaciones} ubicaciones
+    `;
+    element.onclick = function() {
+        collapseLocations(this, expandedItems, cantidadUbicaciones);
+    };
 }
 
-function expandTableLocations(element, additionalLocations) {
-    const container = element.parentElement;
-    
-    additionalLocations.forEach(ubicacion => {
-        const estadoClass = ubicacion.estado.replace(/\s+/g, '-').toLowerCase();
-        const estadoIcon = getEstadoIcon(ubicacion.estado);
-        
-        const locationDiv = document.createElement('div');
-        locationDiv.className = 'table-location-item';
-        locationDiv.innerHTML = `
-            <div class="table-location-info">
-                <span class="table-location-name">${ubicacion.ubicacion_nombre}</span>
-            </div>
-            <div class="table-status-badge status-${estadoClass}">
-                <span class="table-quantity">${ubicacion.cantidad}</span>
-                <i class="table-status-icon ${estadoIcon}"></i>
-                <span class="table-status-text">${ubicacion.estado.charAt(0).toUpperCase() + ubicacion.estado.slice(1).replace('_', ' ')}</span>
-            </div>
-        `;
-        
-        container.insertBefore(locationDiv, element);
+function collapseLocations(element, expandedItems, cantidadUbicaciones) {
+    // Eliminar las ubicaciones expandidas
+    expandedItems.forEach(item => {
+        if (item.parentNode) {
+            item.parentNode.removeChild(item);
+        }
     });
     
-    // Remover el botón "más ubicaciones"
-    element.remove();
+    // Restaurar el botón original
+    element.innerHTML = `
+        <i class="fas fa-plus-circle"></i> Ver ${cantidadUbicaciones} ubicaciones más
+    `;
+    element.onclick = function() {
+        expandLocations(this, this.originalData);
+    };
 }
 
-function getEstadoIcon(estado) {
-    switch(estado) {
-        case 'disponible': return 'fas fa-check-circle';
-        case 'en uso': return 'fas fa-play-circle';
-        case 'en mantenimiento': return 'fas fa-tools';
-        case 'dado de baja': return 'fas fa-ban';
-        case 'robado': return 'fas fa-user-secret';
-        default: return 'fas fa-question-circle';
-    }
-}
+
+
+
 
 // ===== LAZY LOADING DE IMÁGENES =====
 function initializeLazyLoading() {
@@ -1078,8 +1225,29 @@ body {
         gap: 0.75rem;
     }
 }
-
-@media (max-width: 480px) {
+ 
+ /* Media query para tablets */
+ @media (max-width: 1024px) and (min-width: 769px) {
+     .stats-container {
+         grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+         gap: 1rem;
+     }
+     
+     .filters-grid {
+         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+     }
+     
+     .elements-grid-view {
+         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+     }
+     
+     .table th,
+     .table td {
+         padding: 0.5rem 0.375rem;
+     }
+ }
+ 
+ @media (max-width: 480px) {
     .stat-icon {
         width: 36px;
         height: 36px;
@@ -2147,6 +2315,8 @@ body {
 
 .table {
     margin-bottom: 0;
+    table-layout: fixed;
+    width: 100%;
 }
 
 .table th {
@@ -2156,16 +2326,86 @@ body {
     font-size: 0.875rem;
     border-bottom: 2px solid #e2e8f0;
     padding: 1rem 0.75rem;
+    vertical-align: middle;
+    border-right: 1px solid #f1f5f9;
+}
+
+.table th:last-child {
+    border-right: none;
 }
 
 .table td {
     padding: 1rem 0.75rem;
     vertical-align: middle;
     border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f8fafc;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.table td:last-child {
+    border-right: none;
 }
 
 .table-hover tbody tr:hover {
     background-color: #f8fafc;
+}
+
+/* Anchos específicos de columnas - distribución uniforme con nueva columna Tipo */
+.table th:nth-child(1), .table td:nth-child(1) { /* Elemento */
+    width: 22%;
+    min-width: 180px;
+}
+
+.table th:nth-child(2), .table td:nth-child(2) { /* Marca/Modelo */
+    width: 18%;
+    min-width: 140px;
+}
+
+.table th:nth-child(3), .table td:nth-child(3) { /* Serie */
+    width: 15%;
+    min-width: 120px;
+}
+
+.table th:nth-child(4), .table td:nth-child(4) { /* Propietario */
+    width: 15%;
+    min-width: 120px;
+}
+
+.table th:nth-child(5), .table td:nth-child(5) { /* Tipo */
+    width: 10%;
+    min-width: 80px;
+    text-align: center;
+}
+
+.table th:nth-child(6), .table td:nth-child(6) { /* Ubicaciones */
+    width: 20%;
+    min-width: 150px;
+}
+
+.table th:nth-child(7), .table td:nth-child(7) { /* Acciones */
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
+}
+
+/* Centrar todas las cabeceras */
+.table th {
+    text-align: center;
+}
+
+/* Alinear contenido de celdas a la izquierda excepto acciones, serie y tipo */
+.table td:nth-child(1),
+.table td:nth-child(2),
+.table td:nth-child(4),
+.table td:nth-child(6) {
+    text-align: left;
+}
+
+.table td:nth-child(3),
+.table td:nth-child(5),
+.table td:nth-child(7) {
+    text-align: center;
 }
 
 .table-element-info {
@@ -2179,12 +2419,16 @@ body {
     font-weight: 600;
     color: #111827;
     margin: 0;
+    line-height: 1.3;
+    word-break: break-word;
+    hyphens: auto;
 }
 
 .table-element-code {
     font-size: 0.75rem;
     color: #6b7280;
     font-family: 'Courier New', monospace;
+    word-break: break-all;
 }
 
 .table-brand-model {
@@ -2194,20 +2438,25 @@ body {
 }
 
 .table-brand {
-    font-size: 0.875rem;
     font-weight: 500;
     color: #374151;
+    word-break: break-word;
+    line-height: 1.3;
 }
 
 .table-model {
     font-size: 0.75rem;
     color: #6b7280;
+    word-break: break-word;
+    line-height: 1.3;
 }
 
 .table-serial {
     font-size: 0.875rem;
     color: #374151;
     font-family: 'Courier New', monospace;
+    word-break: break-all;
+    line-height: 1.3;
 }
 
 .table-locations {
@@ -2369,6 +2618,48 @@ body {
         padding: 1rem;
     }
     
+    /* Ajustes para tabla en móviles */
+    .table th, .table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.75rem;
+    }
+    
+    .table th:nth-child(1), .table td:nth-child(1) { /* Elemento */
+        min-width: 140px;
+    }
+    
+    .table th:nth-child(2), .table td:nth-child(2) { /* Marca/Modelo */
+        min-width: 110px;
+    }
+    
+    .table th:nth-child(3), .table td:nth-child(3) { /* Serie */
+        min-width: 90px;
+    }
+    
+    .table th:nth-child(4), .table td:nth-child(4) { /* Propietario */
+        min-width: 90px;
+    }
+    
+    .table th:nth-child(5), .table td:nth-child(5) { /* Tipo */
+        min-width: 70px;
+    }
+    
+    .table th:nth-child(6), .table td:nth-child(6) { /* Ubicaciones */
+        min-width: 110px;
+    }
+    
+    .table th:nth-child(7), .table td:nth-child(7) { /* Acciones */
+        min-width: 100px;
+    }
+    
+    .table-element-name {
+        font-size: 0.75rem;
+    }
+    
+    .table-element-code {
+        font-size: 0.6875rem;
+    }
+    
     .filter-actions {
         flex-direction: column;
         align-items: stretch;
@@ -2437,11 +2728,592 @@ body {
         padding: 1.5rem;
     }
 }
+
+/* Estilos para Botones Minimalistas Sutiles */
+.btn-modern {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #f1f5f9;
+    border-radius: 4px;
+    font-weight: 400;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    background: #fafbfc;
+    width: 80px;
+    height: 32px;
+}
+
+.btn-modern-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid #f1f5f9;
+    border-radius: 4px;
+    font-weight: 400;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    background: #fafbfc;
+    width: 32px;
+    height: 32px;
+}
+
+/* Botón Ver */
+.btn-view {
+    color: #000000;
+    border-color: #f1f5f9;
+}
+
+.btn-view i {
+    color: #3b82f6;
+}
+
+.btn-view:hover {
+    text-decoration: none;
+    color: #000000;
+}
+
+.btn-view:hover i {
+    color: #3b82f6;
+}
+
+/* Botón Editar */
+.btn-edit {
+    color: #000000;
+    border-color: #f1f5f9;
+}
+
+.btn-edit i {
+    color: #f59e0b;
+}
+
+.btn-edit:hover {
+    text-decoration: none;
+    color: #000000;
+}
+
+.btn-edit:hover i {
+    color: #f59e0b;
+}
+
+/* Botón Eliminar */
+.btn-delete {
+    color: #000000;
+    border-color: #f1f5f9;
+}
+
+.btn-delete i {
+    color: #ef4444;
+}
+
+.btn-delete:hover {
+    color: #000000;
+}
+
+.btn-delete:hover i {
+    color: #ef4444;
+}
+
+/* Iconos en botones */
+.btn-modern i,
+.btn-modern-sm i {
+    font-size: 0.8rem;
+}
+
+/* Responsive para botones */
+@media (max-width: 768px) {
+    .btn-modern {
+        width: 70px;
+        height: 30px;
+        font-size: 0.75rem;
+    }
+    
+    .btn-modern-sm {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .btn-text {
+        display: none;
+    }
+    
+    /* Mejoras responsivas para la vista general */
+     .container-fluid {
+         padding: 0.5rem;
+     }
+     
+     .stats-container {
+         margin-bottom: 1rem;
+         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+     }
+     
+     .stat-item {
+         padding: 0.75rem;
+         margin-bottom: 0.5rem;
+         min-width: 120px;
+     }
+     
+     .stat-number {
+         font-size: clamp(1rem, 2.5vw, 1.25rem);
+     }
+     
+     .stat-label {
+         font-size: clamp(0.7rem, 1.8vw, 0.75rem);
+     }
+    
+    /* Filtros responsivos */
+     .search-and-filters-wrapper {
+         flex-direction: column;
+         gap: 1rem;
+     }
+     
+     .filters-grid {
+         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+         gap: 0.75rem;
+     }
+     
+     .filter-item {
+         margin-bottom: 0.75rem;
+     }
+     
+     .filter-select {
+         font-size: clamp(0.8rem, 2vw, 0.875rem);
+         padding: clamp(0.4rem, 1vw, 0.5rem);
+     }
+     
+     .search-input-modern {
+         font-size: clamp(0.8rem, 2vw, 0.875rem);
+         padding: clamp(0.5rem, 1.2vw, 0.75rem);
+     }
+    
+    /* Vista de tarjetas responsiva */
+     .elements-grid-view {
+         grid-template-columns: 1fr;
+         gap: 1rem;
+     }
+     
+     .element-card-compact {
+         padding: clamp(0.75rem, 2vw, 1rem);
+         margin-bottom: 1rem;
+     }
+     
+     .element-header-compact {
+         flex-direction: column;
+         align-items: flex-start;
+         gap: 0.5rem;
+     }
+     
+     .element-name-compact {
+         font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+         line-height: 1.3;
+     }
+     
+     .element-details-compact {
+         grid-template-columns: 1fr;
+         gap: 0.5rem;
+     }
+     
+     .detail-row-compact {
+         font-size: clamp(0.8rem, 1.8vw, 0.875rem);
+     }
+    
+    /* Ubicaciones responsivas */
+    .location-compact {
+        padding: 0.75rem;
+    }
+    
+    .location-info-compact {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    
+    .status-badge-element-new {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Breakpoint para cambio automático de tabla a grid */
+@media (max-width: 992px) {
+    /* Forzar vista grid en pantallas medianas y pequeñas */
+    .elements-table-view {
+        display: none !important;
+    }
+    
+    .elements-grid-view {
+        display: block !important;
+    }
+    
+    /* Ajustar botones de vista */
+    .view-toggle-btn[data-view="table"] {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 0.5rem;
+    }
+    
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .filter-select,
+    .search-input-modern {
+        font-size: clamp(0.875rem, 2.5vw, 1rem);
+        padding: clamp(0.5rem, 2vw, 0.75rem);
+    }
+    
+    .elements-grid-view {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .element-card-compact {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .element-name-compact {
+        font-size: clamp(1rem, 3vw, 1.125rem);
+        margin-bottom: 0.5rem;
+    }
+    
+    .detail-row-compact {
+        padding: clamp(0.375rem, 1.5vw, 0.5rem) 0;
+        font-size: clamp(0.875rem, 2.2vw, 0.9375rem);
+    }
+}
+
+@media (max-width: 480px) {
+    .container-fluid {
+        padding: 0.25rem;
+    }
+    
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .stat-item {
+        padding: 0.5rem;
+    }
+    
+    .stat-number {
+        font-size: 1rem;
+    }
+    
+    .stat-label {
+        font-size: 0.7rem;
+    }
+    
+    .search-input-modern {
+        font-size: 0.875rem;
+    }
+    
+    .element-card-compact {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .element-name-compact {
+        font-size: 0.9rem;
+        line-height: 1.3;
+    }
+    
+    .detail-row-compact {
+        padding: 0.25rem 0;
+        font-size: 0.8rem;
+    }
+    
+    .btn-modern {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    .btn-text {
+        display: none;
+    }
+    
+    /* Optimización para tabla en caso de que se muestre */
+     .table-responsive {
+          font-size: clamp(0.75rem, 2vw, 0.875rem);
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+      }
+      
+      .table th,
+      .table td {
+          padding: clamp(0.25rem, 1vw, 0.5rem);
+          white-space: nowrap;
+          vertical-align: middle;
+          text-align: center;
+      }
+      
+      .table th {
+          background: #f8f9fa;
+          font-weight: 600;
+      }
+     
+     .table-element-name {
+            font-size: clamp(0.75rem, 2vw, 0.875rem);
+            white-space: normal;
+            word-break: break-word;
+            max-width: 120px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .table-element-info {
+            text-align: center;
+        }
+        
+        .table-element-code {
+            text-align: center;
+            font-size: clamp(0.65rem, 1.5vw, 0.75rem);
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+        
+        .table-serial {
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        /* Centrado para propietario en móviles */
+        .table td:nth-child(4) {
+            text-align: center;
+            font-weight: 500;
+        }
+     
+     .table-brand,
+     .table-model,
+     .table-serial {
+         font-size: clamp(0.7rem, 1.8vw, 0.8rem);
+         white-space: normal;
+         word-break: break-word;
+     }
+     
+     .table-brand-model {
+         max-width: 100px;
+     }
+     
+     .table-status-badge {
+         padding: clamp(0.2rem, 0.8vw, 0.375rem) clamp(0.3rem, 1vw, 0.5rem);
+         font-size: clamp(0.65rem, 1.5vw, 0.75rem);
+         white-space: nowrap;
+         max-width: 80px;
+     }
+     
+     .table-quantity {
+         font-size: clamp(0.65rem, 1.5vw, 0.75rem);
+     }
+     
+     /* Scroll horizontal suave para tabla */
+     .table-responsive::-webkit-scrollbar {
+         height: 6px;
+     }
+     
+     .table-responsive::-webkit-scrollbar-track {
+         background: #f1f1f1;
+         border-radius: 3px;
+     }
+     
+     .table-responsive::-webkit-scrollbar-thumb {
+         background: #c1c1c1;
+         border-radius: 3px;
+     }
+     
+     .table-responsive::-webkit-scrollbar-thumb:hover {
+         background: #a8a8a8;
+     }
+}
+
+/* Mejoras adicionales para alineación de tabla */
+@media (min-width: 993px) {
+    .table th {
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 10;
+        border-bottom: 2px solid #dee2e6;
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .table td {
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .table-element-info {
+        min-width: 150px;
+        text-align: center;
+    }
+    
+    .table-brand-model {
+        min-width: 120px;
+        text-align: center;
+    }
+    
+    .table-serial {
+        min-width: 100px;
+        text-align: center;
+        font-weight: 500;
+    }
+    
+    .table-locations {
+        min-width: 200px;
+        text-align: center;
+    }
+    
+    /* Centrar elementos específicos */
+    .table-element-name {
+        text-align: center;
+        margin: 0;
+        font-weight: 500;
+    }
+    
+    .table-element-code {
+        text-align: center;
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .table-brand,
+    .table-model {
+        display: block;
+        text-align: center;
+    }
+    
+    /* Centrado para propietario */
+    .table td:nth-child(4) {
+        text-align: center;
+        font-weight: 500;
+    }
+    
+    .table-status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0.125rem;
+    }
+    
+    .table-location-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .table-location-name {
+        text-align: center;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+}
 </style>
 @endpush
 
 @push('scripts')
 <script>
+// ===== FUNCIONES GLOBALES PARA AUTOCOMPLETADO =====
+function fetchAutocomplete(query) {
+    if (query.length < 2) {
+        hideSuggestions();
+        return;
+    }
+    
+    @if(isset($categoria) && $categoria->id)
+    fetch(`{{ route('inventarios.categoria.autocomplete', $categoria->id) }}?q=${encodeURIComponent(query)}`)
+    @else
+    fetch(`{{ route('inventarios.autocomplete') }}?q=${encodeURIComponent(query)}`)
+    @endif
+        .then(response => response.json())
+        .then(data => {
+            displaySuggestions(data);
+        })
+        .catch(error => {
+            console.error('Error fetching autocomplete:', error);
+            hideSuggestions();
+        });
+}
+
+function displaySuggestions(suggestions) {
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    if (!suggestions || suggestions.length === 0) {
+        hideSuggestions();
+        return;
+    }
+    
+    const suggestionsHTML = suggestions.map(suggestion => `
+        <div class="suggestion-item" data-url="${suggestion.url}">
+            <div class="suggestion-icon">
+                <i class="${getSuggestionIcon(suggestion.type)}"></i>
+            </div>
+            <div class="suggestion-content">
+                <div class="suggestion-text">${suggestion.text}</div>
+                <div class="suggestion-subtitle">${suggestion.subtitle}</div>
+            </div>
+            <div class="suggestion-type">${getSuggestionTypeText(suggestion.type)}</div>
+        </div>
+    `).join('');
+    
+    searchSuggestions.innerHTML = suggestionsHTML;
+    searchSuggestions.style.display = 'block';
+    
+    // Agregar event listeners a las sugerencias
+    document.querySelectorAll('.suggestion-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            if (url) {
+                window.location.href = url;
+            }
+        });
+    });
+}
+
+function hideSuggestions() {
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    if (searchSuggestions) {
+        searchSuggestions.style.display = 'none';
+        searchSuggestions.innerHTML = '';
+    }
+}
+
+function getSuggestionIcon(type) {
+    const icons = {
+        'inventario': 'fas fa-cube',
+        'marca': 'fas fa-tag',
+        'estado': 'fas fa-info-circle'
+    };
+    return icons[type] || 'fas fa-search';
+}
+
+function getSuggestionTypeText(type) {
+    const types = {
+        'inventario': 'Elemento',
+        'marca': 'Marca',
+        'estado': 'Estado'
+    };
+    return types[type] || 'Resultado';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Variables para el sistema de autocompletado y filtros
     const searchInput = document.getElementById('searchInput');
@@ -2519,6 +3391,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterProveedor = document.getElementById('filterProveedor');
     const filterUbicacion = document.getElementById('filterUbicacion');
     const filterEstado = document.getElementById('filterEstado');
+    const filterTipoPropiedad = document.getElementById('filterTipoPropiedad');
     
     // Función para actualizar proveedores
     // Variable para controlar actualizaciones concurrentes
@@ -2534,12 +3407,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const elementoSeleccionado = filterElemento ? filterElemento.value : '';
         const marcaSeleccionada = filterMarca ? filterMarca.value : '';
+        const tipoSeleccionado = filterTipoPropiedad ? filterTipoPropiedad.value : '';
         
         // Guardar valores actuales
         const valoresActuales = {
             proveedor: filterProveedor ? filterProveedor.value : '',
             ubicacion: filterUbicacion ? filterUbicacion.value : '',
-            estado: filterEstado ? filterEstado.value : ''
+            estado: filterEstado ? filterEstado.value : '',
+            tipo_propiedad: filterTipoPropiedad ? filterTipoPropiedad.value : ''
         };
         
         const params = new URLSearchParams({
@@ -2552,6 +3427,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (marcaSeleccionada) {
             params.append('marca', marcaSeleccionada);
+        }
+        
+        if (tipoSeleccionado) {
+            params.append('tipo_propiedad', tipoSeleccionado);
         }
         
         const url = `/api/filtros-unificados?${params.toString()}`;
@@ -2652,10 +3531,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             filterMarca.innerHTML += `<option value="${marca}">${marca}</option>`;
                         });
                         // Actualizar todos los filtros después de cargar marcas
-
-                        actualizarProveedores();
-                        actualizarUbicaciones();
-                        actualizarEstados();
+                        actualizarFiltrosUnificados();
                     })
                     .catch(error => {
                         filterMarca.innerHTML = '<option value="">Error al cargar marcas</option>';
@@ -2664,17 +3540,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 filterMarca.disabled = true;
                 filterMarca.innerHTML = '<option value="">Selecciona un elemento primero</option>';
                 // Actualizar todos los filtros cuando no hay elemento seleccionado
-                actualizarProveedores();
-                actualizarUbicaciones();
-                actualizarEstados();
+                actualizarFiltrosUnificados();
             }
         });
         
         // Event listener para cuando cambia la marca
         filterMarca.addEventListener('change', function() {
-            actualizarProveedores();
-            actualizarUbicaciones();
-            actualizarEstados();
+            actualizarFiltrosUnificados();
+        });
+    }
+    
+    // Event listener para el filtro de tipo de propiedad
+    if (filterTipoPropiedad) {
+        filterTipoPropiedad.addEventListener('change', function() {
+            actualizarFiltrosUnificados();
         });
     }
     
@@ -2780,6 +3659,83 @@ document.addEventListener('DOMContentLoaded', function() {
     restaurarFiltros();
     
     // El acordeón ya no necesita JavaScript para iconos
+    
+    // ===== MANEJO RESPONSIVO AUTOMÁTICO DE VISTAS =====
+    function handleResponsiveView() {
+        const tableView = document.getElementById('elements-table-category');
+        const gridView = document.getElementById('elements-grid-category');
+        const tableBtn = document.querySelector('.view-toggle-btn[data-view="table"]');
+        const gridBtn = document.querySelector('.view-toggle-btn[data-view="grid"]');
+        
+        const screenWidth = window.innerWidth;
+        
+        if (screenWidth <= 992) {
+            // Forzar vista grid en pantallas pequeñas y medianas
+            if (tableView) tableView.style.display = 'none';
+            if (gridView) gridView.style.display = 'block';
+            
+            // Actualizar botones
+            if (tableBtn) {
+                tableBtn.classList.remove('active');
+                tableBtn.style.opacity = '0.5';
+                tableBtn.style.pointerEvents = 'none';
+            }
+            if (gridBtn) {
+                gridBtn.classList.add('active');
+                gridBtn.style.opacity = '1';
+                gridBtn.style.pointerEvents = 'auto';
+            }
+        } else {
+            // Permitir ambas vistas en pantallas grandes
+            if (tableBtn) {
+                tableBtn.style.opacity = '1';
+                tableBtn.style.pointerEvents = 'auto';
+            }
+            
+            // Restaurar vista preferida del usuario si existe
+            const savedView = localStorage.getItem('preferred_view');
+            if (savedView === 'table') {
+                if (tableView) tableView.style.display = 'block';
+                if (gridView) gridView.style.display = 'none';
+                if (tableBtn) tableBtn.classList.add('active');
+                if (gridBtn) gridBtn.classList.remove('active');
+            } else {
+                if (tableView) tableView.style.display = 'none';
+                if (gridView) gridView.style.display = 'block';
+                if (tableBtn) tableBtn.classList.remove('active');
+                if (gridBtn) gridBtn.classList.add('active');
+            }
+        }
+    }
+    
+    // Ejecutar al cargar la página
+    handleResponsiveView();
+    
+    // Ejecutar cuando cambie el tamaño de ventana
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(handleResponsiveView, 100);
+    });
+    
+    // Mejorar los botones de cambio de vista
+    document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const view = this.getAttribute('data-view');
+            const screenWidth = window.innerWidth;
+            
+            // No permitir cambio a tabla en pantallas pequeñas
+            if (view === 'table' && screenWidth <= 992) {
+                return;
+            }
+            
+            // Guardar preferencia del usuario
+            localStorage.setItem('preferred_view', view);
+            
+            // Aplicar cambio de vista
+            handleResponsiveView();
+        });
+    });
     
     // Guardar URL actual cuando se hace clic en enlaces 'Ver' o 'Editar'
     document.querySelectorAll('a[href*="inventarios/"]').forEach(link => {

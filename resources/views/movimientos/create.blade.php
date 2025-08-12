@@ -19,10 +19,14 @@
             <select name="ubicacion_origen" id="ubicacion_origen" class="form-control" required>
                 <option value="">Seleccione la ubicación de origen</option>
                 @foreach($ubicaciones as $ubicacion)
+                    @php
+                        $ubicacionData = $inventario->ubicacionesData->where('ubicacion_id', $ubicacion->id)->first();
+                        $cantidad = $ubicacionData ? $ubicacionData->cantidad : 0;
+                    @endphp
                     <option value="{{ $ubicacion->id }}" 
                             {{ (isset($movimiento) && $movimiento->ubicacion_origen == $ubicacion->id) || (!isset($movimiento) && $inventario->ubicacion_id == $ubicacion->id) ? 'selected' : '' }}
-                            data-cantidad="{{ $inventario->ubicaciones->where('ubicacion_id', $ubicacion->id)->first()->cantidad ?? 0 }}">
-                        {{ $ubicacion->nombre }} (Disponible: {{ $inventario->ubicaciones->where('ubicacion_id', $ubicacion->id)->first()->cantidad ?? 0 }})
+                            data-cantidad="{{ $cantidad }}">
+                        {{ $ubicacion->nombre }} (Disponible: {{ $cantidad }})
                     </option>
                 @endforeach
             </select>
@@ -40,8 +44,11 @@
         </div>
         <div class="form-group mb-3">
             <label for="cantidad">Cantidad a Mover</label>
-            <input type="number" name="cantidad" id="cantidad" class="form-control" required min="1" max="{{ $inventario->cantidadTotal }}">
-            <small class="form-text text-muted">Cantidad máxima disponible: <span id="max-cantidad">{{ $inventario->cantidadTotal }}</span></small>
+            @php
+                $cantidadTotal = $inventario->ubicacionesData->sum('cantidad');
+            @endphp
+            <input type="number" name="cantidad" id="cantidad" class="form-control" required min="1" max="{{ $cantidadTotal }}">
+            <small class="form-text text-muted">Cantidad máxima disponible: <span id="max-cantidad">{{ $cantidadTotal }}</span></small>
         </div>
         <div class="form-group mb-3">
             <label for="nuevo_estado">Estado del Elemento</label>

@@ -20,9 +20,9 @@ class InventarioController extends Controller
 
     public function index(Request $request)
     {
-        // Si hay parámetros de filtro, redirigir al método search
+        // Si hay parámetros de filtro, redirigir al método searchInventarios
         if ($request->hasAny(['search', 'categoria', 'marca', 'estado', 'ubicacion'])) {
-            return $this->search($request);
+            return $this->searchInventarios($request);
         }
 
         // Vista principal del inventario - similar a homepage de Homecenter
@@ -92,6 +92,11 @@ class InventarioController extends Controller
                            ->havingRaw('SUM(CASE WHEN inventario_ubicaciones.estado = ? THEN inventario_ubicaciones.cantidad ELSE 0 END) > 0', [$request->estado]);
         }
 
+        // Aplicar filtro de ubicación si existe
+        if ($request->filled('ubicacion')) {
+            $categoriasQuery->where('inventario_ubicaciones.ubicacion_id', $request->ubicacion);
+        }
+
         // Obtener categorías con sus estadísticas
         $categorias = $categoriasQuery
             ->select([
@@ -157,7 +162,8 @@ class InventarioController extends Controller
             'marca' => $request->get('marca'),
             'proveedor' => $request->get('proveedor'),
             'estado' => $request->get('estado'),
-            'ubicacion' => $request->get('ubicacion')
+            'ubicacion' => $request->get('ubicacion'),
+            'tipo_propiedad' => $request->get('tipo_propiedad')
         ]);
         
         \Log::info('Request completo:', $request->all());
@@ -197,6 +203,10 @@ class InventarioController extends Controller
         
         if ($request->filled('elemento')) {
             $query->where('nombre', 'LIKE', '%' . $request->elemento . '%');
+        }
+        
+        if ($request->filled('tipo_propiedad')) {
+            $query->where('tipo_propiedad', $request->tipo_propiedad);
         }
         
         // Ordenación simple por nombre
@@ -451,6 +461,22 @@ class InventarioController extends Controller
                 ->get();
         }
 
+        // Determinar qué vista retornar basado en el contexto
+        // Si viene de la vista principal (index) y es una búsqueda simple, mantener en index
+        if ($request->filled('search') && !$request->filled(['categoria', 'estado', 'marca'])) {
+            // Búsqueda desde index - retornar resultados en formato JSON para AJAX
+            if ($request->ajax()) {
+                return response()->json([
+                    'inventarios' => $inventarios,
+                    'total' => $inventarios->total()
+                ]);
+            }
+            // Si no es AJAX, retornar vista index con resultados
+            $todasCategorias = Categoria::all();
+            return view('inventarios.index', compact('inventarios', 'searchTerm', 'filtros', 'categorias', 'statsGlobales', 'todasCategorias'));
+        }
+        
+        // Para filtros avanzados o navegación por categorías, usar vista categorias
         return view('inventarios.categorias', compact('inventarios', 'searchTerm', 'filtros', 'categorias', 'statsGlobales'));
     }
 
@@ -498,18 +524,18 @@ class InventarioController extends Controller
             $ubicaciones = $inventario->ubicaciones;
             if ($ubicaciones->count() > 0) {
                 $primeraUbicacion = $ubicaciones->first();
-                if ($primeraUbicacion && $primeraUbicacion->ubicacion) {
+                if ($primeraUbicacion && $primeraUbicacion->nombre) {
                     // Agregar ubicación
                     if ($ubicaciones->count() > 1) {
                         $adicionales = $ubicaciones->count() - 1;
-                        $subtitle_parts[] = 'Ubicación: ' . $primeraUbicacion->ubicacion->nombre . ' y ' . $adicionales . ' más';
+                        $subtitle_parts[] = 'Ubicación: ' . $primeraUbicacion->nombre . ' y ' . $adicionales . ' más';
                     } else {
-                        $subtitle_parts[] = 'Ubicación: ' . $primeraUbicacion->ubicacion->nombre;
+                        $subtitle_parts[] = 'Ubicación: ' . $primeraUbicacion->nombre;
                     }
                     
                     // Agregar estado
-                    if ($primeraUbicacion->estado) {
-                        $subtitle_parts[] = 'Estado: ' . ucfirst($primeraUbicacion->estado);
+                    if ($primeraUbicacion->pivot && $primeraUbicacion->pivot->estado) {
+                        $subtitle_parts[] = 'Estado: ' . ucfirst($primeraUbicacion->pivot->estado);
                     }
                 }
             }
@@ -560,7 +586,7 @@ class InventarioController extends Controller
                 'id' => $ubicacion->id,
                 'text' => $ubicacion->nombre,
                 'subtitle' => 'Ubicación',
-                'url' => route('inventarios.index', ['ubicacion' => $ubicacion->id])
+                'url' => route('inventarios.categoria', ['categoria' => null, 'ubicacion' => $ubicacion->id])
             ];
         }
         
@@ -576,7 +602,7 @@ class InventarioController extends Controller
                 'id' => $estado,
                 'text' => ucfirst($estado),
                 'subtitle' => 'Estado',
-                'url' => route('inventarios.index', ['estado' => $estado])
+                'url' => route('inventarios.categoria', ['categoria' => null, 'estado' => $estado])
             ];
         }
         
@@ -631,18 +657,18 @@ class InventarioController extends Controller
             $ubicaciones = $inventario->ubicaciones;
             if ($ubicaciones->count() > 0) {
                 $primeraUbicacion = $ubicaciones->first();
-                if ($primeraUbicacion && $primeraUbicacion->ubicacion) {
+                if ($primeraUbicacion && $primeraUbicacion->nombre) {
                     // Agregar ubicación
                     if ($ubicaciones->count() > 1) {
                         $adicionales = $ubicaciones->count() - 1;
-                        $subtitle_parts[] = 'Ubicación: ' . $primeraUbicacion->ubicacion->nombre . ' y ' . $adicionales . ' más';
+                        $subtitle_parts[] = 'Ubicación: ' . $primeraUbicacion->nombre . ' y ' . $adicionales . ' más';
                     } else {
-                        $subtitle_parts[] = 'Ubicación: ' . $primeraUbicacion->ubicacion->nombre;
+                        $subtitle_parts[] = 'Ubicación: ' . $primeraUbicacion->nombre;
                     }
                     
                     // Agregar estado
-                    if ($primeraUbicacion->estado) {
-                        $subtitle_parts[] = 'Estado: ' . ucfirst($primeraUbicacion->estado);
+                    if ($primeraUbicacion->pivot && $primeraUbicacion->pivot->estado) {
+                        $subtitle_parts[] = 'Estado: ' . ucfirst($primeraUbicacion->pivot->estado);
                     }
                 }
             }
@@ -962,6 +988,8 @@ class InventarioController extends Controller
             'observaciones' => 'nullable|string',
             'imagen_principal' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
             'imagen_secundaria' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'qr_code' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'enlace_documentacion' => 'nullable|url|max:255',
             'ubicacion_id' => 'required|exists:ubicaciones,id',
             'estado' => 'required|in:disponible,en uso,en mantenimiento,dado de baja,robado',
         ])->validate();
@@ -999,6 +1027,22 @@ class InventarioController extends Controller
             }
             
             $validatedData['imagen_secundaria'] = $file->storeAs('inventario_imagenes', $fileName, 'public');
+        }
+
+        // Manejar archivo QR
+        if ($request->hasFile('qr_code')) {
+            $file = $request->file('qr_code');
+            $extension = $file->getClientOriginalExtension();
+            $fileName = $codigoUnico . '_qr.' . $extension;
+            
+            // Verificar que el archivo no existe
+            $counter = 1;
+            while (Storage::disk('public')->exists('documentos/' . $fileName)) {
+                $fileName = $codigoUnico . '_qr_' . $counter . '.' . $extension;
+                $counter++;
+            }
+            
+            $validatedData['qr_code'] = $file->storeAs('documentos', $fileName, 'public');
         }
 
         $cantidadInicial = $validatedData['cantidad'];
@@ -1078,6 +1122,8 @@ class InventarioController extends Controller
         'observaciones' => 'nullable|string',
         'imagen_principal' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         'imagen_secundaria' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+        'qr_code' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+        'enlace_documentacion' => 'nullable|url|max:255',
         'cantidades' => 'array',
         'cantidades.*' => 'integer|min:0',
         'estados' => 'array',
@@ -1134,6 +1180,26 @@ class InventarioController extends Controller
                         }
                         
                         $validatedData['imagen_secundaria'] = $file->storeAs('inventario_imagenes', $fileName, 'public');
+            }
+
+            // Manejar archivo QR
+            if ($request->hasFile('qr_code')) {
+                if ($inventario->qr_code) {
+                    Storage::disk('public')->delete($inventario->qr_code);
+                }
+                            
+                        $file = $request->file('qr_code');
+                        $extension = $file->getClientOriginalExtension();
+                        $fileName = $inventario->codigo_unico . '_qr.' . $extension;
+                        
+                        // Verificar que el archivo no existe
+                        $counter = 1;
+                        while (Storage::disk('public')->exists('documentos/' . $fileName)) {
+                            $fileName = $inventario->codigo_unico . '_qr_' . $counter . '.' . $extension;
+                            $counter++;
+                        }
+                        
+                        $validatedData['qr_code'] = $file->storeAs('documentos', $fileName, 'public');
             }
 
             // Actualizar el inventario
@@ -1418,6 +1484,7 @@ class InventarioController extends Controller
         try {
             $elemento = $request->get('elemento');
             $marca = $request->get('marca');
+            $tipoPropiedad = $request->get('tipo_propiedad');
             $categoriaId = $request->get('categoria_id');
             
             if (!$categoriaId) {
@@ -1561,6 +1628,7 @@ class InventarioController extends Controller
             $elemento = $request->get('elemento');
             $marca = $request->get('marca');
             $categoriaId = $request->get('categoria_id');
+            $tipoPropiedad = $request->get('tipo_propiedad');
             
             if (!$categoriaId) {
                 return response()->json([
@@ -1622,6 +1690,10 @@ class InventarioController extends Controller
                 });
             }
             
+            if ($tipoPropiedad) {
+                $queryProveedores->where('tipo_propiedad', $tipoPropiedad);
+            }
+            
             $resultado['proveedores'] = $queryProveedores->with('proveedor')
                 ->distinct()
                 ->get()
@@ -1644,6 +1716,17 @@ class InventarioController extends Controller
                 $queryUbicaciones->where('nombre', $elemento);
             }
             
+            if ($marca) {
+                $queryUbicaciones->where(function($q) use ($marca) {
+                    $q->where('marca', $marca)
+                      ->orWhere('modelo', $marca);
+                });
+            }
+            
+            if ($tipoPropiedad) {
+                $queryUbicaciones->where('tipo_propiedad', $tipoPropiedad);
+            }
+            
             $resultado['ubicaciones'] = $queryUbicaciones->with('ubicaciones')
                 ->get()
                 ->pluck('ubicaciones')
@@ -1663,6 +1746,17 @@ class InventarioController extends Controller
             
             if ($elemento) {
                 $queryEstados->where('nombre', $elemento);
+            }
+            
+            if ($marca) {
+                $queryEstados->where(function($q) use ($marca) {
+                    $q->where('marca', $marca)
+                      ->orWhere('modelo', $marca);
+                });
+            }
+            
+            if ($tipoPropiedad) {
+                $queryEstados->where('tipo_propiedad', $tipoPropiedad);
             }
             
             $estadosUnicos = $queryEstados->with('ubicaciones')

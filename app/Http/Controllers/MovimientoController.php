@@ -116,9 +116,19 @@ class MovimientoController extends Controller
     {
         $this->authorize('create', Movimiento::class);
         $inventario = Inventario::findOrFail($request->inventario_id);
+        
+        // Obtener ubicaciones del inventario usando consulta directa
+        $inventarioUbicaciones = DB::table('inventario_ubicaciones')
+            ->join('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
+            ->where('inventario_ubicaciones.inventario_id', $inventario->id)
+            ->select('ubicaciones.id as ubicacion_id', 'ubicaciones.nombre as ubicacion_nombre', 
+                    'inventario_ubicaciones.cantidad', 'inventario_ubicaciones.estado')
+            ->get();
+        
+        $inventario->ubicacionesData = $inventarioUbicaciones;
         $ubicaciones = Ubicacion::all();
         $empleados = Empleado::all();
-    
+
         return view('movimientos.create', compact('inventario', 'ubicaciones', 'empleados'));
     }
     
@@ -180,9 +190,14 @@ class MovimientoController extends Controller
         }
 
         $inventario = Inventario::findOrFail($request->inventario_id);
-        $inventarioUbicacionOrigen = $inventario->ubicaciones()
+        $inventarioUbicacionOrigen = DB::table('inventario_ubicaciones')
+            ->where('inventario_id', $inventario->id)
             ->where('ubicacion_id', $request->ubicacion_origen)
-            ->firstOrFail();
+            ->first();
+            
+        if (!$inventarioUbicacionOrigen) {
+            return back()->withErrors(['ubicacion_origen' => 'No se encontró el elemento en la ubicación de origen.']);
+        }
         
         if ($inventarioUbicacionOrigen->cantidad < $request->cantidad) {
             Log::warning('Cantidad insuficiente en ubicación origen', [
@@ -266,25 +281,52 @@ class MovimientoController extends Controller
                     'movimiento_id' => $movimiento->id
                 ]);
 
-                $inventarioUbicacionOrigen->decrement('cantidad', $request->cantidad);
-                $inventarioUbicacionDestino = $inventario->ubicaciones()
+                // Decrementar cantidad en ubicación origen
+                DB::table('inventario_ubicaciones')
+                    ->where('inventario_id', $inventario->id)
+                    ->where('ubicacion_id', $request->ubicacion_origen)
+                    ->decrement('cantidad', $request->cantidad);
+                
+                // Buscar ubicación destino
+                $inventarioUbicacionDestino = DB::table('inventario_ubicaciones')
+                    ->where('inventario_id', $inventario->id)
                     ->where('ubicacion_id', $request->ubicacion_destino)
                     ->first();
 
                 if ($inventarioUbicacionDestino) {
-                    $inventarioUbicacionDestino->increment('cantidad', $request->cantidad);
-                    // Actualizar el estado con el nuevo estado seleccionado
-                    $inventarioUbicacionDestino->update(['estado' => $request->nuevo_estado]);
+                    // Incrementar cantidad en ubicación destino existente
+                    DB::table('inventario_ubicaciones')
+                        ->where('inventario_id', $inventario->id)
+                        ->where('ubicacion_id', $request->ubicacion_destino)
+                        ->increment('cantidad', $request->cantidad);
+                    // Actualizar el estado
+                    DB::table('inventario_ubicaciones')
+                        ->where('inventario_id', $inventario->id)
+                        ->where('ubicacion_id', $request->ubicacion_destino)
+                        ->update(['estado' => $request->nuevo_estado]);
                 } else {
-                    $inventarioUbicacionDestino = $inventario->ubicaciones()->create([
+                    // Crear nueva ubicación destino
+                    DB::table('inventario_ubicaciones')->insert([
+                        'inventario_id' => $inventario->id,
                         'ubicacion_id' => $request->ubicacion_destino,
                         'cantidad' => $request->cantidad,
-                        'estado' => $request->nuevo_estado
+                        'estado' => $request->nuevo_estado,
+                        'created_at' => now(),
+                        'updated_at' => now()
                     ]);
                 }
 
-                $inventario->ubicaciones()->where('cantidad', 0)->delete();
-                $inventario->cantidadTotal = $inventario->ubicaciones()->sum('cantidad');
+                // Eliminar ubicaciones con cantidad 0
+                DB::table('inventario_ubicaciones')
+                    ->where('inventario_id', $inventario->id)
+                    ->where('cantidad', 0)
+                    ->delete();
+                    
+                // Actualizar cantidad total
+                $cantidadTotal = DB::table('inventario_ubicaciones')
+                    ->where('inventario_id', $inventario->id)
+                    ->sum('cantidad');
+                $inventario->cantidadTotal = $cantidadTotal;
                 $inventario->save();
 
                 Log::info('Iniciando proceso de notificaciones', [
@@ -334,6 +376,17 @@ class MovimientoController extends Controller
         $this->authorize('view', $movimiento);
         $inventario = $movimiento->inventario;
         
+        // Obtener ubicaciones del inventario usando consulta directa
+        $inventarioUbicaciones = DB::table('inventario_ubicaciones')
+            ->join('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
+            ->where('inventario_ubicaciones.inventario_id', $inventario->id)
+            ->select('ubicaciones.id as ubicacion_id', 'ubicaciones.nombre as ubicacion_nombre', 
+                    'inventario_ubicaciones.cantidad', 'inventario_ubicaciones.estado')
+            ->get();
+        
+        $inventario->ubicacionesData = $inventarioUbicaciones;
+        $inventario->cantidadTotalCalculada = $inventarioUbicaciones->sum('cantidad');
+        
         $movimientosPorMes = $inventario->movimientos()
             ->selectRaw('MONTH(fecha_movimiento) as mes, COUNT(*) as total')
             ->groupBy('mes')
@@ -365,7 +418,12 @@ class MovimientoController extends Controller
         $totalMovimientos = $inventario->movimientos()->count();
         $ultimoMovimiento = $inventario->movimientos()->latest('fecha_movimiento')->first();
         // Obtener la ubicación actual del inventario (primera ubicación con cantidad > 0)
-        $ubicacionActual = $inventario->ubicaciones()->where('cantidad', '>', 0)->first();
+        $ubicacionActualData = DB::table('inventario_ubicaciones')
+            ->join('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
+            ->where('inventario_ubicaciones.inventario_id', $inventario->id)
+            ->where('inventario_ubicaciones.cantidad', '>', 0)
+            ->select('ubicaciones.nombre')
+            ->first();
 
         $estadisticas = [
             'meses' => $meses,
@@ -374,7 +432,7 @@ class MovimientoController extends Controller
             'frecuencia_ubicaciones' => $frecuenciaUbicaciones,
             'total_movimientos' => $totalMovimientos,
             'ultimo_movimiento' => $ultimoMovimiento ? $ultimoMovimiento->fecha_movimiento->format('d/m/Y H:i') : 'N/A',
-            'ubicacion_actual' => $ubicacionActual ? $ubicacionActual->ubicacion->nombre : 'N/A',
+            'ubicacion_actual' => $ubicacionActualData ? $ubicacionActualData->nombre : 'N/A',
             'realizado_por' => $movimiento->usuario->name ?? 'N/A'
         ];
 
@@ -385,6 +443,16 @@ class MovimientoController extends Controller
     {
         $this->authorize('update', $movimiento);
         $inventario = $movimiento->inventario;
+        
+        // Obtener ubicaciones del inventario usando consulta directa
+        $inventarioUbicaciones = DB::table('inventario_ubicaciones')
+            ->join('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
+            ->where('inventario_ubicaciones.inventario_id', $inventario->id)
+            ->select('ubicaciones.id as ubicacion_id', 'ubicaciones.nombre as ubicacion_nombre', 
+                    'inventario_ubicaciones.cantidad', 'inventario_ubicaciones.estado')
+            ->get();
+        
+        $inventario->ubicacionesData = $inventarioUbicaciones;
         $ubicaciones = Ubicacion::all();
         $empleados = Empleado::all();
         return view('movimientos.edit', compact('movimiento', 'inventario', 'ubicaciones', 'empleados'));
@@ -437,36 +505,61 @@ class MovimientoController extends Controller
                 ]);
 
                 // 1. Quitar cantidad de la ubicación destino anterior
-                $ubicacionAnterior = $inventario->ubicaciones()
+                $ubicacionAnterior = DB::table('inventario_ubicaciones')
+                    ->where('inventario_id', $inventario->id)
                     ->where('ubicacion_id', $datosOriginales['ubicacion_destino'])
                     ->first();
 
                 if ($ubicacionAnterior) {
-                    $ubicacionAnterior->decrement('cantidad', $movimiento->cantidad);
                     $estadoActual = $ubicacionAnterior->estado;
                     
-                    if ($ubicacionAnterior->fresh()->cantidad <= 0) {
-                        $ubicacionAnterior->delete();
+                    // Decrementar cantidad
+                    DB::table('inventario_ubicaciones')
+                        ->where('inventario_id', $inventario->id)
+                        ->where('ubicacion_id', $datosOriginales['ubicacion_destino'])
+                        ->decrement('cantidad', $movimiento->cantidad);
+                    
+                    // Verificar si la cantidad llegó a 0 y eliminar si es necesario
+                    $cantidadActual = DB::table('inventario_ubicaciones')
+                        ->where('inventario_id', $inventario->id)
+                        ->where('ubicacion_id', $datosOriginales['ubicacion_destino'])
+                        ->value('cantidad');
+                        
+                    if ($cantidadActual <= 0) {
+                        DB::table('inventario_ubicaciones')
+                            ->where('inventario_id', $inventario->id)
+                            ->where('ubicacion_id', $datosOriginales['ubicacion_destino'])
+                            ->delete();
                     }
                 }
 
                 // 2. Agregar cantidad a la nueva ubicación destino
-                $nuevaUbicacion = $inventario->ubicaciones()
+                $nuevaUbicacion = DB::table('inventario_ubicaciones')
+                    ->where('inventario_id', $inventario->id)
                     ->where('ubicacion_id', $validatedData['ubicacion_destino'])
                     ->first();
 
                 if ($nuevaUbicacion) {
-                    $nuevaUbicacion->increment('cantidad', $movimiento->cantidad);
+                    DB::table('inventario_ubicaciones')
+                        ->where('inventario_id', $inventario->id)
+                        ->where('ubicacion_id', $validatedData['ubicacion_destino'])
+                        ->increment('cantidad', $movimiento->cantidad);
                 } else {
-                    $inventario->ubicaciones()->create([
+                    DB::table('inventario_ubicaciones')->insert([
+                        'inventario_id' => $inventario->id,
                         'ubicacion_id' => $validatedData['ubicacion_destino'],
                         'cantidad' => $movimiento->cantidad,
-                        'estado' => $estadoActual ?? 'disponible'
+                        'estado' => $estadoActual ?? 'disponible',
+                        'created_at' => now(),
+                        'updated_at' => now()
                     ]);
                 }
 
                 // 3. Actualizar cantidad total
-                $inventario->cantidadTotal = $inventario->ubicaciones()->sum('cantidad');
+                $cantidadTotal = DB::table('inventario_ubicaciones')
+                    ->where('inventario_id', $inventario->id)
+                    ->sum('cantidad');
+                $inventario->cantidadTotal = $cantidadTotal;
                 $inventario->save();
             }
 
@@ -539,35 +632,65 @@ class MovimientoController extends Controller
             $inventario = $movimiento->inventario;
             
             // Obtener ubicación destino y su estado actual
-            $ubicacionDestino = $inventario->ubicaciones()
+            $ubicacionDestino = DB::table('inventario_ubicaciones')
+                ->where('inventario_id', $inventario->id)
                 ->where('ubicacion_id', $movimiento->ubicacion_destino)
                 ->first();
             
             // Obtener el estado de la ubicación destino o un estado por defecto
             $estadoActual = $ubicacionDestino ? $ubicacionDestino->estado : 'disponible';
             
-            // Crear o actualizar ubicación origen con el estado correcto
-            $ubicacionOrigen = $inventario->ubicaciones()
-                ->firstOrCreate(
-                    ['ubicacion_id' => $movimiento->ubicacion_origen],
-                    [
-                        'cantidad' => 0,
-                        'estado' => $estadoActual // Aseguramos que el estado no sea nulo
-                    ]
-                );
+            // Buscar ubicación origen
+            $ubicacionOrigen = DB::table('inventario_ubicaciones')
+                ->where('inventario_id', $inventario->id)
+                ->where('ubicacion_id', $movimiento->ubicacion_origen)
+                ->first();
                 
             if ($ubicacionDestino) {
                 if ($ubicacionDestino->cantidad >= $movimiento->cantidad) {
-                    $ubicacionDestino->decrement('cantidad', $movimiento->cantidad);
-                    $ubicacionOrigen->increment('cantidad', $movimiento->cantidad);
+                    // Decrementar cantidad en ubicación destino
+                    DB::table('inventario_ubicaciones')
+                        ->where('inventario_id', $inventario->id)
+                        ->where('ubicacion_id', $movimiento->ubicacion_destino)
+                        ->decrement('cantidad', $movimiento->cantidad);
                     
-                    if ($ubicacionDestino->fresh()->cantidad == 0) {
-                        $ubicacionDestino->delete();
+                    // Incrementar o crear ubicación origen
+                    if ($ubicacionOrigen) {
+                        DB::table('inventario_ubicaciones')
+                            ->where('inventario_id', $inventario->id)
+                            ->where('ubicacion_id', $movimiento->ubicacion_origen)
+                            ->increment('cantidad', $movimiento->cantidad);
+                    } else {
+                        DB::table('inventario_ubicaciones')->insert([
+                            'inventario_id' => $inventario->id,
+                            'ubicacion_id' => $movimiento->ubicacion_origen,
+                            'cantidad' => $movimiento->cantidad,
+                            'estado' => $estadoActual,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                    }
+                    
+                    // Verificar si la ubicación destino quedó en 0 y eliminarla
+                    $cantidadDestino = DB::table('inventario_ubicaciones')
+                        ->where('inventario_id', $inventario->id)
+                        ->where('ubicacion_id', $movimiento->ubicacion_destino)
+                        ->value('cantidad');
+                        
+                    if ($cantidadDestino == 0) {
+                        DB::table('inventario_ubicaciones')
+                            ->where('inventario_id', $inventario->id)
+                            ->where('ubicacion_id', $movimiento->ubicacion_destino)
+                            ->delete();
                     }
                 }
             }
 
-            $inventario->cantidadTotal = $inventario->ubicaciones()->sum('cantidad');
+            // Actualizar cantidad total
+            $cantidadTotal = DB::table('inventario_ubicaciones')
+                ->where('inventario_id', $inventario->id)
+                ->sum('cantidad');
+            $inventario->cantidadTotal = $cantidadTotal;
             $inventario->save();
 
             $movimiento->delete();

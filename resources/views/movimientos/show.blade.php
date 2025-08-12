@@ -43,7 +43,7 @@
                         <dd class="col-sm-8">{{ $movimiento->inventario->categoria->nombre }}</dd>
                         
                         <dt class="col-sm-4">Cantidad Total:</dt>
-                        <dd class="col-sm-8">{{ $movimiento->inventario->cantidadTotal }}</dd>
+                        <dd class="col-sm-8">{{ $movimiento->inventario->cantidadTotalCalculada ?? $movimiento->inventario->cantidadTotal }}</dd>
                         
                         <dt class="col-sm-4">Cantidad Movida:</dt>
                         <dd class="col-sm-8">{{ $movimiento->cantidad }}</dd>
