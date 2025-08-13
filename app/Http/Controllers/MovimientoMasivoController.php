@@ -299,7 +299,6 @@ class MovimientoMasivoController extends Controller
                 ->join('categorias', 'inventarios.categoria_id', '=', 'categorias.id')
                 ->join('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
                 ->where('inventario_ubicaciones.cantidad', '>', 0)
-                ->where('inventario_ubicaciones.estado', 'disponible')
                 ->select(
                     'inventarios.id',
                     'inventarios.codigo_unico',
