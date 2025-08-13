@@ -288,6 +288,7 @@ class MovimientoMasivoController extends Controller
                 ->select(
                     'inventarios.id',
                     'inventarios.codigo_unico',
+                    'inventarios.numero_serie',
                     'inventarios.nombre',
                     'inventarios.observaciones',
                     'inventarios.valor_unitario',
@@ -310,7 +311,7 @@ class MovimientoMasivoController extends Controller
             foreach ($resultados as $resultado) {
                 $elementos[] = [
                     'id' => $resultado->id,
-                    'codigo' => $resultado->codigo_unico,
+                    'codigo' => $resultado->numero_serie ?? $resultado->codigo_unico,
                     'nombre' => $resultado->nombre,
                     'descripcion' => $resultado->observaciones ?? '',
                     'categoria' => $resultado->categoria_nombre ?? 'Sin categoría',

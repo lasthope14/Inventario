@@ -3399,7 +3399,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Función unificada para actualizar todos los filtros (API Unificada - Opción 2)
     function actualizarFiltrosUnificados() {
+        console.log('🔄 INICIANDO actualizarFiltrosUnificados()');
+        
         if (isUpdating) {
+            console.log('⚠️ Ya hay una actualización en progreso, saliendo...');
             return;
         }
         
@@ -3408,13 +3411,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const elementoSeleccionado = filterElemento ? filterElemento.value : '';
         const marcaSeleccionada = filterMarca ? filterMarca.value : '';
         const tipoSeleccionado = filterTipoPropiedad ? filterTipoPropiedad.value : '';
+        const proveedorSeleccionado = filterProveedor ? filterProveedor.value : '';
+        const ubicacionSeleccionada = filterUbicacion ? filterUbicacion.value : '';
+        const estadoSeleccionado = filterEstado ? filterEstado.value : '';
+        
+        console.log('📍 UBICACION - Valor actual antes de API:', ubicacionSeleccionada);
+        console.log('📍 UBICACION - Elemento DOM existe:', !!filterUbicacion);
         
         // Guardar valores actuales
         const valoresActuales = {
-            proveedor: filterProveedor ? filterProveedor.value : '',
-            ubicacion: filterUbicacion ? filterUbicacion.value : '',
-            estado: filterEstado ? filterEstado.value : '',
-            tipo_propiedad: filterTipoPropiedad ? filterTipoPropiedad.value : ''
+            marca: marcaSeleccionada,
+            proveedor: proveedorSeleccionado,
+            ubicacion: ubicacionSeleccionada,
+            estado: estadoSeleccionado,
+            tipo_propiedad: tipoSeleccionado
         };
         
         const params = new URLSearchParams({
@@ -3433,9 +3443,25 @@ document.addEventListener('DOMContentLoaded', function() {
             params.append('tipo_propiedad', tipoSeleccionado);
         }
         
+        if (proveedorSeleccionado) {
+            params.append('proveedor', proveedorSeleccionado);
+        }
+        
+        if (ubicacionSeleccionada) {
+            params.append('ubicacion', ubicacionSeleccionada);
+        }
+        
+        if (estadoSeleccionado) {
+            params.append('estado', estadoSeleccionado);
+        }
+        
         const url = `/api/filtros-unificados?${params.toString()}`;
         
+        console.log('📍 UBICACION - URL de API:', url);
+        console.log('📍 UBICACION - Parámetros enviados:', Object.fromEntries(params));
+        
         // Mostrar estado de carga
+        if (filterMarca && elementoSeleccionado) filterMarca.innerHTML = '<option value="">Cargando...</option>';
         if (filterProveedor) filterProveedor.innerHTML = '<option value="">Cargando...</option>';
         if (filterUbicacion) filterUbicacion.innerHTML = '<option value="">Cargando...</option>';
         if (filterEstado) filterEstado.innerHTML = '<option value="">Cargando...</option>';
@@ -3449,6 +3475,19 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 
+                // Actualizar marcas
+                if (filterMarca && data.marcas && elementoSeleccionado) {
+                    filterMarca.innerHTML = '<option value="">Todas las marcas</option>';
+                    data.marcas.forEach(marca => {
+                        const selected = valoresActuales.marca == marca ? 'selected' : '';
+                        filterMarca.innerHTML += `<option value="${marca}" ${selected}>${marca}</option>`;
+                    });
+                    filterMarca.disabled = false;
+                } else if (filterMarca && !elementoSeleccionado) {
+                    filterMarca.disabled = true;
+                    filterMarca.innerHTML = '<option value="">Selecciona un elemento primero</option>';
+                }
+                
                 // Actualizar proveedores
                 if (filterProveedor && data.proveedores) {
                     filterProveedor.innerHTML = '<option value="">Todos los proveedores</option>';
@@ -3459,12 +3498,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Actualizar ubicaciones
+                console.log('📍 UBICACION - Datos recibidos de API:', data.ubicaciones);
+                console.log('📍 UBICACION - Valor que debería mantener:', valoresActuales.ubicacion);
+                
                 if (filterUbicacion && data.ubicaciones) {
                     filterUbicacion.innerHTML = '<option value="">Todas las ubicaciones</option>';
+                    
+                    let ubicacionEncontrada = false;
                     data.ubicaciones.forEach(ubicacion => {
                         const selected = valoresActuales.ubicacion == ubicacion.id ? 'selected' : '';
+                        if (selected) {
+                            ubicacionEncontrada = true;
+                            console.log('📍 UBICACION - Encontrada en datos API:', ubicacion);
+                        }
                         filterUbicacion.innerHTML += `<option value="${ubicacion.id}" ${selected}>${ubicacion.nombre}</option>`;
                     });
+                    
+                    // Si el valor seleccionado no se encontró en la API, agregarlo manualmente
+                    if (valoresActuales.ubicacion && !ubicacionEncontrada) {
+                        console.log('📍 UBICACION - Valor no encontrado en API, agregando manualmente:', valoresActuales.ubicacion);
+                        filterUbicacion.innerHTML += `<option value="${valoresActuales.ubicacion}" selected>Ubicación ID: ${valoresActuales.ubicacion}</option>`;
+                        ubicacionEncontrada = true;
+                    }
+                    
+                    console.log('📍 UBICACION - ¿Se encontró en API?:', ubicacionEncontrada);
+                    console.log('📍 UBICACION - Valor final del select:', filterUbicacion.value);
                 }
                 
                 // Actualizar estados
@@ -3476,16 +3534,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
+                // Actualizar tipos de propiedad
+                if (filterTipoPropiedad && data.tipos_propiedad) {
+                    filterTipoPropiedad.innerHTML = '<option value="">Todos los tipos</option>';
+                    data.tipos_propiedad.forEach(tipo => {
+                        const selected = valoresActuales.tipo_propiedad == tipo.value ? 'selected' : '';
+                        filterTipoPropiedad.innerHTML += `<option value="${tipo.value}" ${selected}>${tipo.label}</option>`;
+                    });
+                }
+                
 
             })
             .catch(error => {
                 
                 // Mostrar error en los filtros
+                if (filterMarca && elementoSeleccionado) filterMarca.innerHTML = '<option value="">Error al cargar marcas</option>';
                 if (filterProveedor) filterProveedor.innerHTML = '<option value="">Error al cargar proveedores</option>';
                 if (filterUbicacion) filterUbicacion.innerHTML = '<option value="">Error al cargar ubicaciones</option>';
                 if (filterEstado) filterEstado.innerHTML = '<option value="">Error al cargar estados</option>';
+                if (filterTipoPropiedad) filterTipoPropiedad.innerHTML = '<option value="">Error al cargar tipos</option>';
             })
             .finally(() => {
+                console.log('📍 UBICACION - FINALIZANDO actualizarFiltrosUnificados, valor final:', filterUbicacion ? filterUbicacion.value : 'N/A');
                 isUpdating = false;
             });
     }
@@ -3557,6 +3627,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Event listeners para hacer los filtros bidireccionales
+    if (filterProveedor) {
+        filterProveedor.addEventListener('change', function() {
+            console.log('🔄 EVENT - Cambio en proveedor, llamando actualizarFiltrosUnificados');
+            actualizarFiltrosUnificados();
+        });
+    }
+    
+    if (filterUbicacion) {
+        filterUbicacion.addEventListener('change', function() {
+            console.log('🔄 EVENT - Cambio en ubicación, nuevo valor:', this.value);
+            console.log('🔄 EVENT - Llamando actualizarFiltrosUnificados desde cambio de ubicación');
+            actualizarFiltrosUnificados();
+        });
+    }
+    
+    if (filterEstado) {
+        filterEstado.addEventListener('change', function() {
+            console.log('🔄 EVENT - Cambio en estado, llamando actualizarFiltrosUnificados');
+            actualizarFiltrosUnificados();
+        });
+    }
+    
     // ===== LIMPIAR FILTROS =====
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', function() {
@@ -3607,15 +3700,65 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Restaurar valores de filtros después de cargar la página
     function restaurarFiltros() {
-        const elementoSeleccionado = '{{ request("elemento") }}';
-        const marcaSeleccionada = '{{ request("marca") }}';
-        const proveedorSeleccionado = '{{ request("proveedor") }}';
+        console.log('🔄 INICIANDO restaurarFiltros()');
+        
+        // Leer parámetros directamente desde la URL del navegador
+        const urlParams = new URLSearchParams(window.location.search);
+        const elementoSeleccionado = urlParams.get('elemento') || '';
+        const marcaSeleccionada = urlParams.get('marca') || '';
+        const proveedorSeleccionado = urlParams.get('proveedor') || '';
+        const ubicacionSeleccionada = urlParams.get('ubicacion') || '';
+        const estadoSeleccionado = urlParams.get('estado') || '';
+        const tipoSeleccionado = urlParams.get('tipo_propiedad') || '';
+        
+        console.log('📍 UBICACION - Valor desde URL (JavaScript):', ubicacionSeleccionada);
+        console.log('📍 UBICACION - Todos los parámetros URL:', Object.fromEntries(urlParams));
+        
+        // Restaurar filtros básicos que no dependen de otros
+        const filterUbicacion = document.getElementById('filterUbicacion');
+        const filterEstado = document.getElementById('filterEstado');
+        const filterTipoPropiedad = document.getElementById('filterTipoPropiedad');
+        const filterProveedor = document.getElementById('filterProveedor');
+        
+        console.log('📍 UBICACION - Elemento DOM encontrado:', !!filterUbicacion);
+        
+        if (filterUbicacion && ubicacionSeleccionada) {
+            console.log('📍 UBICACION - Estableciendo valor:', ubicacionSeleccionada);
+            
+            // Verificar si la opción existe en el select
+            const optionExists = Array.from(filterUbicacion.options).some(option => option.value === ubicacionSeleccionada);
+            console.log('📍 UBICACION - ¿Opción existe en DOM?:', optionExists);
+            
+            // Si la opción no existe, agregarla
+            if (!optionExists) {
+                console.log('📍 UBICACION - Agregando opción faltante al DOM:', ubicacionSeleccionada);
+                const option = document.createElement('option');
+                option.value = ubicacionSeleccionada;
+                option.textContent = `Ubicación ID: ${ubicacionSeleccionada}`;
+                option.selected = true;
+                filterUbicacion.appendChild(option);
+            } else {
+                filterUbicacion.value = ubicacionSeleccionada;
+            }
+            
+            console.log('📍 UBICACION - Valor después de establecer:', filterUbicacion.value);
+        }
+        
+        if (filterEstado && estadoSeleccionado) {
+            filterEstado.value = estadoSeleccionado;
+        }
+        
+        if (filterTipoPropiedad && tipoSeleccionado) {
+            filterTipoPropiedad.value = tipoSeleccionado;
+        }
+        
+        if (filterProveedor && proveedorSeleccionado) {
+            filterProveedor.value = proveedorSeleccionado;
+        }
         
         if (elementoSeleccionado) {
-
             const filterElemento = document.getElementById('filterElemento');
             if (filterElemento) {
-
                 filterElemento.value = elementoSeleccionado;
                 
                 // Cargar marcas para el elemento seleccionado
@@ -3625,33 +3768,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch(marcasUrl)
                     .then(response => response.json())
                      .then(data => {
-
                          const filterMarca = document.getElementById('filterMarca');
                          if (filterMarca) {
-
                              filterMarca.innerHTML = '<option value="">Todas las marcas</option>';
                              data.forEach(marca => {
                                  const option = document.createElement('option');
                                  option.value = marca;
                                  option.textContent = marca;
                                  if (marca === marcaSeleccionada) {
-
                                      option.selected = true;
                                  }
                                  filterMarca.appendChild(option);
                              });
                              filterMarca.disabled = false;
                              
-                             // Actualizar proveedores después de restaurar marca
-                             if (marcaSeleccionada) {
-                                 actualizarProveedores();
-                             }
+                             // Después de restaurar todos los filtros, actualizar los filtros unificados
+                             console.log('📍 UBICACION - Antes del setTimeout, valor actual:', filterUbicacion ? filterUbicacion.value : 'N/A');
+                             setTimeout(() => {
+                                 console.log('📍 UBICACION - Dentro del setTimeout, valor antes de actualizar:', filterUbicacion ? filterUbicacion.value : 'N/A');
+                                 actualizarFiltrosUnificados();
+                             }, 100);
                          }
                     })
                     .catch(error => {
                         console.error('Error al cargar marcas:', error);
                     });
             }
+        } else {
+            // Si no hay elemento seleccionado, aún así actualizar filtros unificados
+            console.log('📍 UBICACION - No hay elemento seleccionado, valor actual:', filterUbicacion ? filterUbicacion.value : 'N/A');
+            setTimeout(() => {
+                console.log('📍 UBICACION - Sin elemento, dentro del setTimeout, valor antes de actualizar:', filterUbicacion ? filterUbicacion.value : 'N/A');
+                actualizarFiltrosUnificados();
+            }, 100);
         }
     }
 

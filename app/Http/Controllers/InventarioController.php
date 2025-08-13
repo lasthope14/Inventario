@@ -1629,13 +1629,17 @@ class InventarioController extends Controller
             $marca = $request->get('marca');
             $categoriaId = $request->get('categoria_id');
             $tipoPropiedad = $request->get('tipo_propiedad');
+            $proveedor = $request->get('proveedor');
+            $ubicacion = $request->get('ubicacion');
+            $estado = $request->get('estado');
             
             if (!$categoriaId) {
                 return response()->json([
                     'marcas' => [],
                     'proveedores' => [],
                     'ubicaciones' => [],
-                    'estados' => []
+                    'estados' => [],
+                    'tipos_propiedad' => []
                 ]);
             }
             
@@ -1643,34 +1647,45 @@ class InventarioController extends Controller
             
             // 1. Obtener marcas si hay elemento seleccionado
             if ($elemento) {
-                $inventarios = Inventario::where('categoria_id', $categoriaId)
+                $queryMarcas = Inventario::where('categoria_id', $categoriaId)
                     ->where('nombre', $elemento)
-                    ->where(function($query) {
-                        $query->where(function($q) {
-                            $q->whereNotNull('marca')
-                              ->where('marca', '!=', '')
-                              ->where('marca', '!=', 'N/A');
-                        })->orWhere(function($q) {
-                            $q->whereNotNull('modelo')
-                              ->where('modelo', '!=', '')
-                              ->where('modelo', '!=', 'N/A');
-                        });
-                    })
-                    ->select('marca', 'modelo')
+                    ->whereNotNull('marca')
+                    ->where('marca', '!=', '')
+                    ->where('marca', '!=', 'N/A');
+                
+                // Aplicar filtros adicionales
+                if ($tipoPropiedad) {
+                    $queryMarcas->where('tipo_propiedad', $tipoPropiedad);
+                }
+                
+                if ($proveedor) {
+                    $queryMarcas->where('proveedor_id', $proveedor);
+                }
+                
+                if ($ubicacion) {
+                    $queryMarcas->whereHas('ubicaciones', function($q) use ($ubicacion) {
+                        $q->where('ubicacion_id', $ubicacion);
+                    });
+                }
+                
+                if ($estado) {
+                    $queryMarcas->whereHas('ubicaciones', function($q) use ($estado) {
+                        $q->where('estado', $estado);
+                    });
+                }
+                
+                $inventarios = $queryMarcas->select('marca', 'modelo')
                     ->distinct()
                     ->get();
                 
-                $marcasModelos = collect();
+                $marcas = collect();
                 foreach ($inventarios as $inventario) {
                     if (!empty($inventario->marca) && $inventario->marca !== 'N/A') {
-                        $marcasModelos->push($inventario->marca);
-                    }
-                    if (!empty($inventario->modelo) && $inventario->modelo !== 'N/A' && $inventario->modelo !== $inventario->marca) {
-                        $marcasModelos->push($inventario->modelo);
+                        $marcas->push($inventario->marca);
                     }
                 }
                 
-                $resultado['marcas'] = $marcasModelos->unique()->sort()->values();
+                $resultado['marcas'] = $marcas->unique()->sort()->values();
             } else {
                 $resultado['marcas'] = [];
             }
@@ -1684,14 +1699,30 @@ class InventarioController extends Controller
             }
             
             if ($marca) {
-                $queryProveedores->where(function($q) use ($marca) {
-                    $q->where('marca', $marca)
-                      ->orWhere('modelo', $marca);
-                });
+                $queryProveedores->where('marca', $marca);
             }
             
             if ($tipoPropiedad) {
                 $queryProveedores->where('tipo_propiedad', $tipoPropiedad);
+            }
+            
+            if ($ubicacion) {
+                $queryProveedores->whereHas('ubicaciones', function($q) use ($ubicacion) {
+                    $q->where('ubicacion_id', $ubicacion);
+                });
+            }
+            
+            if ($estado) {
+                $queryProveedores->whereHas('ubicaciones', function($q) use ($estado) {
+                    $q->where('estado', $estado);
+                });
+            }
+            
+            if ($marca) {
+                $queryProveedores->where(function($q) use ($marca) {
+                    $q->where('marca', $marca)
+                      ->orWhere('modelo', $marca);
+                });
             }
             
             $resultado['proveedores'] = $queryProveedores->with('proveedor')
@@ -1710,6 +1741,7 @@ class InventarioController extends Controller
                 });
             
             // 3. Obtener ubicaciones
+            // IMPORTANTE: No aplicar el filtro de ubicación actual para evitar que desaparezca de la lista
             $queryUbicaciones = Inventario::where('categoria_id', $categoriaId);
             
             if ($elemento) {
@@ -1717,17 +1749,29 @@ class InventarioController extends Controller
             }
             
             if ($marca) {
-                $queryUbicaciones->where(function($q) use ($marca) {
-                    $q->where('marca', $marca)
-                      ->orWhere('modelo', $marca);
-                });
+                $queryUbicaciones->where('marca', $marca);
             }
             
             if ($tipoPropiedad) {
                 $queryUbicaciones->where('tipo_propiedad', $tipoPropiedad);
             }
             
-            $resultado['ubicaciones'] = $queryUbicaciones->with('ubicaciones')
+            if ($proveedor) {
+                $queryUbicaciones->where('proveedor_id', $proveedor);
+            }
+            
+            if ($estado) {
+                $queryUbicaciones->whereHas('ubicaciones', function($q) use ($estado) {
+                    $q->where('estado', $estado);
+                });
+            }
+            
+            // Nota: NO aplicamos el filtro de ubicación aquí para preservar la selección actual
+            // if ($ubicacion) { ... } - REMOVIDO INTENCIONALMENTE
+            
+            // Nota: El filtro de marca ya se aplicó arriba, no duplicar
+            
+            $ubicacionesDisponibles = $queryUbicaciones->with('ubicaciones')
                 ->get()
                 ->pluck('ubicaciones')
                 ->flatten()
@@ -1741,6 +1785,23 @@ class InventarioController extends Controller
                     ];
                 });
             
+            // Si hay una ubicación seleccionada, asegurar que esté en la lista
+            if ($ubicacion) {
+                $ubicacionSeleccionada = \App\Models\Ubicacion::find($ubicacion);
+                if ($ubicacionSeleccionada) {
+                    $ubicacionExiste = $ubicacionesDisponibles->contains('id', $ubicacion);
+                    if (!$ubicacionExiste) {
+                        // Agregar la ubicación seleccionada al inicio de la lista
+                        $ubicacionesDisponibles->prepend([
+                            'id' => $ubicacionSeleccionada->id,
+                            'nombre' => $ubicacionSeleccionada->nombre
+                        ]);
+                    }
+                }
+            }
+            
+            $resultado['ubicaciones'] = $ubicacionesDisponibles;
+            
             // 4. Obtener estados
             $queryEstados = Inventario::where('categoria_id', $categoriaId);
             
@@ -1749,14 +1810,28 @@ class InventarioController extends Controller
             }
             
             if ($marca) {
-                $queryEstados->where(function($q) use ($marca) {
-                    $q->where('marca', $marca)
-                      ->orWhere('modelo', $marca);
-                });
+                $queryEstados->where('marca', $marca);
             }
             
             if ($tipoPropiedad) {
                 $queryEstados->where('tipo_propiedad', $tipoPropiedad);
+            }
+            
+            if ($proveedor) {
+                $queryEstados->where('proveedor_id', $proveedor);
+            }
+            
+            if ($ubicacion) {
+                $queryEstados->whereHas('ubicaciones', function($q) use ($ubicacion) {
+                    $q->where('ubicacion_id', $ubicacion);
+                });
+            }
+            
+            if ($marca) {
+                $queryEstados->where(function($q) use ($marca) {
+                    $q->where('marca', $marca)
+                      ->orWhere('modelo', $marca);
+                });
             }
             
             $estadosUnicos = $queryEstados->with('ubicaciones')
@@ -1784,6 +1859,47 @@ class InventarioController extends Controller
                 ];
             });
             
+            // 5. Obtener tipos de propiedad disponibles
+            $queryTiposPropiedad = Inventario::where('categoria_id', $categoriaId);
+            
+            if ($elemento) {
+                $queryTiposPropiedad->where('nombre', $elemento);
+            }
+            
+            if ($marca) {
+                $queryTiposPropiedad->where('marca', $marca);
+            }
+            
+            if ($proveedor) {
+                $queryTiposPropiedad->where('proveedor_id', $proveedor);
+            }
+            
+            if ($ubicacion) {
+                $queryTiposPropiedad->whereHas('ubicaciones', function($q) use ($ubicacion) {
+                    $q->where('ubicacion_id', $ubicacion);
+                });
+            }
+            
+            if ($estado) {
+                $queryTiposPropiedad->whereHas('ubicaciones', function($q) use ($estado) {
+                    $q->where('estado', $estado);
+                });
+            }
+            
+            $tiposDisponibles = $queryTiposPropiedad->select('tipo_propiedad')
+                ->distinct()
+                ->whereNotNull('tipo_propiedad')
+                ->pluck('tipo_propiedad')
+                ->sort()
+                ->values();
+            
+            $resultado['tipos_propiedad'] = $tiposDisponibles->map(function($tipo) {
+                return [
+                    'value' => $tipo,
+                    'label' => $tipo == 'alquiler' ? 'ALQUILER' : 'PROPIO'
+                ];
+            });
+            
             return response()->json($resultado);
             
         } catch (\Exception $e) {
@@ -1792,7 +1908,8 @@ class InventarioController extends Controller
                 'marcas' => [],
                 'proveedores' => [],
                 'ubicaciones' => [],
-                'estados' => []
+                'estados' => [],
+                'tipos_propiedad' => []
             ], 500);
         }
     }
