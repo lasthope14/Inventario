@@ -1902,7 +1902,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // cargarElementos(); // Se llamará después de definir la función
     
     // Event listeners para filtros
-    document.getElementById('filtroUbicacionOrigen').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtroUbicacionOrigen').addEventListener('change', function() {
+        // Cuando cambia la ubicación, necesitamos cargar nuevos elementos del servidor
+        window.cargarElementos();
+    });
     document.getElementById('filtroTexto').addEventListener('input', debounce(aplicarFiltros, 300));
     document.getElementById('limpiarDestino').addEventListener('click', limpiarDestino);
     document.getElementById('revertirUltimo').addEventListener('click', revertirUltimo);

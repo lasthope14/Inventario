@@ -287,6 +287,12 @@ class MovimientoMasivoController extends Controller
     public function getInventarioData(Request $request)
     {
         try {
+            \Log::info('getInventarioData llamado', [
+                'ubicacion_id' => $request->ubicacion_id,
+                'has_ubicacion_id' => $request->has('ubicacion_id'),
+                'ubicacion_id_empty' => empty($request->ubicacion_id)
+            ]);
+            
             // Usar consulta directa a la tabla pivot (método 3 del test)
             $query = \DB::table('inventario_ubicaciones')
                 ->join('inventarios', 'inventario_ubicaciones.inventario_id', '=', 'inventarios.id')
@@ -310,10 +316,16 @@ class MovimientoMasivoController extends Controller
                 
             // Filtrar por ubicación si se especifica
             if ($request->has('ubicacion_id') && $request->ubicacion_id) {
+                \Log::info('Aplicando filtro por ubicación', ['ubicacion_id' => $request->ubicacion_id]);
                 $query->where('inventario_ubicaciones.ubicacion_id', $request->ubicacion_id);
             }
             
+            // Log de la consulta SQL
+            \Log::info('SQL Query', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
+            
             $resultados = $query->get();
+            
+            \Log::info('Resultados obtenidos', ['count' => $resultados->count()]);
             
             $elementos = [];
             
