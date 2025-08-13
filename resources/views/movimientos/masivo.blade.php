@@ -1899,12 +1899,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let accionPendiente = null; // Para manejar confirmaciones
     
     // Cargar elementos iniciales
-    cargarElementos();
+    // cargarElementos(); // Se llamará después de definir la función
     
     // Event listeners para filtros
     document.getElementById('filtroUbicacionOrigen').addEventListener('change', aplicarFiltros);
     document.getElementById('filtroTexto').addEventListener('input', debounce(aplicarFiltros, 300));
-    document.getElementById('refreshElementos').addEventListener('click', cargarElementos);
     document.getElementById('limpiarDestino').addEventListener('click', limpiarDestino);
     document.getElementById('revertirUltimo').addEventListener('click', revertirUltimo);
     document.getElementById('moverSeleccionados').addEventListener('click', moverElementosSeleccionados);
@@ -1924,7 +1923,8 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    function cargarElementos() {
+    // Hacer cargarElementos global
+    window.cargarElementos = function cargarElementos() {
         const ubicacionId = document.getElementById('filtroUbicacionOrigen').value;
         const refreshBtn = document.getElementById('refreshElementos');
         
@@ -1970,7 +1970,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
                 refreshBtn.disabled = false;
             });
-    }
+    }; // Cierre de window.cargarElementos
+    
+    // Cargar elementos iniciales después de definir la función
+    window.cargarElementos();
+    
+    // Event listener para el botón refresh (después de definir la función)
+    document.getElementById('refreshElementos').addEventListener('click', window.cargarElementos);
     
     function aplicarFiltros() {
         // Validar que todosLosElementos sea un array antes de usar filter
@@ -2554,7 +2560,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 historialMovimientos = [];
                 document.getElementById('ubicacionDestino').value = '';
                 actualizarVistaDestino();
-                cargarElementos();
+                window.cargarElementos();
                 actualizarBotones();
             } else {
                 mostrarError(data.message || 'Error al procesar los movimientos');
@@ -2803,7 +2809,9 @@ function revertirMovimiento(movimientoId) {
                 if (data.success) {
                     mostrarExito('Movimiento revertido correctamente');
                     cargarMovimientosRevertibles();
-                    cargarElementos(); // Actualizar elementos disponibles
+                    if (typeof cargarElementos === 'function') {
+                        cargarElementos(); // Actualizar elementos disponibles
+                    }
                 } else {
                     mostrarError(data.message || 'Error al revertir el movimiento');
                 }
@@ -2851,7 +2859,9 @@ function revertirTodosLosMovimientos() {
                     }
                     
                     cargarMovimientosRevertibles();
-                    cargarElementos(); // Actualizar elementos disponibles
+                    if (typeof cargarElementos === 'function') {
+                        cargarElementos(); // Actualizar elementos disponibles
+                    }
                     return;
                 }
                 
@@ -2975,7 +2985,9 @@ function revertirMovimientosSeleccionados() {
                     }
                     
                     cargarMovimientosRevertibles();
-                    cargarElementos(); // Actualizar elementos disponibles
+                    if (typeof cargarElementos === 'function') {
+                        cargarElementos(); // Actualizar elementos disponibles
+                    }
                     return;
                 }
                 

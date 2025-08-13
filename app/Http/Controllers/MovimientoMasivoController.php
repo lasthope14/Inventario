@@ -134,14 +134,21 @@ class MovimientoMasivoController extends Controller
                             continue;
                         }
 
-                        $cantidadDisponible = $ubicacionOrigen->cantidad;
+                        $cantidadDisponible = $ubicacionOrigen->pivot->cantidad;
                         
                         Log::info("Ubicación origen encontrada {$requestId}", [
                             'inventario_id' => $inventario->id,
                             'ubicacion_id' => $elemento['ubicacion_id'],
                             'cantidad_disponible' => $cantidadDisponible,
-                            'cantidad_solicitada' => $elemento['cantidad_mover']
+                            'cantidad_solicitada' => $elemento['cantidad_mover'],
+                            'ubicacion_origen_completa' => $ubicacionOrigen->toArray()
                         ]);
+
+                        // Verificar si la cantidad es null o vacía
+                        if ($cantidadDisponible === null || $cantidadDisponible === '') {
+                            $errores[] = "Elemento " . ($elemento['codigo'] ?? $elemento['id']) . ": Cantidad no definida en la ubicación de origen";
+                            continue;
+                        }
 
                         if ($cantidadDisponible < $elemento['cantidad_mover']) {
                             $errores[] = "Elemento " . ($elemento['codigo'] ?? $elemento['id']) . ": Cantidad insuficiente (Disponible: {$cantidadDisponible}, Solicitado: {$elemento['cantidad_mover']})";
@@ -167,10 +174,10 @@ class MovimientoMasivoController extends Controller
                         $nuevaCantidadOrigen = $cantidadDisponible - $elemento['cantidad_mover'];
                         
                         if ($nuevaCantidadOrigen > 0) {
-                            $ubicacionOrigen->update(['cantidad' => $nuevaCantidadOrigen]);
+                            $ubicacionOrigen->pivot->update(['cantidad' => $nuevaCantidadOrigen]);
                         } else {
                             // Eliminar registro si cantidad llega a 0
-                            $ubicacionOrigen->delete();
+                            $ubicacionOrigen->pivot->delete();
                         }
 
                         // Agregar o actualizar en ubicación destino
@@ -182,21 +189,22 @@ class MovimientoMasivoController extends Controller
 
                         if ($ubicacionDestino) {
                             // Actualizar cantidad existente
-                            $ubicacionDestino->update([
-                                'cantidad' => $ubicacionDestino->cantidad + $elemento['cantidad_mover'],
+                            $ubicacionDestino->pivot->update([
+                                'cantidad' => $ubicacionDestino->pivot->cantidad + $elemento['cantidad_mover'],
                                 'estado' => $estadoDestino
                             ]);
                         } else {
                             // Crear nueva relación
-                            $inventario->ubicaciones()->create([
-                                'ubicacion_id' => $request->ubicacion_destino_id,
+                            $inventario->ubicaciones()->attach($request->ubicacion_destino_id, [
                                 'cantidad' => $elemento['cantidad_mover'],
                                 'estado' => $estadoDestino
                             ]);
                         }
 
                         // Actualizar cantidad total del inventario
-                        $inventario->cantidadTotal = $inventario->ubicaciones()->sum('cantidad');
+                        $inventario->cantidadTotal = \DB::table('inventario_ubicaciones')
+                            ->where('inventario_id', $inventario->id)
+                            ->sum('cantidad');
                         $inventario->save();
 
                         $movimientosCreados[] = $movimiento;
@@ -285,6 +293,7 @@ class MovimientoMasivoController extends Controller
                 ->join('categorias', 'inventarios.categoria_id', '=', 'categorias.id')
                 ->join('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
                 ->where('inventario_ubicaciones.cantidad', '>', 0)
+                ->where('inventario_ubicaciones.estado', 'disponible')
                 ->select(
                     'inventarios.id',
                     'inventarios.codigo_unico',
@@ -359,16 +368,10 @@ class MovimientoMasivoController extends Controller
             
             // Buscar la ubicación de destino actual para restar la cantidad
             $ubicacionDestino = $inventario->ubicaciones()
-                ->where('ubicacion_id', function($query) use ($movimiento) {
-                    // Buscar el ID de ubicación por nombre
-                    $query->select('id')
-                          ->from('ubicaciones')
-                          ->where('nombre', $movimiento->ubicacion_destino)
-                          ->limit(1);
-                })
+                ->where('ubicacion_id', $movimiento->ubicacion_destino)
                 ->first();
             
-            if (!$ubicacionDestino || $ubicacionDestino->cantidad < $movimiento->cantidad) {
+            if (!$ubicacionDestino || $ubicacionDestino->pivot->cantidad < $movimiento->cantidad) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No hay suficiente cantidad en la ubicación de destino para revertir'
@@ -376,15 +379,15 @@ class MovimientoMasivoController extends Controller
             }
             
             // Revertir el inventario en destino
-            $nuevaCantidadDestino = $ubicacionDestino->cantidad - $movimiento->cantidad;
+            $nuevaCantidadDestino = $ubicacionDestino->pivot->cantidad - $movimiento->cantidad;
             if ($nuevaCantidadDestino <= 0) {
-                $ubicacionDestino->delete();
+                $ubicacionDestino->pivot->delete();
             } else {
-                $ubicacionDestino->update(['cantidad' => $nuevaCantidadDestino]);
+                $ubicacionDestino->pivot->update(['cantidad' => $nuevaCantidadDestino]);
             }
             
             // Restaurar el inventario en origen
-            $ubicacionOrigenId = \App\Models\Ubicacion::where('nombre', $movimiento->ubicacion_origen)->first()->id ?? null;
+            $ubicacionOrigenId = $movimiento->ubicacion_origen;
             
             if ($ubicacionOrigenId) {
                 $ubicacionOrigen = $inventario->ubicaciones()
@@ -393,13 +396,12 @@ class MovimientoMasivoController extends Controller
                 
                 if ($ubicacionOrigen) {
                     // Actualizar cantidad existente
-                    $ubicacionOrigen->update([
-                        'cantidad' => $ubicacionOrigen->cantidad + $movimiento->cantidad
+                    $ubicacionOrigen->pivot->update([
+                        'cantidad' => $ubicacionOrigen->pivot->cantidad + $movimiento->cantidad
                     ]);
                 } else {
                     // Crear nuevo registro en origen
-                    $inventario->ubicaciones()->create([
-                        'ubicacion_id' => $ubicacionOrigenId,
+                    $inventario->ubicaciones()->attach($ubicacionOrigenId, [
                         'cantidad' => $movimiento->cantidad,
                         'estado' => 'disponible' // Estado por defecto al revertir
                     ]);
@@ -407,7 +409,9 @@ class MovimientoMasivoController extends Controller
             }
             
             // Actualizar cantidad total del inventario
-            $inventario->cantidadTotal = $inventario->ubicaciones()->sum('cantidad');
+            $inventario->cantidadTotal = \DB::table('inventario_ubicaciones')
+                ->where('inventario_id', $inventario->id)
+                ->sum('cantidad');
             $inventario->save();
             
             // Marcar el movimiento como revertido
