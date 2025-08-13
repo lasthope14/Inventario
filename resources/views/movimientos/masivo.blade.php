@@ -165,25 +165,40 @@
         <div class="col-lg-6">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-gradient-success text-white py-3">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                         <div>
                             <h5 class="mb-0"><i class="fas fa-arrow-right me-2"></i>Elementos a Mover</h5>
                             <small class="opacity-75">Revisa y confirma los elementos seleccionados</small>
                         </div>
-                        <div class="d-flex gap-2">
-                            <select id="ubicacionDestino" class="form-select form-select-sm" style="width: 180px;">
+                        <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-md-auto">
+                            <select id="ubicacionDestino" class="form-select form-select-sm" style="min-width: 180px;">
                                 <option value="">🎯 Seleccione destino</option>
                                 @foreach($ubicaciones as $ubicacion)
                                     <option value="{{ $ubicacion->id }}">🎯 {{ $ubicacion->nombre }}</option>
                                 @endforeach
                             </select>
-                            <button type="button" class="btn btn-light btn-sm" id="limpiarDestino" title="Limpiar todo">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-warning btn-sm" id="cambiarEstadoSeleccionados" disabled title="Cambiar estado de elementos seleccionados">
+                                    <i class="fas fa-exchange-alt me-1"></i>Cambiar Estado
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm" id="limpiarDestino" title="Limpiar todo">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="card-body p-3">
+                    <!-- Header con selección múltiple -->
+                    <div id="headerSeleccionDestino" class="d-none mb-3 p-2 bg-light rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="checkbox" class="form-check-input" id="selectAllDestino" onchange="toggleSelectAllDestino()">
+                                <label for="selectAllDestino" class="form-check-label fw-semibold">Seleccionar todos</label>
+                                <span class="badge bg-primary" id="contadorSeleccionadosDestino">0</span>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Contenedor de Elementos Destino -->
                     <div id="elementosDestino" class="elementos-container drop-zone">
                         <div class="empty-placeholder">
@@ -1816,6 +1831,53 @@
         transform: scale(1.02);
     }
     
+    /* Estilos para checkboxes en el panel de destino */
+    .destino-checkbox {
+        width: 18px !important;
+        height: 18px !important;
+        cursor: pointer;
+        border: 2px solid #dee2e6;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+    
+    .destino-checkbox:checked {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+        transform: scale(1.05);
+    }
+    
+    .destino-checkbox:hover {
+        border-color: #28a745;
+        transform: scale(1.02);
+    }
+    
+    #selectAllDestino {
+        width: 18px !important;
+        height: 18px !important;
+        cursor: pointer;
+        border: 2px solid #dee2e6;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+    
+    #selectAllDestino:checked {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+        transform: scale(1.05);
+    }
+    
+    #selectAllDestino:indeterminate {
+        background-color: #ffc107 !important;
+        border-color: #ffc107 !important;
+        transform: scale(1.05);
+    }
+    
+    #selectAllDestino:hover {
+        border-color: #28a745;
+        transform: scale(1.02);
+    }
+    
     /* Estilos para dark theme */
     [data-bs-theme="dark"] .movimiento-checkbox,
     body.dark-theme .movimiento-checkbox {
@@ -1838,6 +1900,139 @@
     body.dark-theme #selectAllMovimientos {
         background-color: #334155 !important;
         border-color: #475569 !important;
+    }
+    
+    /* Dark theme para checkboxes de destino */
+    [data-bs-theme="dark"] .destino-checkbox,
+    body.dark-theme .destino-checkbox {
+        background-color: #334155 !important;
+        border-color: #475569 !important;
+    }
+    
+    [data-bs-theme="dark"] .destino-checkbox:checked,
+    body.dark-theme .destino-checkbox:checked {
+        background-color: #10b981 !important;
+        border-color: #10b981 !important;
+    }
+    
+    [data-bs-theme="dark"] .destino-checkbox:hover,
+    body.dark-theme .destino-checkbox:hover {
+        border-color: #10b981 !important;
+    }
+    
+    [data-bs-theme="dark"] #selectAllDestino,
+    body.dark-theme #selectAllDestino {
+        background-color: #334155 !important;
+        border-color: #475569 !important;
+    }
+    
+    [data-bs-theme="dark"] #selectAllDestino:checked,
+    body.dark-theme #selectAllDestino:checked {
+        background-color: #10b981 !important;
+        border-color: #10b981 !important;
+    }
+    
+    [data-bs-theme="dark"] #selectAllDestino:indeterminate,
+    body.dark-theme #selectAllDestino:indeterminate {
+        background-color: #f59e0b !important;
+        border-color: #f59e0b !important;
+    }
+    
+    [data-bs-theme="dark"] #selectAllDestino:hover,
+    body.dark-theme #selectAllDestino:hover {
+        border-color: #10b981 !important;
+    }
+    
+    /* Estilos responsivos */
+    @media (max-width: 768px) {
+        .elemento-row {
+            flex-direction: column;
+            gap: 10px;
+            padding: 15px;
+        }
+        
+        .elemento-checkbox-col {
+            order: -1;
+            align-self: flex-start;
+        }
+        
+        .elemento-info-col {
+            order: 1;
+            padding-right: 0;
+        }
+        
+        .elemento-cantidad-col {
+            order: 2;
+            text-align: left;
+            padding: 0;
+        }
+        
+        .elemento-estado-col {
+            order: 3;
+        }
+        
+        .elemento-actions-col {
+            order: 4;
+            justify-content: flex-start;
+            padding: 0;
+        }
+        
+        .elemento-controls-col {
+            order: 5;
+            justify-content: flex-start;
+            padding: 0;
+        }
+        
+        .card-header .d-flex {
+            gap: 15px;
+        }
+        
+        .btn-sm {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        #headerSeleccionDestino {
+            padding: 10px;
+        }
+        
+        #headerSeleccionDestino .d-flex {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .col-lg-6 {
+            margin-bottom: 20px;
+        }
+        
+        .card-header h5 {
+            font-size: 1.1rem;
+        }
+        
+        .card-header small {
+            font-size: 0.8rem;
+        }
+        
+        .btn-action {
+            width: 28px;
+            height: 28px;
+            font-size: 11px;
+        }
+        
+        .elemento-nombre {
+            font-size: 14px;
+        }
+        
+        .elemento-codigo {
+            font-size: 11px;
+        }
+        
+        .cantidad-disponible {
+            font-size: 18px;
+        }
     }
     
     [data-bs-theme="dark"] #selectAllMovimientos:checked,
@@ -2258,6 +2453,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function actualizarVistaDestino() {
         const container = document.getElementById('elementosDestino');
+        const headerSeleccion = document.getElementById('headerSeleccionDestino');
         
         if (elementosDestino.length === 0) {
             container.innerHTML = `
@@ -2267,11 +2463,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="mb-0">Selecciona elementos del panel izquierdo para moverlos aquí</p>
                 </div>
             `;
+            headerSeleccion.classList.add('d-none');
             return;
         }
         
+        // Mostrar header de selección
+        headerSeleccion.classList.remove('d-none');
+        
         container.innerHTML = elementosDestino.map((elemento, index) => `
             <div class="elemento-row en-destino" data-index="${index}">
+                <div class="elemento-checkbox-col">
+                    <input class="form-check-input destino-checkbox" type="checkbox" 
+                           id="destino_check_${index}" data-index="${index}" onchange="actualizarContadorDestino()">
+                </div>
                 <div class="elemento-info-col">
                     <div class="elemento-nombre">${elemento.nombre}</div>
                     <div class="elemento-codigo">${elemento.codigo}</div>
@@ -2293,6 +2497,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `).join('');
+        
+        // Actualizar contador
+        actualizarContadorDestino();
     }
     
     function removerElemento(index) {
@@ -2451,6 +2658,131 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Función global para remover elemento
     window.removerElemento = removerElemento;
+    
+    // Funciones para selección múltiple en destino
+    function toggleSelectAllDestino() {
+        const selectAll = document.getElementById('selectAllDestino');
+        const checkboxes = document.querySelectorAll('.destino-checkbox');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+        
+        actualizarContadorDestino();
+    }
+    
+    function actualizarContadorDestino() {
+        const checkboxes = document.querySelectorAll('.destino-checkbox:checked');
+        const contador = checkboxes.length;
+        const total = document.querySelectorAll('.destino-checkbox').length;
+        
+        // Actualizar contador
+        document.getElementById('contadorSeleccionadosDestino').textContent = contador;
+        
+        // Actualizar botón de cambiar estado
+        const btnCambiarEstado = document.getElementById('cambiarEstadoSeleccionados');
+        btnCambiarEstado.disabled = contador === 0;
+        
+        // Actualizar estado del checkbox "Seleccionar todos"
+        const selectAll = document.getElementById('selectAllDestino');
+        if (contador === 0) {
+            selectAll.indeterminate = false;
+            selectAll.checked = false;
+        } else if (contador === total) {
+            selectAll.indeterminate = false;
+            selectAll.checked = true;
+        } else {
+            selectAll.indeterminate = true;
+            selectAll.checked = false;
+        }
+    }
+    
+    // Función para cambiar estado de elementos seleccionados
+    document.getElementById('cambiarEstadoSeleccionados').addEventListener('click', function() {
+        const checkboxesSeleccionados = document.querySelectorAll('.destino-checkbox:checked');
+        
+        if (checkboxesSeleccionados.length === 0) {
+            mostrarError('No hay elementos seleccionados');
+            return;
+        }
+        
+        // Crear modal para seleccionar nuevo estado
+        const modalHtml = `
+            <div class="modal fade" id="cambiarEstadoModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title">
+                                <i class="fas fa-exchange-alt me-2"></i>Cambiar Estado Masivo
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Se cambiará el estado de <strong>${checkboxesSeleccionados.length}</strong> elemento(s) seleccionado(s).</p>
+                            <div class="mb-3">
+                                <label for="nuevoEstadoMasivo" class="form-label fw-bold">
+                                    <i class="fas fa-tag me-1"></i>Nuevo Estado:
+                                </label>
+                                <select id="nuevoEstadoMasivo" class="form-select">
+                                    <option value="disponible">Disponible</option>
+                                    <option value="en uso">En Uso</option>
+                                    <option value="en mantenimiento">En Mantenimiento</option>
+                                    <option value="dado de baja">Dado de Baja</option>
+                                    <option value="robado">Robado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </button>
+                            <button type="button" class="btn btn-warning" onclick="aplicarCambioEstadoMasivo()">
+                                <i class="fas fa-check me-1"></i>Aplicar Cambios
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remover modal anterior si existe
+        const modalAnterior = document.getElementById('cambiarEstadoModal');
+        if (modalAnterior) {
+            modalAnterior.remove();
+        }
+        
+        // Agregar nuevo modal
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('cambiarEstadoModal'));
+        modal.show();
+    });
+    
+    // Función para aplicar cambio de estado masivo
+    window.aplicarCambioEstadoMasivo = function() {
+        const nuevoEstado = document.getElementById('nuevoEstadoMasivo').value;
+        const checkboxesSeleccionados = document.querySelectorAll('.destino-checkbox:checked');
+        
+        // Aplicar nuevo estado a elementos seleccionados
+        checkboxesSeleccionados.forEach(checkbox => {
+            const index = parseInt(checkbox.dataset.index);
+            elementosDestino[index].nuevo_estado = nuevoEstado;
+        });
+        
+        // Actualizar vista
+        actualizarVistaDestino();
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('cambiarEstadoModal'));
+        modal.hide();
+        
+        mostrarExito(`Estado actualizado para ${checkboxesSeleccionados.length} elemento(s)`);
+    };
+    
+    // Hacer funciones globales
+    window.toggleSelectAllDestino = toggleSelectAllDestino;
+    window.actualizarContadorDestino = actualizarContadorDestino;
     
     // Funciones para modales profesionales
     function mostrarError(mensaje) {

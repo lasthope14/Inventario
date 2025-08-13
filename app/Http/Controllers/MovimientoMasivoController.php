@@ -293,11 +293,10 @@ class MovimientoMasivoController extends Controller
                 'ubicacion_id_empty' => empty($request->ubicacion_id)
             ]);
             
-            // Usar consulta directa a la tabla pivot (método 3 del test)
+            // Usar consulta directa a la tabla pivot agrupando por inventario
             $query = \DB::table('inventario_ubicaciones')
                 ->join('inventarios', 'inventario_ubicaciones.inventario_id', '=', 'inventarios.id')
                 ->join('categorias', 'inventarios.categoria_id', '=', 'categorias.id')
-                ->join('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
                 ->where('inventario_ubicaciones.cantidad', '>', 0)
                 ->select(
                     'inventarios.id',
@@ -307,16 +306,46 @@ class MovimientoMasivoController extends Controller
                     'inventarios.observaciones',
                     'inventarios.valor_unitario',
                     'categorias.nombre as categoria_nombre',
-                    'inventario_ubicaciones.ubicacion_id',
-                    'ubicaciones.nombre as ubicacion_nombre',
-                    'inventario_ubicaciones.cantidad',
-                    'inventario_ubicaciones.estado'
+                    \DB::raw('SUM(inventario_ubicaciones.cantidad) as cantidad_total'),
+                    \DB::raw('GROUP_CONCAT(DISTINCT inventario_ubicaciones.estado) as estados'),
+                    \DB::raw('GROUP_CONCAT(DISTINCT CONCAT(ubicaciones.nombre, ":", inventario_ubicaciones.cantidad, ":", inventario_ubicaciones.estado) SEPARATOR "||") as ubicaciones_detalle')
+                )
+                ->leftJoin('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
+                ->groupBy(
+                    'inventarios.id',
+                    'inventarios.codigo_unico',
+                    'inventarios.numero_serie',
+                    'inventarios.nombre',
+                    'inventarios.observaciones',
+                    'inventarios.valor_unitario',
+                    'categorias.nombre'
                 );
                 
             // Filtrar por ubicación si se especifica
             if ($request->has('ubicacion_id') && $request->ubicacion_id) {
                 \Log::info('Aplicando filtro por ubicación', ['ubicacion_id' => $request->ubicacion_id]);
                 $query->where('inventario_ubicaciones.ubicacion_id', $request->ubicacion_id);
+                
+                // Cuando se filtra por ubicación específica, no agrupamos para mostrar solo esa ubicación
+                $query = \DB::table('inventario_ubicaciones')
+                    ->join('inventarios', 'inventario_ubicaciones.inventario_id', '=', 'inventarios.id')
+                    ->join('categorias', 'inventarios.categoria_id', '=', 'categorias.id')
+                    ->join('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
+                    ->where('inventario_ubicaciones.cantidad', '>', 0)
+                    ->where('inventario_ubicaciones.ubicacion_id', $request->ubicacion_id)
+                    ->select(
+                        'inventarios.id',
+                        'inventarios.codigo_unico',
+                        'inventarios.numero_serie',
+                        'inventarios.nombre',
+                        'inventarios.observaciones',
+                        'inventarios.valor_unitario',
+                        'categorias.nombre as categoria_nombre',
+                        'inventario_ubicaciones.ubicacion_id',
+                        'ubicaciones.nombre as ubicacion_nombre',
+                        'inventario_ubicaciones.cantidad',
+                        'inventario_ubicaciones.estado'
+                    );
             }
             
             // Log de la consulta SQL
@@ -329,18 +358,57 @@ class MovimientoMasivoController extends Controller
             $elementos = [];
             
             foreach ($resultados as $resultado) {
-                $elementos[] = [
-                    'id' => $resultado->id,
-                    'codigo' => $resultado->numero_serie ?? $resultado->codigo_unico,
-                    'nombre' => $resultado->nombre,
-                    'descripcion' => $resultado->observaciones ?? '',
-                    'categoria' => $resultado->categoria_nombre ?? 'Sin categoría',
-                    'ubicacion_id' => $resultado->ubicacion_id,
-                    'ubicacion_nombre' => $resultado->ubicacion_nombre ?? 'Sin ubicación',
-                    'cantidad_disponible' => $resultado->cantidad,
-                    'estado' => $resultado->estado ?? 'disponible',
-                    'valor_unitario' => $resultado->valor_unitario ?? 0
-                ];
+                // Verificar si es resultado agrupado o simple
+                $esResultadoAgrupado = isset($resultado->cantidad_total);
+                
+                if ($esResultadoAgrupado) {
+                    // Resultado agrupado (sin filtro de ubicación)
+                    $estados = explode(',', $resultado->estados);
+                    $estadoPrincipal = $estados[0] ?? 'disponible';
+                    
+                    // Procesar ubicaciones detalle para mostrar información completa
+                    $ubicacionesInfo = [];
+                    if ($resultado->ubicaciones_detalle) {
+                        $ubicacionesArray = explode('||', $resultado->ubicaciones_detalle);
+                        foreach ($ubicacionesArray as $ubicacionDetalle) {
+                            $partes = explode(':', $ubicacionDetalle);
+                            if (count($partes) >= 3) {
+                                $ubicacionesInfo[] = [
+                                    'nombre' => $partes[0],
+                                    'cantidad' => $partes[1],
+                                    'estado' => $partes[2]
+                                ];
+                            }
+                        }
+                    }
+                    
+                    $elementos[] = [
+                        'id' => $resultado->id,
+                        'codigo' => $resultado->numero_serie ?? $resultado->codigo_unico,
+                        'nombre' => $resultado->nombre,
+                        'descripcion' => $resultado->observaciones ?? '',
+                        'categoria' => $resultado->categoria_nombre ?? 'Sin categoría',
+                        'cantidad_disponible' => $resultado->cantidad_total,
+                        'estado' => $estadoPrincipal,
+                        'estados_todos' => $estados,
+                        'ubicaciones_info' => $ubicacionesInfo,
+                        'valor_unitario' => $resultado->valor_unitario ?? 0
+                    ];
+                } else {
+                    // Resultado simple (con filtro de ubicación)
+                    $elementos[] = [
+                        'id' => $resultado->id,
+                        'codigo' => $resultado->numero_serie ?? $resultado->codigo_unico,
+                        'nombre' => $resultado->nombre,
+                        'descripcion' => $resultado->observaciones ?? '',
+                        'categoria' => $resultado->categoria_nombre ?? 'Sin categoría',
+                        'ubicacion_id' => $resultado->ubicacion_id,
+                        'ubicacion_nombre' => $resultado->ubicacion_nombre ?? 'Sin ubicación',
+                        'cantidad_disponible' => $resultado->cantidad,
+                        'estado' => $resultado->estado ?? 'disponible',
+                        'valor_unitario' => $resultado->valor_unitario ?? 0
+                    ];
+                }
             }
             
             return response()->json($elementos);
