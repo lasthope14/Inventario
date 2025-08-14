@@ -815,6 +815,10 @@ Dropzone.autoDiscover = false;
 
 const myDropzone = new Dropzone("#importForm", {
     url: "{{ route('inventarios.import') }}",
+    paramName: "file", // Nombre del parámetro que espera el servidor
+    headers: {
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
     maxFiles: 1,
     acceptedFiles: ".zip",
     addRemoveLinks: false,
