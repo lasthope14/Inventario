@@ -44,11 +44,19 @@ class InventariosImport
         $filesProcessed = [];
         
         foreach ($rows as $rowIndex => $row) {
-            if (empty(array_filter($row))) {
+            // Filtrar filas completamente vacías o con solo espacios en blanco
+            $filteredRow = array_filter($row, function($value) {
+                return !empty(trim($value));
+            });
+            
+            if (empty($filteredRow)) {
                 continue;
             }
             
             $data = array_combine($headers, $row);
+            
+            // Limpiar datos de espacios en blanco
+            $data = array_map('trim', $data);
 
 
 
@@ -669,21 +677,32 @@ class InventariosImport
         $filesProcessed = [];
 
         foreach ($rows as $rowIndex => $row) {
-            if (empty(array_filter($row))) {
+            // Filtrar filas completamente vacías o con solo espacios en blanco
+            $filteredRow = array_filter($row, function($value) {
+                return !empty(trim($value));
+            });
+            
+            if (empty($filteredRow)) {
                 continue;
             }
 
             $data = array_combine($headers, $row);
             $rowNumber = $rowIndex + 2;
 
+            // Limpiar datos de espacios en blanco
+            $data = array_map('trim', $data);
+
             try {
-                // Validar que tenga código único y QR code imagen
+                // Validar que tenga código único y QR code imagen (solo procesar si tiene datos reales)
                 if (empty($data['codigo_unico']) || empty($data['qr_code_imagen'])) {
-                    $details[] = [
-                        "row" => $rowNumber,
-                        "status" => "error",
-                        "message" => "Código único o imagen QR faltante"
-                    ];
+                    // Solo mostrar error si la fila tiene algún contenido pero le faltan campos requeridos
+                    if (!empty($data['codigo_unico']) || !empty($data['qr_code_imagen']) || !empty($data['nombre'])) {
+                        $details[] = [
+                            "row" => $rowNumber,
+                            "status" => "error",
+                            "message" => "Código único o imagen QR faltante"
+                        ];
+                    }
                     continue;
                 }
 
