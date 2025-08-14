@@ -308,7 +308,7 @@ class MovimientoMasivoController extends Controller
                     'categorias.nombre as categoria_nombre',
                     \DB::raw('SUM(inventario_ubicaciones.cantidad) as cantidad_total'),
                     \DB::raw('GROUP_CONCAT(DISTINCT inventario_ubicaciones.estado) as estados'),
-                    \DB::raw('GROUP_CONCAT(DISTINCT CONCAT(ubicaciones.nombre, ":", inventario_ubicaciones.cantidad, ":", inventario_ubicaciones.estado) SEPARATOR "||") as ubicaciones_detalle')
+                    \DB::raw('GROUP_CONCAT(DISTINCT CONCAT(ubicaciones.id, ":", ubicaciones.nombre, ":", inventario_ubicaciones.cantidad, ":", inventario_ubicaciones.estado) SEPARATOR "||") as ubicaciones_detalle')
                 )
                 ->leftJoin('ubicaciones', 'inventario_ubicaciones.ubicacion_id', '=', 'ubicaciones.id')
                 ->groupBy(
@@ -372,11 +372,12 @@ class MovimientoMasivoController extends Controller
                         $ubicacionesArray = explode('||', $resultado->ubicaciones_detalle);
                         foreach ($ubicacionesArray as $ubicacionDetalle) {
                             $partes = explode(':', $ubicacionDetalle);
-                            if (count($partes) >= 3) {
+                            if (count($partes) >= 4) {
                                 $ubicacionesInfo[] = [
-                                    'nombre' => $partes[0],
-                                    'cantidad' => $partes[1],
-                                    'estado' => $partes[2]
+                                    'id' => $partes[0],
+                                    'nombre' => $partes[1],
+                                    'cantidad' => $partes[2],
+                                    'estado' => $partes[3]
                                 ];
                             }
                         }

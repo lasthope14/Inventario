@@ -2257,6 +2257,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="mt-1">
                             <span class="estado-badge estado-${elemento.estado.replace(/\s+/g, '-').toLowerCase()}">${elemento.estado}</span>
                         </div>
+                        <div class="mt-1">
+                            <small class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>${elemento.ubicacion_nombre || (elemento.ubicaciones_info && elemento.ubicaciones_info.length > 0 ? elemento.ubicaciones_info.map(u => u.nombre).join(', ') : 'Sin ubicación')}</small>
+                        </div>
                     </div>
                     <div class="elemento-controls-col" style="display: ${isSelected ? 'flex' : 'none'};">
                         <div class="cantidad-controls">
@@ -2433,8 +2436,29 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Determinar la ubicación de origen
+        let ubicacionOrigenId = elemento.ubicacion_id;
+        
+        // Si no tiene ubicacion_id directa, intentar obtenerla de ubicaciones_info
+        if (!ubicacionOrigenId && elemento.ubicaciones_info && elemento.ubicaciones_info.length > 0) {
+            // Para elementos con múltiples ubicaciones, usar la primera ubicación disponible
+            ubicacionOrigenId = elemento.ubicaciones_info[0].id;
+        }
+        
+        // Si aún no tenemos ubicación, usar el filtro
+        if (!ubicacionOrigenId) {
+            ubicacionOrigenId = document.getElementById('filtroUbicacionOrigen').value;
+        }
+        
+        // Validar que tengamos una ubicación válida
+        if (!ubicacionOrigenId || ubicacionOrigenId === '' || ubicacionOrigenId === 'todas') {
+            mostrarError('No se puede determinar la ubicación de origen del elemento.');
+            return;
+        }
+        
         const elementoDestino = {
             ...elemento,
+            ubicacion_id: ubicacionOrigenId, // Usar ubicacion_id del elemento o del filtro
             cantidad_mover: cantidad || Math.min(elemento.cantidad_disponible, 1),
             nuevo_estado: nuevoEstado || elemento.estado
         };
