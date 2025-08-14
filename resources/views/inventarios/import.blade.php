@@ -99,6 +99,44 @@
                                 color: #f9fafb;
                             }
                             
+                            /* Estilos básicos para el modal - Solo Bootstrap estándar */
+                            
+                            .bg-gradient-primary {
+                                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+                            }
+                            
+                            .modal-content {
+                                border-radius: 15px;
+                                overflow: hidden;
+                            }
+                            
+                            .modal-header {
+                                border-radius: 15px 15px 0 0;
+                            }
+                            
+                            .modal-footer {
+                                border-radius: 0 0 15px 15px;
+                            }
+                            
+                            /* Scroll personalizado para el modal */
+                            .modal-body::-webkit-scrollbar {
+                                width: 8px;
+                            }
+                            
+                            .modal-body::-webkit-scrollbar-track {
+                                background: #f1f1f1;
+                                border-radius: 4px;
+                            }
+                            
+                            .modal-body::-webkit-scrollbar-thumb {
+                                background: #c1c1c1;
+                                border-radius: 4px;
+                            }
+                            
+                            .modal-body::-webkit-scrollbar-thumb:hover {
+                                background: #a8a8a8;
+                            }
+                            
                             [data-bs-theme="dark"] .btn-outline-secondary:hover {
                                 background-color: #4b5563;
                                 border-color: #9ca3af;
@@ -583,17 +621,44 @@
                                     </div>
                                 </div>
 
-                                <!-- Resultados del análisis -->
-                                <div id="analysisResults" class="mt-4" style="display: none;">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">
-                                                <i class="fas fa-chart-bar me-2"></i>
-                                                Resultados del Análisis
-                                            </h6>
+                                <!-- Sección de Análisis con Acordeones Bootstrap -->
+                                <div id="analysisSection" class="mt-4" style="display: none;">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-chart-line me-2"></i>Resultados del Análisis
+                                            </h5>
+                                            <button type="button" class="btn btn-sm btn-outline-light" onclick="hideAnalysisSection()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
                                         </div>
-                                        <div class="card-body">
-                                            <div id="analysisContent"></div>
+                                        <div class="card-body p-0">
+                                            <!-- Acordeón de Análisis -->
+                                            <div class="accordion" id="analysisAccordion">
+                                                <!-- Resumen -->
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header" id="summaryHeading">
+                                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#summaryCollapse" aria-expanded="true" aria-controls="summaryCollapse">
+                                                            <i class="fas fa-chart-pie me-2"></i>Resumen del Análisis
+                                                        </button>
+                                                    </h2>
+                                                    <div id="summaryCollapse" class="accordion-collapse collapse show" aria-labelledby="summaryHeading" data-bs-parent="#analysisAccordion">
+                                                        <div class="accordion-body" id="analysisContent">
+                                                            <!-- El contenido se cargará aquí dinámicamente -->
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Botones de Acción -->
+                                            <div class="card-footer bg-light d-flex justify-content-end gap-2">
+                                                <button type="button" class="btn btn-secondary" onclick="hideAnalysisSection()">
+                                                    <i class="fas fa-times me-2"></i>Cerrar
+                                                </button>
+                                                <button type="button" class="btn btn-primary d-none" id="proceedImport">
+                                                    <i class="fas fa-upload me-2"></i>Proceder con la Importación
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -867,51 +932,404 @@ function showStatus(type, message) {
 }
 
 function analyzeFile(file) {
+    console.log('analyzeFile called with file:', file);
     // Implementar análisis de archivo
     const formData = new FormData();
     formData.append('file', file);
     formData.append('_token', document.querySelector('input[name="_token"]').value);
     
+    console.log('Sending request to analyze file...');
     fetch('{{ route("inventarios.analyze") }}', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response received:', response);
+        return response.json();
+    })
     .then(data => {
+        console.log('Data received:', data);
         if (data.success) {
+            console.log('Analysis successful, calling showAnalysisResults');
             showAnalysisResults(data.analysis);
         } else {
+            console.log('Analysis failed:', data.message);
             showStatus('error', data.message || 'Error al analizar el archivo');
         }
     })
     .catch(error => {
+        console.error('Error in analyzeFile:', error);
         showStatus('error', 'Error al analizar el archivo');
     });
 }
 
 function showAnalysisResults(analysis) {
     const content = document.getElementById('analysisContent');
-    content.innerHTML = `
-        <div class="row">
-            <div class="col-md-6">
-                <h6>Registros encontrados:</h6>
-                <p class="text-primary fs-4">${analysis.total_records || 0}</p>
+    
+    // Detectar tipo de plantilla
+    const isQrTemplate = analysis.template_type === 'qr_template';
+    
+    let summaryHtml = '';
+    
+    if (isQrTemplate) {
+        // Header con información de la plantilla
+        summaryHtml = `
+            <div class="bg-light p-4 border-bottom">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="me-3">
+                        <div class="bg-primary rounded-circle p-3">
+                            <i class="fas fa-qrcode text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="mb-1 fw-bold">${analysis.summary.template_info || 'Plantilla QR detectada'}</h6>
+                        <p class="text-muted mb-0">Análisis completo de códigos QR</p>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <h6>Imágenes encontradas:</h6>
-                <p class="text-success fs-4">${analysis.images_found || 0}</p>
+            
+            <!-- Estadísticas principales -->
+            <div class="p-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-3">
+                                <div class="mb-2">
+                                    <i class="fas fa-list-ol text-primary" style="font-size: 2rem;"></i>
+                                </div>
+                                <h3 class="text-primary mb-1">${analysis.summary.total_filas || 0}</h3>
+                                <p class="text-muted mb-0 small">Total de elementos</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-3">
+                                <div class="mb-2">
+                                    <i class="fas fa-check-circle text-success" style="font-size: 2rem;"></i>
+                                </div>
+                                <h3 class="text-success mb-1">${analysis.summary.elementos_validos || 0}</h3>
+                                <p class="text-muted mb-0 small">Elementos válidos</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center p-3">
+                                <div class="mb-2">
+                                    <i class="fas fa-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+                                </div>
+                                <h3 class="text-danger mb-1">${analysis.summary.elementos_no_encontrados || 0}</h3>
+                                <p class="text-muted mb-0 small">No encontrados</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Estadísticas de QR -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-start border-success border-4 h-100">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-qrcode text-success" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-success mb-0">${analysis.summary.elementos_con_qr || 0}</h4>
+                                        <small class="text-muted">Con imagen QR</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-start border-warning border-4 h-100">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-qrcode text-warning" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-warning mb-0">${analysis.summary.elementos_sin_qr || 0}</h4>
+                                        <small class="text-muted">Sin imagen QR</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-start border-info border-4 h-100">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-sync-alt text-info" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-info mb-0">${analysis.summary.qr_a_reemplazar || 0}</h4>
+                                        <small class="text-muted">QR a reemplazar</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-start border-danger border-4 h-100">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-copy text-danger" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-danger mb-0">${analysis.summary.duplicados_excel || 0}</h4>
+                                        <small class="text-muted">Duplicados Excel</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            
+            <!-- Alertas informativas -->
+            ${analysis.summary.elementos_sin_qr > 0 || analysis.summary.qr_a_reemplazar > 0 || analysis.summary.duplicados_excel > 0 ? `
+                <div class="border-top bg-light p-4">
+                    ${analysis.summary.elementos_sin_qr > 0 ? `
+                        <div class="alert alert-warning border-0 shadow-sm mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <i class="fas fa-info-circle text-warning" style="font-size: 1.2rem;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="alert-heading mb-2">Elementos sin imagen QR</h6>
+                                    <p class="mb-0">Los elementos sin imagen QR se procesarán correctamente pero no tendrán código QR asignado. Esto no impedirá la importación.</p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${analysis.summary.qr_a_reemplazar > 0 ? `
+                        <div class="alert alert-info border-0 shadow-sm mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <i class="fas fa-sync-alt text-info" style="font-size: 1.2rem;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="alert-heading mb-2">Códigos QR existentes en la base de datos</h6>
+                                    <p class="mb-0">En tu plantilla tienes <strong>${analysis.summary.qr_a_reemplazar}</strong> código(s) QR que ya están asignados en la base de datos. Si cargas esta plantilla, estos códigos QR serán reemplazados con los nuevos códigos del archivo.</p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${analysis.summary.duplicados_excel > 0 ? `
+                        <div class="alert alert-danger border-0 shadow-sm mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <i class="fas fa-exclamation-triangle text-danger" style="font-size: 1.2rem;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="alert-heading mb-2">Códigos QR duplicados en el archivo</h6>
+                                    <p class="mb-0">Tu plantilla contiene <strong>${analysis.summary.duplicados_excel}</strong> código(s) QR duplicado(s) dentro del mismo archivo Excel. Debes corregir estos duplicados antes de proceder con la importación.</p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            ` : ''}
+        `;
+    } else {
+        // Mostrar resumen para plantilla completa
+        summaryHtml = `
+            <div class="p-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-database text-primary mb-3" style="font-size: 2rem;"></i>
+                                <h3 class="text-primary">${analysis.total_records || analysis.total_rows || 0}</h3>
+                                <p class="text-muted mb-0">Registros encontrados</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-images text-success mb-3" style="font-size: 2rem;"></i>
+                                <h3 class="text-success">${analysis.images_found || 0}</h3>
+                                <p class="text-muted mb-0">Imágenes encontradas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Mostrar errores/duplicados en acordeón
+    let errorsHtml = '';
+    const hasIssues = (analysis.duplicates && analysis.duplicates.length > 0) || 
+                     (analysis.missing_references && analysis.missing_references.length > 0) || 
+                     (analysis.warnings && analysis.warnings.length > 0);
+    
+    if (hasIssues) {
+        errorsHtml = `
+            <div class="border-top">
+                <div class="p-4">
+                    <h6 class="mb-3 fw-bold text-muted">
+                        <i class="fas fa-list-ul me-2"></i>Detalles del Análisis
+                    </h6>
+                    <div class="accordion" id="analysisAccordion">
+        `;
+        
+        // Duplicados
+        if (analysis.duplicates && analysis.duplicates.length > 0) {
+            errorsHtml += `
+                <div class="accordion-item border-0 shadow-sm mb-2">
+                    <h2 class="accordion-header" id="duplicatesHeader">
+                        <button class="accordion-button collapsed bg-danger bg-opacity-10 border-0" type="button" data-bs-toggle="collapse" data-bs-target="#duplicatesCollapse" aria-expanded="false" aria-controls="duplicatesCollapse">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-exclamation-triangle text-danger" style="font-size: 1.2rem;"></i>
+                                </div>
+                                <div>
+                                    <span class="fw-bold text-danger">Duplicados encontrados</span>
+                                    <span class="badge bg-danger ms-2">${analysis.duplicates.length}</span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="duplicatesCollapse" class="accordion-collapse collapse" aria-labelledby="duplicatesHeader" data-bs-parent="#analysisAccordion">
+                        <div class="accordion-body bg-light">
+                            <div class="list-group list-group-flush">
+                                ${analysis.duplicates.map(dup => `
+                                    <div class="list-group-item border-0 bg-transparent">
+                                        <i class="fas fa-dot-circle text-danger me-2"></i>
+                                        <span class="text-danger">${dup.message}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Referencias faltantes
+        if (analysis.missing_references && analysis.missing_references.length > 0) {
+            errorsHtml += `
+                <div class="accordion-item border-0 shadow-sm mb-2">
+                    <h2 class="accordion-header" id="missingHeader">
+                        <button class="accordion-button collapsed bg-warning bg-opacity-10 border-0" type="button" data-bs-toggle="collapse" data-bs-target="#missingCollapse" aria-expanded="false" aria-controls="missingCollapse">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-search text-warning" style="font-size: 1.2rem;"></i>
+                                </div>
+                                <div>
+                                    <span class="fw-bold text-warning">Referencias no encontradas</span>
+                                    <span class="badge bg-warning ms-2">${analysis.missing_references.length}</span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="missingCollapse" class="accordion-collapse collapse" aria-labelledby="missingHeader" data-bs-parent="#analysisAccordion">
+                        <div class="accordion-body bg-light">
+                            <div class="list-group list-group-flush">
+                                ${analysis.missing_references.map(ref => `
+                                    <div class="list-group-item border-0 bg-transparent">
+                                        <i class="fas fa-dot-circle text-warning me-2"></i>
+                                        <span class="text-warning">${ref.message}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Advertencias
+        if (analysis.warnings && analysis.warnings.length > 0) {
+            errorsHtml += `
+                <div class="accordion-item border-0 shadow-sm mb-2">
+                    <h2 class="accordion-header" id="warningsHeader">
+                        <button class="accordion-button collapsed bg-info bg-opacity-10 border-0" type="button" data-bs-toggle="collapse" data-bs-target="#warningsCollapse" aria-expanded="false" aria-controls="warningsCollapse">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-info-circle text-info" style="font-size: 1.2rem;"></i>
+                                </div>
+                                <div>
+                                    <span class="fw-bold text-info">Advertencias</span>
+                                    <span class="badge bg-info ms-2">${analysis.warnings.length}</span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="warningsCollapse" class="accordion-collapse collapse" aria-labelledby="warningsHeader" data-bs-parent="#analysisAccordion">
+                        <div class="accordion-body bg-light">
+                            <div class="list-group list-group-flush">
+                                ${analysis.warnings.map(warn => `
+                                    <div class="list-group-item border-0 bg-transparent">
+                                        <i class="fas fa-dot-circle text-info me-2"></i>
+                                        <span class="text-info">${warn.message}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        errorsHtml += `
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Mostrar estado de importación
+    const canImport = analysis.summary && analysis.summary.can_import;
+    let statusMessage = '';
+    
+    if (isQrTemplate) {
+        statusMessage = analysis.summary.import_message || 
+            (canImport ? 'El archivo está listo para procesar códigos QR.' : 'Corrija los errores antes de proceder.');
+    } else {
+        statusMessage = canImport ? 
+            'El archivo ha pasado todas las validaciones y está listo para ser importado.' : 
+            'Corrija los errores antes de proceder con la importación.';
+    }
+    
+    const statusHtml = `
+        <div class="alert ${canImport ? 'alert-success' : 'alert-danger'}">
+            <h6><i class="fas ${canImport ? 'fa-check-circle' : 'fa-times-circle'} me-2"></i>
+                ${canImport ? 'Listo para importar' : 'No se puede importar'}
+            </h6>
+            <p class="mb-0">
+                ${statusMessage}
+            </p>
         </div>
-        ${analysis.errors && analysis.errors.length > 0 ? `
-            <div class="alert alert-warning">
-                <h6>Advertencias:</h6>
-                <ul class="mb-0">
-                    ${analysis.errors.map(error => `<li>${error}</li>`).join('')}
-                </ul>
-            </div>
-        ` : ''}
     `;
-    document.getElementById('analysisResults').style.display = 'block';
+    
+    content.innerHTML = summaryHtml + errorsHtml + statusHtml;
+    
+    // Configurar botón de proceder con importación
+    const proceedButton = document.getElementById('proceedImport');
+    if (canImport) {
+        proceedButton.classList.remove('d-none');
+        proceedButton.onclick = function() {
+            // Cerrar sección y proceder con importación
+            hideAnalysisSection();
+            // Aquí se puede agregar la lógica para proceder con la importación
+            document.getElementById('importForm').submit();
+        };
+    } else {
+        proceedButton.classList.add('d-none');
+    }
+    
+    // Mostrar sección de análisis
+    console.log('About to show analysis section');
+    showAnalysisSection();
+    console.log('Analysis section shown');
 }
 
 function formatFileSize(bytes) {
@@ -921,5 +1339,37 @@ function formatFileSize(bytes) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
+
+// Funciones para la sección de análisis
+function showAnalysisSection() {
+    console.log('showAnalysisSection called');
+    const section = document.getElementById('analysisSection');
+    console.log('Analysis section element:', section);
+    if (section) {
+        section.style.display = 'block';
+        // Scroll suave hacia la sección
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        console.log('Analysis section should be visible now');
+    } else {
+        console.error('Analysis section element not found!');
+    }
+}
+
+function hideAnalysisSection() {
+    const section = document.getElementById('analysisSection');
+    if (section) {
+        section.style.display = 'none';
+    }
+}
+
+// Cerrar sección con tecla Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const section = document.getElementById('analysisSection');
+        if (section && section.style.display !== 'none') {
+            hideAnalysisSection();
+        }
+    }
+});
 </script>
 @endsection

@@ -624,7 +624,7 @@ class InventariosImport
             return null;
         }
 
-        $directories = ['documentos', 'imagenes', ''];
+        $directories = ['documentos', 'imagenes', 'qr_codes', ''];
         foreach ($directories as $dir) {
             $searchPath = $dir ? $basePath . '/' . $dir : $basePath;
             
@@ -698,14 +698,21 @@ class InventariosImport
                     continue;
                 }
 
-                // Verificar si ya tiene QR code
-                if (!empty($inventario->qr_code)) {
-                    $details[] = [
-                        "row" => $rowNumber,
-                        "status" => "warning",
-                        "message" => "El inventario {$data['codigo_unico']} ya tiene código QR asignado"
-                    ];
-                    continue;
+                // Verificar si ya tiene QR code - ahora lo reemplazamos
+                $hasExistingQr = !empty($inventario->qr_code);
+                if ($hasExistingQr) {
+                    // Eliminar el QR anterior de la tabla media si existe
+                    DB::table('media')
+                        ->where('model_type', get_class($inventario))
+                        ->where('model_id', $inventario->id)
+                        ->where('collection_name', 'qr_codes')
+                        ->delete();
+                    
+                    // Eliminar archivo físico anterior si existe
+                    $oldQrPath = storage_path('app/public/' . $inventario->qr_code);
+                    if (file_exists($oldQrPath)) {
+                        unlink($oldQrPath);
+                    }
                 }
 
                 // Procesar código QR
@@ -715,18 +722,26 @@ class InventariosImport
                     $updatedIds[] = $inventario->id;
                     $updatedRows++;
 
+                    $message = $hasExistingQr ? 
+                        "QR code reemplazado exitosamente - {$data['codigo_unico']}" : 
+                        "QR code actualizado exitosamente - {$data['codigo_unico']}";
+                    
                     $details[] = [
                         "row" => $rowNumber,
                         "status" => "success",
-                        "message" => "QR code actualizado exitosamente - {$data['codigo_unico']}",
+                        "message" => $message,
                         "files" => ["QR procesado: {$qrProcesado}"]
                     ];
                 } else {
+                    // Marcar como advertencia en lugar de error
                     $details[] = [
                         "row" => $rowNumber,
-                        "status" => "error",
-                        "message" => "No se pudo procesar el archivo QR: {$data['qr_code_imagen']}"
+                        "status" => "warning",
+                        "message" => "Elemento procesado sin QR - {$data['codigo_unico']} (archivo QR no encontrado: {$data['qr_code_imagen']})"
                     ];
+                    // Aún contar como procesado exitosamente
+                    $updatedIds[] = $inventario->id;
+                    $updatedRows++;
                 }
 
             } catch (\Exception $e) {

@@ -179,14 +179,22 @@ class ImportController extends Controller
         
         $headers = array_map('strtolower', array_map('trim', array_shift($rows)));
         
+        // Detectar si es una plantilla QR simplificada
+        $isQrTemplate = $this->isQrTemplateHeaders($headers);
+        
         $analysis = [
             'total_rows' => count($rows),
             'duplicates' => [],
             'conflicts' => [],
             'missing_references' => [],
             'warnings' => [],
-            'summary' => []
+            'summary' => [],
+            'template_type' => $isQrTemplate ? 'qr_template' : 'full_template'
         ];
+        
+        if ($isQrTemplate) {
+            return $this->analyzeQrTemplate($rows, $headers, $analysis);
+        }
         
         $numerosSerieUsados = [];
         
@@ -293,6 +301,154 @@ class ImportController extends Controller
             'total_missing_references' => count($analysis['missing_references']),
             'total_warnings' => count($analysis['warnings']),
             'can_import' => count($analysis['duplicates']) === 0 && count($analysis['conflicts']) === 0 && count($analysis['missing_references']) === 0
+        ];
+        
+        return $analysis;
+    }
+    
+    private function isQrTemplateHeaders($headers)
+    {
+        $expectedQrHeaders = ['codigo_unico', 'categoria', 'nombre', 'numero_serie', 'qr_code_imagen'];
+        $normalizedHeaders = array_map('strtolower', array_map('trim', $headers));
+        
+        // Verificar que todos los headers esperados estén presentes
+        foreach ($expectedQrHeaders as $expectedHeader) {
+            if (!in_array($expectedHeader, $normalizedHeaders)) {
+                return false;
+            }
+        }
+        
+        // Verificar que no haya headers adicionales significativos
+        return count($normalizedHeaders) <= 6; // Permitir 1 header adicional por flexibilidad
+    }
+    
+    private function analyzeQrTemplate($rows, $headers, $analysis)
+    {
+        $codigosUsados = [];
+        
+        foreach ($rows as $rowIndex => $row) {
+            if (empty(array_filter($row))) {
+                continue;
+            }
+            
+            $data = array_combine($headers, $row);
+            $rowNumber = $rowIndex + 2;
+            
+            // Verificar código único
+            if (isset($data['codigo_unico']) && !empty($data['codigo_unico'])) {
+                $codigoUnico = trim($data['codigo_unico']);
+                
+                // Verificar duplicados en el archivo Excel
+                if (isset($codigosUsados[$codigoUnico])) {
+                    $analysis['duplicates'][] = [
+                        'type' => 'codigo_unico_duplicado_excel',
+                        'value' => $codigoUnico,
+                        'rows' => [$codigosUsados[$codigoUnico], $rowNumber],
+                        'message' => "El código único '{$codigoUnico}' está duplicado en el archivo Excel (filas {$codigosUsados[$codigoUnico]} y {$rowNumber})"
+                    ];
+                } else {
+                    $codigosUsados[$codigoUnico] = $rowNumber;
+                }
+                
+                // Verificar si existe en la base de datos
+                $existingInventario = \App\Models\Inventario::where('codigo_unico', $codigoUnico)->first();
+                if (!$existingInventario) {
+                    $analysis['missing_references'][] = [
+                        'type' => 'codigo_unico_no_encontrado',
+                        'value' => $codigoUnico,
+                        'row' => $rowNumber,
+                        'message' => "El código único '{$codigoUnico}' no existe en la base de datos"
+                    ];
+                } else {
+                    // Verificar si ya tiene QR code - será reemplazado
+                    if (!empty($existingInventario->qr_code)) {
+                        $analysis['warnings'][] = [
+                            'type' => 'qr_code_sera_reemplazado',
+                            'value' => $codigoUnico,
+                            'row' => $rowNumber,
+                            'message' => "El elemento '{$codigoUnico}' ya tiene un código QR que será reemplazado"
+                        ];
+                    }
+                }
+            } else {
+                $analysis['warnings'][] = [
+                    'type' => 'codigo_unico_vacio',
+                    'row' => $rowNumber,
+                    'message' => "El código único está vacío en la fila {$rowNumber}"
+                ];
+            }
+            
+            // Verificar que tenga nombre de archivo QR
+            if (isset($data['qr_code_imagen']) && !empty($data['qr_code_imagen'])) {
+                $qrFileName = trim($data['qr_code_imagen']);
+                // Verificar que tenga extensión de imagen
+                if (!preg_match('/\.(jpg|jpeg|png|gif|bmp)$/i', $qrFileName)) {
+                    $analysis['warnings'][] = [
+                        'type' => 'qr_imagen_formato_invalido',
+                        'value' => $qrFileName,
+                        'row' => $rowNumber,
+                        'message' => "El archivo QR '{$qrFileName}' no tiene una extensión de imagen válida"
+                    ];
+                }
+            } else {
+                $analysis['warnings'][] = [
+                    'type' => 'qr_imagen_vacio',
+                    'row' => $rowNumber,
+                    'message' => "El nombre del archivo QR está vacío en la fila {$rowNumber}"
+                ];
+            }
+        }
+        
+        // Contar elementos por estado
+        $elementosConQr = 0;
+        $elementosSinQr = 0;
+        $elementosNoEncontrados = 0;
+        
+        foreach ($analysis['conflicts'] as $conflict) {
+            if ($conflict['type'] === 'codigo_unico_no_encontrado') {
+                $elementosNoEncontrados++;
+            }
+        }
+        
+        foreach ($analysis['warnings'] as $warning) {
+            if ($warning['type'] === 'qr_imagen_vacio' || $warning['type'] === 'qr_imagen_formato_invalido') {
+                $elementosSinQr++;
+            } else {
+                $elementosConQr++;
+            }
+        }
+        
+        // Calcular elementos que se procesarán exitosamente
+        $totalFilas = count($rows);
+        $elementosValidos = $totalFilas - $elementosNoEncontrados;
+        
+        // Contar duplicados en Excel y en base de datos
+        $duplicadosExcel = count(array_filter($analysis['duplicates'], function($d) {
+            return $d['type'] === 'codigo_unico_duplicado_excel';
+        }));
+        
+        $qrAReemplazar = count(array_filter($analysis['warnings'], function($w) {
+            return $w['type'] === 'qr_code_sera_reemplazado';
+        }));
+        
+        // Generar resumen específico para plantilla QR
+        $analysis['summary'] = [
+            'total_duplicates' => $duplicadosExcel,
+            'total_conflicts' => $elementosNoEncontrados,
+            'total_missing_references' => count($analysis['missing_references']),
+            'total_warnings' => count($analysis['warnings']),
+            'elementos_con_qr' => $elementosConQr,
+            'elementos_sin_qr' => $elementosSinQr,
+            'elementos_no_encontrados' => $elementosNoEncontrados,
+            'elementos_validos' => $elementosValidos,
+            'qr_a_reemplazar' => $qrAReemplazar,
+            'duplicados_excel' => $duplicadosExcel,
+            'total_filas' => $totalFilas,
+            'can_import' => $elementosNoEncontrados === 0 && $duplicadosExcel === 0, // Bloquear si hay elementos no encontrados o duplicados en Excel
+            'template_info' => 'Plantilla QR simplificada detectada',
+            'import_message' => $elementosValidos > 0 ? 
+                "Se procesarán {$elementosValidos} elementos. Los elementos sin imagen QR se marcarán como advertencias pero se procesarán correctamente." :
+                "No hay elementos válidos para procesar."
         ];
         
         return $analysis;
