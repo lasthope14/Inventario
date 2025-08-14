@@ -503,6 +503,78 @@ class ImportController extends Controller
         );
     }
 
+    public function downloadQrTemplate()
+    {
+        if (!in_array(auth()->user()->role->name, ['administrador', 'almacenista'])) {
+            abort(403, $this->utf8Message('No tienes permisos para descargar la plantilla.'));
+        }
+
+        try {
+            // Obtener inventarios sin QR code
+            $inventariosSinQr = Inventario::whereNull('qr_code')
+                ->orWhere('qr_code', '')
+                ->with(['categoria', 'proveedor', 'ubicaciones'])
+                ->get();
+
+            if ($inventariosSinQr->isEmpty()) {
+                return back()->with('info', $this->utf8Message('No hay elementos sin código QR para exportar.'));
+            }
+
+            // Crear archivo Excel
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Encabezados simplificados
+            $headers = [
+                'codigo_unico', 'categoria', 'nombre', 'numero_serie', 'qr_code_imagen'
+            ];
+            
+            $sheet->fromArray($headers, null, 'A1');
+            
+            // Datos
+            $row = 2;
+            foreach ($inventariosSinQr as $inventario) {
+                $data = [
+                    $inventario->codigo_unico,
+                    $inventario->categoria->nombre ?? '',
+                    $inventario->nombre,
+                    $inventario->numero_serie ?? '',
+                    '' // Campo vacío para que el usuario llene el nombre de la imagen QR
+                ];
+                
+                $sheet->fromArray($data, null, 'A' . $row);
+                $row++;
+            }
+            
+            // Aplicar estilos
+            $headerRange = 'A1:E1';
+            $sheet->getStyle($headerRange)->getFont()->setBold(true);
+            $sheet->getStyle($headerRange)->getFill()
+                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setRGB('E2E8F0');
+            
+            // Ajustar ancho de columnas
+            foreach (range('A', 'E') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+            
+            // Crear archivo temporal
+            $tempFile = tempnam(sys_get_temp_dir(), 'qr_template_');
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save($tempFile);
+            
+            $fileName = 'plantilla_qr_inventario_' . date('Y-m-d_H-i-s') . '.xlsx';
+            
+            return response()->download($tempFile, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ])->deleteFileAfterSend(true);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error generando plantilla QR: ' . $e->getMessage());
+            return back()->with('error', $this->utf8Message('Error al generar la plantilla: ') . $e->getMessage());
+        }
+    }
+
     public function destroy(ImportLog $log)
 {
     if (auth()->user()->role->name !== 'administrador') {

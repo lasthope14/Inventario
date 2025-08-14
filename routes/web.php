@@ -59,6 +59,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/inventarios/importar', [ImportController::class, 'import'])->name('inventarios.import');
     Route::get('/inventarios/descargar-plantilla', [ImportController::class, 'downloadTemplate'])
         ->name('inventarios.template.download');
+    Route::get('/inventarios/descargar-plantilla-qr', [ImportController::class, 'downloadQrTemplate'])
+        ->name('inventarios.qr.template.download');
 
     // Rutas para gestión de logs de importación
     Route::delete('/importlogs/{log}', [ImportController::class, 'destroy'])

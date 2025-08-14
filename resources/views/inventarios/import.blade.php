@@ -313,10 +313,10 @@
                                                             │   ├── 📷 equipo001.jpg<br>
                                                             │   ├── 📷 equipo002.png<br>
                                                             │   └── 📷 ...<br>
-                                                            └── 📁 documentos <span class="text-info">(minúsculas)</span><br>
-                                                                ├── 📄 manual_equipo001.pdf<br>
-                                                                ├── 📄 ficha_equipo002.pdf<br>
-                                                                └── 📄 ...
+                                                            └── 📁 qr_codes <span class="text-info">(minúsculas)</span><br>
+                                                                ├── 🔲 qr_equipo001.png<br>
+                                                                ├── 🔲 qr_equipo002.jpg<br>
+                                                                └── 🔲 ...
                                                         </div>
                                                     </div>
                                                     
@@ -346,7 +346,7 @@
                                                     <ul class="mb-2">
                                                         <li><strong>Excel en la raíz:</strong> El archivo Excel debe estar en el nivel principal del ZIP</li>
                                                         <li><strong>Carpeta "imagenes":</strong> Exactamente con este nombre en minúsculas</li>
-                                                        <li><strong>Carpeta "documentos":</strong> Exactamente con este nombre en minúsculas</li>
+                                                        <li><strong>Carpeta "qr_codes":</strong> Exactamente con este nombre en minúsculas</li>
                                                         <li><strong>Nombres coincidentes:</strong> Los archivos dentro deben tener los mismos nombres que aparecen en el Excel</li>
                                                     </ul>
                                                     <hr class="my-2">
@@ -366,11 +366,11 @@
                                                     <ul class="mb-2">
                                                         <li><strong>Verifica nombres:</strong> Los archivos en las carpetas deben tener exactamente los mismos nombres que en el Excel</li>
                                                         <li><strong>Usa "Analizar":</strong> Siempre analiza antes de importar para detectar errores</li>
-                                                        <li><strong>Carpetas en minúsculas:</strong> "imagenes" y "documentos" deben estar en minúsculas</li>
+                                                        <li><strong>Carpetas en minúsculas:</strong> "imagenes" y "qr_codes" deben estar en minúsculas</li>
                                                         <li><strong>Excel en raíz:</strong> No pongas el Excel dentro de ninguna carpeta</li>
                                                     </ul>
                                                     <div class="bg-light p-2 rounded">
-                                                        <small class="text-muted"><strong>Ejemplo:</strong> Si en el Excel tienes "equipo001.jpg", debe existir el archivo "equipo001.jpg" en la carpeta "imagenes"</small>
+                                                        <small class="text-muted"><strong>Ejemplo:</strong> Si en el Excel tienes "qr_equipo001.png", debe existir el archivo "qr_equipo001.png" en la carpeta "qr_codes"</small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -456,6 +456,10 @@
                                     <a href="{{ route('inventarios.template.download') }}" class="btn btn-sm" style="font-size: 0.9rem; padding: 0.5rem 1rem; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057;">
                                         <i class="fas fa-download me-2" style="color: #6c757d;"></i>
                                         Descargar Plantilla
+                                    </a>
+                                    <a href="{{ route('inventarios.qr.template.download') }}" class="btn btn-sm" style="font-size: 0.9rem; padding: 0.5rem 1rem; background-color: #e3f2fd; border: 1px solid #2196f3; color: #1976d2;">
+                                        <i class="fas fa-qrcode me-2" style="color: #1976d2;"></i>
+                                        Plantilla QR
                                     </a>
                                 </div>
 

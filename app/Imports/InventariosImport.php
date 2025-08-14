@@ -31,6 +31,13 @@ class InventariosImport
         
         $headers = array_map('strtolower', array_map('trim', array_shift($rows)));
         
+        // Detectar si es una plantilla QR simplificada
+        $isQrTemplate = $this->isQrTemplate($headers);
+        
+        if ($isQrTemplate) {
+            return $this->importQrCodes($rows, $headers, $filesPath);
+        }
+        
         $importedRows = 0;
         $details = [];
         $importedIds = [];
@@ -88,9 +95,11 @@ class InventariosImport
                 $imagesProcesadas = $this->processImages($inventario, $data, $filesPath);
                 $filesProcessed = array_merge($filesProcessed, $imagesProcesadas);
 
-                // Procesar documentos
-                $documentosProcesados = $this->processDocuments($inventario, $data, $filesPath);
-                $filesProcessed = array_merge($filesProcessed, $documentosProcesados);
+                // Procesar código QR (reemplaza documentos)
+                $qrProcesado = $this->processQrCode($inventario, $data, $filesPath);
+                if ($qrProcesado) {
+                    $filesProcessed[] = $qrProcesado;
+                }
 
                 $inventario->ubicaciones()->create([
                     'ubicacion_id' => $data['ubicacion_id'],
@@ -504,6 +513,94 @@ class InventariosImport
         return $processedFiles;
     }
 
+    protected function processQrCode($inventario, $data, $filesPath)
+    {
+        if (!empty($data['qr_code_imagen'])) {
+            $qrImageName = trim($data['qr_code_imagen']);
+            
+            \Log::info('Procesando código QR:', ['qr_image' => $qrImageName]);
+            
+            $qrPath = $this->findFile($filesPath, $qrImageName, $this->allowedImageExtensions);
+            if ($qrPath) {
+                try {
+                    $qrHash = hash_file('md5', $qrPath);
+                    
+                    // Verificar si ya existe un QR con el mismo hash
+                    $existingQr = DB::table('media')
+                        ->where('collection_name', 'qr_codes')
+                        ->where('custom_properties->hash', $qrHash)
+                        ->first();
+                    
+                    if ($existingQr) {
+                        // Usar QR existente
+                        $physicalPath = storage_path('app/public/documentos/' . $existingQr->file_name);
+                        if (!file_exists($physicalPath)) {
+                            // Si el archivo físico no existe, copiarlo
+                            $fileName = $qrHash . '.' . pathinfo($qrImageName, PATHINFO_EXTENSION);
+                            $destinationPath = 'documentos/' . $fileName;
+                            $fullDestinationPath = storage_path('app/public/' . $destinationPath);
+                            
+                            if (copy($qrPath, $fullDestinationPath)) {
+                                chmod($fullDestinationPath, 0644);
+                            } else {
+                                throw new \Exception("No se pudo copiar el código QR al destino");
+                            }
+                        }
+                        
+                        $destinationPath = 'documentos/' . $existingQr->file_name;
+                        $inventario->qr_code = $destinationPath;
+                        $inventario->save();
+                    } else {
+                        // Crear nuevo registro de QR
+                        $fileName = $qrHash . '.' . pathinfo($qrImageName, PATHINFO_EXTENSION);
+                        $destinationPath = 'documentos/' . $fileName;
+                        $fullDestinationPath = storage_path('app/public/' . $destinationPath);
+                        
+                        if (copy($qrPath, $fullDestinationPath)) {
+                            chmod($fullDestinationPath, 0644);
+                            
+                            $inventario->qr_code = $destinationPath;
+                            $inventario->save();
+                            
+                            // Registrar en tabla media
+                            DB::table('media')->insert([
+                                'model_type' => get_class($inventario),
+                                'model_id' => $inventario->id,
+                                'uuid' => (string) Str::uuid(),
+                                'collection_name' => 'qr_codes',
+                                'name' => $inventario->codigo_unico . '_qr',
+                                'file_name' => $fileName,
+                                'mime_type' => mime_content_type($qrPath),
+                                'disk' => 'public',
+                                'size' => filesize($qrPath),
+                                'manipulations' => '[]',
+                                'custom_properties' => json_encode(['hash' => $qrHash]),
+                                'generated_conversions' => '[]',
+                                'responsive_images' => '[]',
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ]);
+                        } else {
+                            throw new \Exception("No se pudo copiar el código QR al destino");
+                        }
+                    }
+                    
+                    return $qrImageName;
+                    
+                } catch (\Exception $e) {
+                    \Log::error('Error procesando código QR: ' . $qrImageName, [
+                        'error' => $e->getMessage()
+                    ]);
+                    return null;
+                }
+            } else {
+                \Log::warning('Código QR no encontrado: ' . $qrImageName);
+            }
+        }
+        
+        return null;
+    }
+
     protected function generateUniqueFileName($originalName, $hash)
     {
         $extension = pathinfo($originalName, PATHINFO_EXTENSION);
@@ -556,5 +653,97 @@ class InventariosImport
 
 
         return null;
+    }
+
+    protected function isQrTemplate($headers)
+    {
+        $expectedHeaders = ['codigo_unico', 'categoria', 'nombre', 'numero_serie', 'qr_code_imagen'];
+        return count($headers) === 5 && array_diff($expectedHeaders, $headers) === [];
+    }
+
+    protected function importQrCodes($rows, $headers, $filesPath)
+    {
+        $updatedRows = 0;
+        $details = [];
+        $updatedIds = [];
+        $filesProcessed = [];
+
+        foreach ($rows as $rowIndex => $row) {
+            if (empty(array_filter($row))) {
+                continue;
+            }
+
+            $data = array_combine($headers, $row);
+            $rowNumber = $rowIndex + 2;
+
+            try {
+                // Validar que tenga código único y QR code imagen
+                if (empty($data['codigo_unico']) || empty($data['qr_code_imagen'])) {
+                    $details[] = [
+                        "row" => $rowNumber,
+                        "status" => "error",
+                        "message" => "Código único o imagen QR faltante"
+                    ];
+                    continue;
+                }
+
+                // Buscar inventario existente por código único
+                $inventario = Inventario::where('codigo_unico', $data['codigo_unico'])->first();
+                if (!$inventario) {
+                    $details[] = [
+                        "row" => $rowNumber,
+                        "status" => "error",
+                        "message" => "No se encontró inventario con código: {$data['codigo_unico']}"
+                    ];
+                    continue;
+                }
+
+                // Verificar si ya tiene QR code
+                if (!empty($inventario->qr_code)) {
+                    $details[] = [
+                        "row" => $rowNumber,
+                        "status" => "warning",
+                        "message" => "El inventario {$data['codigo_unico']} ya tiene código QR asignado"
+                    ];
+                    continue;
+                }
+
+                // Procesar código QR
+                $qrProcesado = $this->processQrCode($inventario, $data, $filesPath);
+                if ($qrProcesado) {
+                    $filesProcessed[] = $qrProcesado;
+                    $updatedIds[] = $inventario->id;
+                    $updatedRows++;
+
+                    $details[] = [
+                        "row" => $rowNumber,
+                        "status" => "success",
+                        "message" => "QR code actualizado exitosamente - {$data['codigo_unico']}",
+                        "files" => ["QR procesado: {$qrProcesado}"]
+                    ];
+                } else {
+                    $details[] = [
+                        "row" => $rowNumber,
+                        "status" => "error",
+                        "message" => "No se pudo procesar el archivo QR: {$data['qr_code_imagen']}"
+                    ];
+                }
+
+            } catch (\Exception $e) {
+                \Log::error('Error en importación QR de fila ' . $rowNumber . ': ' . $e->getMessage());
+                $details[] = [
+                    "row" => $rowNumber,
+                    "status" => "error",
+                    "message" => "Error: " . $e->getMessage()
+                ];
+            }
+        }
+
+        return [
+            'records_imported' => $updatedRows,
+            'details' => $details,
+            'imported_ids' => $updatedIds,
+            'files_processed' => $filesProcessed
+        ];
     }
 }
