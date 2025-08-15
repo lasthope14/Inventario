@@ -15,32 +15,30 @@
                 <div class="card shadow-sm">
                     <div class="card-header position-relative" style="background: #ffffff; padding: 1.5rem; padding-bottom: 1.5rem;">
                         
-                        <!-- Botones de Acción y QR Code -->
+                        <!-- Botones de Acción -->
                         <div class="position-absolute" style="top: 10px; right: 15px; z-index: 10;">
-                            <div class="d-flex flex-column align-items-center gap-2">
-                                <!-- Botones -->
-                                <div class="d-flex gap-2">
-                                    @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'almacenista')
-                                        <a href="{{ route('inventarios.edit', $inventario->id) }}" class="quick-action-btn text-decoration-none" style="border-radius: 10px; padding: 8px 16px; font-weight: 500; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057; transition: all 0.3s ease; font-size: 0.9rem;">
-                                            <i class="fas fa-edit me-2" style="color: #007bff;"></i>Editar
-                                        </a>
-                                    @endif
-                                    <a href="{{ route('inventarios.index') }}" id="volverInventarioBtn" class="quick-action-btn text-decoration-none" style="border-radius: 10px; padding: 8px 16px; font-weight: 500; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057; transition: all 0.3s ease; font-size: 0.9rem;">
-                                        <i class="fas fa-arrow-left me-2" style="color: #6c757d;"></i>Volver
+                            <div class="d-flex gap-2">
+                                @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'almacenista')
+                                    <a href="{{ route('inventarios.edit', $inventario->id) }}" class="quick-action-btn text-decoration-none" style="border-radius: 10px; padding: 8px 16px; font-weight: 500; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057; transition: all 0.3s ease; font-size: 0.9rem;">
+                                        <i class="fas fa-edit me-2" style="color: #007bff;"></i>Editar
                                     </a>
-                                </div>
-                                <!-- QR Code -->
-                                <div>
-                                    @if($inventario->qr_code)
-                                        <img src="{{ asset('storage/' . $inventario->qr_code) }}" alt="QR Personalizado" style="width: 120px; height: 120px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-                                    @else
-                                        @php
-                                            $nasUrl = 'http://nas.empresa.local/documentos/inventario/' . $inventario->id;
-                                        @endphp
-                                        <div id="qrcode-header-{{ $inventario->id }}" style="width: 120px; height: 120px;"></div>
-                                    @endif
-                                </div>
+                                @endif
+                                <a href="{{ route('inventarios.index') }}" id="volverInventarioBtn" class="quick-action-btn text-decoration-none" style="border-radius: 10px; padding: 8px 16px; font-weight: 500; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057; transition: all 0.3s ease; font-size: 0.9rem;">
+                                    <i class="fas fa-arrow-left me-2" style="color: #6c757d;"></i>Volver
+                                </a>
                             </div>
+                        </div>
+                        
+                        <!-- QR Code Centrado -->
+                        <div class="position-absolute" style="top: 10px; left: 50%; transform: translateX(-50%); z-index: 10;">
+                            @if($inventario->qr_code)
+                                <img src="{{ asset('storage/' . $inventario->qr_code) }}" alt="QR Personalizado" style="width: 120px; height: 120px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                            @else
+                                @php
+                                    $nasUrl = 'http://nas.empresa.local/documentos/inventario/' . $inventario->id;
+                                @endphp
+                                <div id="qrcode-header-{{ $inventario->id }}" style="width: 120px; height: 120px;"></div>
+                            @endif
                         </div>
                         
                         <!-- Fila Principal del Header -->
@@ -48,17 +46,8 @@
                             <!-- Columna Izquierda: Información Principal -->
                             <div class="col-lg-6 col-md-6">
                                 <div class="d-flex align-items-center">
-                                    <div class="me-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                        <i class="fas fa-box" style="font-size: 1.2rem; color: #007bff;"></i>
-                                    </div>
                                     <div class="flex-grow-1">
-                                        <h1 class="mb-1" style="color: #212529; font-size: 1.75rem; font-weight: 700; line-height: 1.2;">{{ $inventario->nombre }}</h1>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="badge bg-light text-dark px-2 py-1" style="font-size: 0.75rem; border: 1px solid #dee2e6;">
-                                                <i class="fas fa-layer-group me-1"></i>{{ $inventario->categoria->nombre ?? 'Sin categoría' }}
-                                            </span>
-                                            <span class="text-muted" style="font-size: 0.85rem;">ID: {{ $inventario->id }}</span>
-                                        </div>
+                                        <h1 class="mb-0" style="color: #212529; font-size: 2.25rem; font-weight: 700; line-height: 1.2;">{{ $inventario->nombre }}</h1>
                                         
                                         <!-- Contenedor móvil para botones y QR (solo visible en móviles) -->
                                         <div class="mobile-actions d-none">
@@ -496,12 +485,7 @@
                                                 <span class="info-value" style="color: #212529; font-size: 0.9rem;">{{ $inventario->proveedor->nombre ?? 'No especificado' }}</span>
                                             </div>
                                         </div>
-                                        <div class="p-2 mb-2" style="border-bottom: 1px solid #e9ecef;">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="info-value" style="color: #212529; font-size: 0.8rem; text-transform: uppercase;">Categoría</span>
-                                                <span class="info-value" style="color: #212529; font-size: 0.9rem;">{{ $inventario->categoria->nombre ?? 'No especificada' }}</span>
-                                            </div>
-                                        </div>
+
                                         <div class="p-2">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <span class="info-value" style="color: #212529; font-size: 0.8rem; text-transform: uppercase;">Última Inspección</span>
@@ -521,18 +505,8 @@
                                         <h4 class="mb-0 info-value" style="color: #212529; font-size: 1.1rem;">Especificaciones Técnicas</h4>
                                     </div>
                                     <div class="space-y-2">
-                                        <div class="p-2 mb-2" style="border-bottom: 1px solid #e9ecef;">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="info-value" style="color: #212529; font-size: 0.8rem; text-transform: uppercase;">Número de Serie</span>
-                                                <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ $inventario->numero_serie ?? 'No especificado' }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="p-2 mb-2" style="border-bottom: 1px solid #e9ecef;">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="info-value" style="color: #212529; font-size: 0.8rem; text-transform: uppercase;">Marca</span>
-                                                <span class="info-value" style="color: #212529; font-size: 0.9rem;">{{ $inventario->marca ?? 'No especificada' }}</span>
-                                            </div>
-                                        </div>
+
+
                                         <div class="p-2 mb-2" style="border-bottom: 1px solid #e9ecef;">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <span class="info-value" style="color: #212529; font-size: 0.8rem; text-transform: uppercase;">Modelo</span>
@@ -1610,6 +1584,31 @@ document.addEventListener('DOMContentLoaded', function() {
         object-fit: contain;
         aspect-ratio: 4/3;
     }
+    
+    /* Ajustar header para evitar superposición del QR en resoluciones muy grandes */
+    .card-header {
+        padding-bottom: 120px !important;
+    }
+    
+    /* Mantener botones en posición segura */
+    .position-absolute[style*="right: 15px"] {
+        top: 20px !important;
+        right: 25px !important;
+    }
+    
+    /* Mantener QR centrado */
+    .position-absolute[style*="left: 50%"] {
+        top: 20px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+    }
+    
+    /* Mantener tamaño estándar del QR en resoluciones muy grandes */
+    .position-absolute img,
+    .position-absolute div[id*="qrcode"] {
+        width: 120px !important;
+        height: 120px !important;
+    }
 }
 
 /* Breakpoint para resoluciones grandes (1345px - 1609px) */
@@ -1648,10 +1647,79 @@ document.addEventListener('DOMContentLoaded', function() {
         min-height: 400px !important;
         max-height: 500px !important;
     }
+    
+    /* Ajustar header para evitar superposición del QR */
+    .card-header {
+        padding-bottom: 120px !important;
+    }
+    
+    /* Ajustar posición del QR para evitar superposición */
+    .position-absolute[style*="left: 50%"] {
+        top: 15px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+    }
+    
+    /* Ajustar tamaño del QR en estas resoluciones */
+    .position-absolute img,
+    .position-absolute div[id*="qrcode"] {
+        width: 110px !important;
+        height: 110px !important;
+    }
 }
 
-/* Breakpoint crítico para resoluciones medianas (992px - 1344px) */
-@media (max-width: 1344px) and (min-width: 992px) {
+/* Breakpoint para resoluciones medianas-altas (1189px - 1344px) */
+@media (max-width: 1344px) and (min-width: 1189px) {
+    /* Mantener layout horizontal pero ajustar proporciones */
+    .row.g-4 > .col-xl-8 {
+        flex: 0 0 70%;
+        max-width: 70%;
+    }
+    
+    .row.g-4 > .col-xl-4 {
+        flex: 0 0 30%;
+        max-width: 30%;
+    }
+    
+    /* Ajustar grid de información */
+    .col-lg-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    .col-lg-4:nth-child(3) {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-top: 1rem;
+    }
+    
+    /* Ajustar imagen */
+    .image-container,
+    .no-image-placeholder {
+        min-height: 380px !important;
+        max-height: 480px;
+    }
+    
+    .image-container img {
+        min-height: 380px !important;
+        max-height: 480px !important;
+    }
+    
+    /* Ajustar header */
+    .card-header {
+        padding-bottom: 110px !important;
+    }
+    
+    /* Ajustar tamaño del QR */
+    .position-absolute img,
+    .position-absolute div[id*="qrcode"] {
+        width: 105px !important;
+        height: 105px !important;
+    }
+}
+
+/* Breakpoint crítico para resoluciones medianas (992px - 1188px) */
+@media (max-width: 1188px) and (min-width: 992px) {
     /* Cambiar a layout vertical */
     .row.g-4 > .col-xl-8,
     .row.g-4 > .col-xl-4 {
@@ -1698,10 +1766,17 @@ document.addEventListener('DOMContentLoaded', function() {
         padding-bottom: 80px !important;
     }
     
-    /* Ajustar botones y QR en header */
-    .position-absolute[style*="top: 10px"] {
+    /* Ajustar botones en header */
+    .position-absolute[style*="right: 15px"] {
         top: 15px !important;
         right: 20px !important;
+    }
+    
+    /* Ajustar QR centrado en header */
+    .position-absolute[style*="left: 50%"] {
+        top: 15px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
     }
     
     .position-absolute img,
@@ -1711,8 +1786,101 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-/* Breakpoint para tablets (769px - 991px) */
-@media (max-width: 991px) and (min-width: 769px) {
+/* Breakpoint para tablets grandes (850px - 991px) */
+@media (max-width: 991px) and (min-width: 850px) {
+    /* Layout completamente vertical */
+    .row.g-4 > .col-xl-8,
+    .row.g-4 > .col-xl-4,
+    .col-lg-4,
+    .col-lg-6 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        margin-bottom: 1rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    /* Imagen más pequeña */
+    .image-container,
+    .no-image-placeholder {
+        min-height: 320px !important;
+        max-height: 420px;
+    }
+    
+    .image-container img {
+        min-height: 320px !important;
+        max-height: 420px !important;
+    }
+    
+    /* Ubicaciones en una sola columna */
+    .col-12.col-sm-6.col-lg-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    /* Ajustar header para tablets */
+    .card-header {
+        padding-bottom: 105px !important;
+    }
+    
+    .position-absolute img,
+    .position-absolute div[id*="qrcode"] {
+        width: 95px !important;
+        height: 95px !important;
+    }
+    
+    /* Prevenir desbordamiento de texto */
+    .info-value,
+    .badge {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+    }
+    
+    /* Ocultar el contenedor de botones y QR del header en tablets grandes */
+    .position-absolute[style*="top: 10px"] {
+        display: none !important;
+    }
+    
+    /* Mostrar botones y QR debajo del título en tablets grandes */
+    .mobile-actions {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+        margin-bottom: 0 !important;
+        padding-top: 0.75rem;
+        padding-bottom: 0 !important;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    /* QR primero, centrado */
+    .mobile-actions > div:last-child {
+        order: 1;
+        display: flex;
+        justify-content: center;
+    }
+    
+    /* Botones después del QR */
+    .mobile-actions .d-flex {
+        order: 2;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    /* Ajustar tamaño del QR para tablets grandes */
+    .mobile-actions img,
+    .mobile-actions div[id*="qrcode"] {
+        width: 95px !important;
+        height: 95px !important;
+        margin: 0 auto;
+    }
+}
+
+/* Breakpoint para tablets pequeñas (769px - 849px) */
+@media (max-width: 849px) and (min-width: 769px) {
     /* Layout completamente vertical */
     .row.g-4 > .col-xl-8,
     .row.g-4 > .col-xl-4,
@@ -1745,7 +1913,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /* Ajustar header para tablets */
     .card-header {
-        padding-bottom: 70px !important;
+        padding-bottom: 100px !important;
     }
     
     .position-absolute img,
@@ -1870,8 +2038,6 @@ document.addEventListener('DOMContentLoaded', function() {
     .card-header .d-flex.align-items-center {
         margin: 0 !important;
         padding: 0 !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
     }
     
     /* Icono - selector más específico */
@@ -2005,7 +2171,7 @@ document.addEventListener('DOMContentLoaded', function() {
     /* Ajustes adicionales para el header en pantallas muy pequeñas */
     .card-header {
         padding: 0.75rem !important;
-        padding-bottom: 1rem !important;
+        padding-bottom: 80px !important;
     }
     
     /* QR más pequeño en pantallas muy pequeñas */
