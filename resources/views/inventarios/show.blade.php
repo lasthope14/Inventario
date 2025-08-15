@@ -3,6 +3,7 @@
 @section('title', 'Detalle del Equipo - ' . $inventario->nombre)
 
 @section('content')
+<div id="top"></div>
 <div class="container-fluid py-2">
 
     

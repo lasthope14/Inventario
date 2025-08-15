@@ -118,7 +118,7 @@ class Inventario extends Model implements HasMedia
     public function ubicaciones()
     {
         return $this->belongsToMany(Ubicacion::class, 'inventario_ubicaciones')
-                    ->withPivot('cantidad', 'estado')
+                    ->withPivot('id', 'cantidad', 'estado')
                     ->withTimestamps();
     }
 

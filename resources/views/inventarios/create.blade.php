@@ -185,15 +185,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title mb-4"><i class="fas fa-images me-2"></i>Imagen Secundaria</h5>
-                                <input type="file" class="form-control mb-3" id="imagen_secundaria" name="imagen_secundaria" onchange="previewImage(this, 'preview_imagen_secundaria')">
-                                <img id="preview_imagen_secundaria" src="" alt="Vista previa imagen secundaria" class="img-thumbnail mt-2" style="max-height: 200px; max-width: 100%; display: none;">
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">

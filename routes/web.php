@@ -172,6 +172,10 @@ Route::get('/api/filtros-unificados', [InventarioController::class, 'getFiltrosU
         ->name('notifications.markAsRead');
     Route::post('/mark-all-notifications-as-read', [NotificationController::class, 'markAllAsRead'])
         ->name('notifications.markAllAsRead');
+    
+    // Ruta para logs del formulario de edición
+    Route::post('/log-form-data', [InventarioController::class, 'logFormData'])
+        ->name('inventarios.logFormData');
 });
 
 // Incluye las rutas de autenticación

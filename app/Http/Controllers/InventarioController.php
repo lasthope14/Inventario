@@ -1223,11 +1223,14 @@ class InventarioController extends Controller
 
             // Actualizar cantidades y estados existentes
             $cantidadTotal = 0;
+            
             if (isset($request->ubicaciones_existentes)) {
                 foreach ($request->ubicaciones_existentes as $relacionId => $ubicacionData) {
                     $cantidad = max(0, intval($ubicacionData['cantidad'] ?? 0));
                     $estado = $ubicacionData['estado'] ?? 'disponible';
                     $ubicacionId = $ubicacionData['ubicacion_id'] ?? null;
+                    
+
                     
                     // Verificar que tenemos el ID de ubicación
                     if (!$ubicacionId) {
@@ -1245,32 +1248,41 @@ class InventarioController extends Controller
                             ]);
                         }
                         
-                        Log::info('Actualización de ubicación', [
-                            'inventario_id' => $inventario->id,
-                            'ubicacion_id' => $ubicacionId,
-                            'cantidad' => $cantidad,
-                            'estado' => $estado,
-                            'relacion_id' => $relacionId
-                        ]);
+
                         
                         $cantidadTotal += $cantidad;
                     } else {
                         // Eliminar registro específico si cantidad es 0
-                        $inventario->ubicaciones()->where('id', $relacionId)->delete();
                         
-                        Log::info('Eliminación de ubicación específica por cantidad 0', [
-                            'inventario_id' => $inventario->id,
-                            'relacion_id' => $relacionId,
-                            'ubicacion_id' => $ubicacionId
-                        ]);
+                        // Eliminar directamente por ID de la tabla pivot
+                        try {
+                            $eliminado = DB::table('inventario_ubicaciones')
+                                ->where('id', $relacionId)
+                                ->where('inventario_id', $inventario->id)
+                                ->delete();
+                            
+
+                            
+
+                        } catch (\Exception $e) {
+                            // Error silencioso
+                        }
+
                     }
                 }
             }
 
             // Procesar ubicaciones dinámicas agregadas desde JavaScript
+            
             if ($request->has('ubicaciones') && is_array($request->ubicaciones)) {
-                foreach ($request->ubicaciones as $ubicacionData) {
+
+                
+                foreach ($request->ubicaciones as $index => $ubicacionData) {
+
+                    
                     if (isset($ubicacionData['ubicacion_id']) && isset($ubicacionData['cantidad']) && $ubicacionData['cantidad'] > 0) {
+
+                        
                         // Verificar si ya existe esta combinación de ubicación y estado
                         $ubicacionExistente = $inventario->ubicaciones()
                             ->where('ubicacion_id', $ubicacionData['ubicacion_id'])
@@ -1283,26 +1295,19 @@ class InventarioController extends Controller
                                 'cantidad' => intval($ubicacionData['cantidad'])
                             ]);
                             
-                            Log::info('Ubicación existente actualizada', [
-                                'inventario_id' => $inventario->id,
-                                'ubicacion_id' => $ubicacionData['ubicacion_id'],
-                                'cantidad_nueva' => intval($ubicacionData['cantidad']),
-                                'estado' => $ubicacionData['estado'] ?? 'disponible'
-                            ]);
+
                         } else {
-                            // Si no existe esta combinación, crear nueva
-                            $inventario->ubicaciones()->create([
-                                'ubicacion_id' => $ubicacionData['ubicacion_id'],
-                                'cantidad' => intval($ubicacionData['cantidad']),
-                                'estado' => $ubicacionData['estado'] ?? 'disponible'
-                            ]);
-                            
-                            Log::info('Nueva ubicación creada desde JavaScript', [
-                                'inventario_id' => $inventario->id,
-                                'ubicacion_id' => $ubicacionData['ubicacion_id'],
-                                'cantidad' => intval($ubicacionData['cantidad']),
-                                'estado' => $ubicacionData['estado'] ?? 'disponible'
-                            ]);
+                            // Si no existe esta combinación, crear nueva en la tabla pivot
+                            try {
+                                $inventario->ubicaciones()->attach($ubicacionData['ubicacion_id'], [
+                                    'cantidad' => intval($ubicacionData['cantidad']),
+                                    'estado' => $ubicacionData['estado'] ?? 'disponible'
+                                ]);
+                                
+
+                            } catch (\Exception $e) {
+                                // Error silencioso
+                            }
                         }
                         
                         $cantidadTotal += intval($ubicacionData['cantidad']);
@@ -1312,18 +1317,12 @@ class InventarioController extends Controller
 
             // Agregar nueva ubicación si se proporciona (mantener compatibilidad)
             if ($request->nueva_ubicacion_id && $request->nueva_ubicacion_cantidad > 0) {
-                $nuevaUbicacion = $inventario->ubicaciones()->create([
-                    'ubicacion_id' => $request->nueva_ubicacion_id,
+                $inventario->ubicaciones()->attach($request->nueva_ubicacion_id, [
                     'cantidad' => $request->nueva_ubicacion_cantidad,
                     'estado' => $request->nueva_ubicacion_estado ?? 'disponible'
                 ]);
                 
-                Log::info('Nueva ubicación agregada', [
-                    'inventario_id' => $inventario->id,
-                    'ubicacion_id' => $request->nueva_ubicacion_id,
-                    'cantidad' => $request->nueva_ubicacion_cantidad,
-                    'estado' => $request->nueva_ubicacion_estado ?? 'disponible'
-                ]);
+
                 
                 $cantidadTotal += $request->nueva_ubicacion_cantidad;
             }
@@ -1332,16 +1331,13 @@ class InventarioController extends Controller
             $inventario->cantidadTotal = $cantidadTotal;
             $inventario->save();
             
-            Log::info('Actualización de inventario completada', [
-                'inventario_id' => $inventario->id,
-                'cantidad_total' => $cantidadTotal
-            ]);
+
         });
 
         return redirect()
             ->route('inventarios.show', $inventario)
-            ->with('success', 'Elemento de inventario actualizado con éxito.');
-            // No agregar fragmento para evitar scroll automático
+            ->with('success', 'Elemento de inventario actualizado con éxito.')
+            ->withFragment('top');
 
     } catch (\Exception $e) {
         Log::error('Error al actualizar inventario', [
@@ -1913,6 +1909,8 @@ class InventarioController extends Controller
             ], 500);
         }
     }
+    
+
 }
 
 
