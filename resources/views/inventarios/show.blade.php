@@ -12,7 +12,7 @@
         <div class="row mb-4 mx-0">
             <div class="col-12 px-0">
                 <div class="card shadow-sm">
-                    <div class="card-header position-relative" style="background: #ffffff; padding: 1.5rem; padding-bottom: 100px;">
+                    <div class="card-header position-relative" style="background: #ffffff; padding: 1.5rem; padding-bottom: 1.5rem;">
                         
                         <!-- Botones de Acción y QR Code -->
                         <div class="position-absolute" style="top: 10px; right: 15px; z-index: 10;">
@@ -43,12 +43,12 @@
                         </div>
                         
                         <!-- Fila Principal del Header -->
-                        <div class="row align-items-center g-4">
+        <div class="row align-items-center">
                             <!-- Columna Izquierda: Información Principal -->
                             <div class="col-lg-6 col-md-6">
                                 <div class="d-flex align-items-center">
-                                    <div class="me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(0,123,255,0.3);">
-                                        <i class="fas fa-box" style="font-size: 1.4rem;"></i>
+                                    <div class="me-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <i class="fas fa-box" style="font-size: 1.2rem; color: #007bff;"></i>
                                     </div>
                                     <div class="flex-grow-1">
                                         <h1 class="mb-1" style="color: #212529; font-size: 1.75rem; font-weight: 700; line-height: 1.2;">{{ $inventario->nombre }}</h1>
@@ -57,6 +57,30 @@
                                                 <i class="fas fa-layer-group me-1"></i>{{ $inventario->categoria->nombre ?? 'Sin categoría' }}
                                             </span>
                                             <span class="text-muted" style="font-size: 0.85rem;">ID: {{ $inventario->id }}</span>
+                                        </div>
+                                        
+                                        <!-- Contenedor móvil para botones y QR (solo visible en móviles) -->
+                                        <div class="mobile-actions d-none">
+                                            <div class="d-flex gap-2">
+                                                @if(auth()->user()->role->name === 'administrador' || auth()->user()->role->name === 'almacenista')
+                                                    <a href="{{ route('inventarios.edit', $inventario->id) }}" class="quick-action-btn text-decoration-none" style="border-radius: 10px; padding: 8px 16px; font-weight: 500; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057; transition: all 0.3s ease; font-size: 0.9rem;">
+                                                        <i class="fas fa-edit me-2" style="color: #007bff;"></i>Editar
+                                                    </a>
+                                                @endif
+                                                <a href="{{ route('inventarios.index') }}" id="volverInventarioBtn" class="quick-action-btn text-decoration-none" style="border-radius: 10px; padding: 8px 16px; font-weight: 500; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #495057; transition: all 0.3s ease; font-size: 0.9rem;">
+                                                    <i class="fas fa-arrow-left me-2" style="color: #6c757d;"></i>Volver
+                                                </a>
+                                            </div>
+                                            <div>
+                                                @if($inventario->qr_code)
+                                                    <img src="{{ asset('storage/' . $inventario->qr_code) }}" alt="QR Personalizado" style="width: 80px; height: 80px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                                                @else
+                                                    @php
+                                                        $nasUrl = 'http://nas.empresa.local/documentos/inventario/' . $inventario->id;
+                                                    @endphp
+                                                    <div id="qrcode-mobile-{{ $inventario->id }}" style="width: 80px; height: 80px;"></div>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1587,14 +1611,120 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-@media (max-width: 1609px) {
-    /* Cambiar a layout vertical en resoluciones menores o iguales a 1609px */
-    .row.g-4 > .col-xl-6 {
-        flex: 0 0 100%;
-        max-width: 100%;
-        min-height: auto;
+/* Breakpoint para resoluciones grandes (1345px - 1609px) */
+@media (max-width: 1609px) and (min-width: 1345px) {
+    /* Mantener layout horizontal pero ajustar proporciones */
+    .row.g-4 > .col-xl-8 {
+        flex: 0 0 65%;
+        max-width: 65%;
     }
     
+    .row.g-4 > .col-xl-4 {
+        flex: 0 0 35%;
+        max-width: 35%;
+    }
+    
+    /* Ajustar grid de información */
+    .col-lg-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    .col-lg-4:nth-child(3) {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-top: 1rem;
+    }
+    
+    /* Ajustar imagen */
+    .image-container,
+    .no-image-placeholder {
+        min-height: 400px !important;
+        max-height: 500px;
+    }
+    
+    .image-container img {
+        min-height: 400px !important;
+        max-height: 500px !important;
+    }
+}
+
+/* Breakpoint crítico para resoluciones medianas (992px - 1344px) */
+@media (max-width: 1344px) and (min-width: 992px) {
+    /* Cambiar a layout vertical */
+    .row.g-4 > .col-xl-8,
+    .row.g-4 > .col-xl-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    /* Reorganizar información en 2 columnas */
+    .col-lg-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+        margin-bottom: 1rem;
+    }
+    
+    .col-lg-4:nth-child(odd) {
+        padding-right: 0.75rem;
+    }
+    
+    .col-lg-4:nth-child(even) {
+        padding-left: 0.75rem;
+    }
+    
+    /* Ajustar imagen para layout vertical */
+    .image-container,
+    .no-image-placeholder {
+        min-height: 350px !important;
+        max-height: 450px;
+        margin-bottom: 2rem;
+    }
+    
+    .image-container img {
+        min-height: 350px !important;
+        max-height: 450px !important;
+    }
+    
+    /* Ajustar ubicaciones */
+    .col-12.col-sm-6.col-lg-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    /* Ajustar header */
+    .card-header {
+        padding-bottom: 80px !important;
+    }
+    
+    /* Ajustar botones y QR en header */
+    .position-absolute[style*="top: 10px"] {
+        top: 15px !important;
+        right: 20px !important;
+    }
+    
+    .position-absolute img,
+    .position-absolute div[id*="qrcode"] {
+        width: 100px !important;
+        height: 100px !important;
+    }
+}
+
+/* Breakpoint para tablets (769px - 991px) */
+@media (max-width: 991px) and (min-width: 769px) {
+    /* Layout completamente vertical */
+    .row.g-4 > .col-xl-8,
+    .row.g-4 > .col-xl-4,
+    .col-lg-4,
+    .col-lg-6 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        margin-bottom: 1rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    /* Imagen más pequeña */
     .image-container,
     .no-image-placeholder {
         min-height: 300px !important;
@@ -1606,16 +1736,21 @@ document.addEventListener('DOMContentLoaded', function() {
         max-height: 400px !important;
     }
     
-    /* Ajustar el grid de información para tablets */
-    .col-md-4 {
-        flex: 0 0 50%;
-        max-width: 50%;
-    }
-    
-    .col-md-4:last-child {
+    /* Ubicaciones en una sola columna */
+    .col-12.col-sm-6.col-lg-4 {
         flex: 0 0 100%;
         max-width: 100%;
-        margin-top: 1rem;
+    }
+    
+    /* Ajustar header para tablets */
+    .card-header {
+        padding-bottom: 70px !important;
+    }
+    
+    .position-absolute img,
+    .position-absolute div[id*="qrcode"] {
+        width: 90px !important;
+        height: 90px !important;
     }
     
     /* Prevenir desbordamiento de texto */
@@ -1656,6 +1791,118 @@ document.addEventListener('DOMContentLoaded', function() {
     .image-container img {
         min-height: 200px !important;
         max-height: 250px !important;
+    }
+    
+    /* Ajustes específicos para el header y QR en móviles */
+    .card-header {
+        padding: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+        position: relative;
+        background: #ffffff !important;
+    }
+    
+    /* Ocultar la columna derecha vacía en móviles */
+    .card-header .row .col-lg-6.col-md-6:last-child {
+        display: none !important;
+    }
+    
+    /* Hacer que la columna izquierda ocupe todo el ancho */
+    .card-header .row .col-lg-6.col-md-6:first-child {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Ajustar el row del header */
+    .card-header .row {
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+    
+    /* Ocultar el contenedor de botones y QR del header en móviles */
+    .position-absolute[style*="top: 10px"] {
+        display: none !important;
+    }
+    
+    /* Mostrar botones y QR debajo del título en móviles */
+    .mobile-actions {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+        margin-bottom: 0 !important;
+        padding-top: 0.75rem;
+        padding-bottom: 0 !important;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    /* QR primero, centrado */
+    .mobile-actions > div:last-child {
+        order: 1;
+        display: flex;
+        justify-content: center;
+    }
+    
+    /* Botones después del QR */
+    .mobile-actions .d-flex {
+        order: 2;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    /* Ajustar tamaño del QR para móviles */
+    .mobile-actions img,
+    .mobile-actions div[id*="qrcode"] {
+        width: 80px !important;
+        height: 80px !important;
+        margin: 0 auto;
+    }
+    
+    /* Resetear y ajustar el contenedor principal */
+    .card-header .col-lg-6.col-md-6:first-child {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Contenedor del icono y título - más específico */
+    .card-header .d-flex.align-items-center {
+        margin: 0 !important;
+        padding: 0 !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+    }
+    
+    /* Icono - selector más específico */
+    .card-header .d-flex.align-items-center > div:first-child {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        margin-right: 0.4rem !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .card-header .d-flex.align-items-center > div:first-child i {
+        font-size: 0.95rem !important;
+    }
+    
+    /* Título principal */
+    .card-header .d-flex.align-items-center h1 {
+        font-size: 1.3rem !important;
+        margin-bottom: 0.2rem !important;
+        line-height: 1.2 !important;
+    }
+    
+    /* Contenedor del título y badges */
+    .card-header .flex-grow-1 {
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    /* Ajustar botones para móviles */
+    .quick-action-btn {
+        padding: 6px 12px !important;
+        font-size: 0.8rem !important;
     }
     
     /* Mejoras responsivas para móviles */
@@ -1706,13 +1953,27 @@ document.addEventListener('DOMContentLoaded', function() {
         padding: 1px 4px !important;
     }
     
-    /* Espaciado mejorado para móviles */
+    /* Eliminar espaciado problemático de Bootstrap */
     .row.g-4 {
-        margin: 0 -0.5rem;
+        margin: 0 !important;
+        --bs-gutter-x: 0 !important;
+        --bs-gutter-y: 0 !important;
     }
     
     .row.g-4 > * {
-        padding: 0 0.5rem;
+        padding: 0 0.5rem !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Corregir alineación del header principal */
+    .card-header .row {
+        margin: 0 !important;
+        --bs-gutter-x: 0 !important;
+        --bs-gutter-y: 0 !important;
+    }
+    
+    .card-header .row > * {
+        padding: 0 !important;
     }
 }
 
@@ -1738,6 +1999,30 @@ document.addEventListener('DOMContentLoaded', function() {
     .col-12.col-sm-6.col-lg-4 {
         flex: 0 0 100%;
         max-width: 100%;
+    }
+    
+    /* Ajustes adicionales para el header en pantallas muy pequeñas */
+    .card-header {
+        padding: 0.75rem !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    /* QR más pequeño en pantallas muy pequeñas */
+    .position-absolute img,
+    .position-absolute div[id*="qrcode"] {
+        width: 70px !important;
+        height: 70px !important;
+    }
+    
+    /* Botones más compactos */
+    .quick-action-btn {
+        padding: 4px 8px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    /* Ajustar gap entre elementos */
+    .position-absolute .d-flex.flex-column {
+        gap: 0.75rem !important;
     }
     
     /* Ajustar el espaciado del contenido */
@@ -1821,6 +2106,35 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Generar QR code para móviles si no hay imagen personalizada
+    @if(!$inventario->qr_code)
+    if (document.getElementById('qrcode-mobile-{{ $inventario->id }}')) {
+        // Cargar librería QRCode.js si no está cargada
+        if (typeof QRCode === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+            script.onload = function() {
+                generateMobileQR();
+            };
+            document.head.appendChild(script);
+        } else {
+            generateMobileQR();
+        }
+        
+        function generateMobileQR() {
+            QRCode.toCanvas(document.getElementById('qrcode-mobile-{{ $inventario->id }}'), '{{ $nasUrl }}', {
+                width: 80,
+                height: 80,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            });
+        }
+    }
+    @endif
 });
 </script>
 

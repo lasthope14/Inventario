@@ -328,10 +328,10 @@
                                                         <div class="row g-3">
                                                             <div class="col-md-4">
                                                                 <label class="form-label">Ubicación</label>
-                                                                <select class="form-select" name="cantidades_ubicacion[{{ $ubicacion->id }}]" data-ubicacion-id="{{ $ubicacion->ubicacion_id }}">
+                                                                <select class="form-select" name="ubicaciones_existentes[{{ $ubicacion->id }}][ubicacion_id]" data-ubicacion-id="{{ $ubicacion->pivot->ubicacion_id }}">
                                                     <option value="">Seleccionar ubicación</option>
                                                     @foreach($ubicaciones as $ub)
-                                                        <option value="{{ $ub->id }}" {{ ($ubicacion->ubicacion_id == $ub->id) ? 'selected' : '' }}>
+                                                        <option value="{{ $ub->id }}" {{ ($ubicacion->pivot->ubicacion_id == $ub->id) ? 'selected' : '' }}>
                                                             {{ $ub->nombre }}
                                                         </option>
                                                     @endforeach
@@ -339,17 +339,17 @@
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <label class="form-label">Cantidad</label>
-                                                                <input type="number" class="form-control cantidad-input" name="cantidades[{{ $ubicacion->id }}]" value="{{ $ubicacion->cantidad ?? 1 }}" min="0">
+                                                                <input type="number" class="form-control cantidad-input" name="ubicaciones_existentes[{{ $ubicacion->id }}][cantidad]" value="{{ $ubicacion->pivot->cantidad ?? 1 }}" min="0">
                                                 <input type="hidden" name="ubicacion_existente[{{ $ubicacion->id }}]" value="{{ $ubicacion->id }}">
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <label class="form-label">Estado</label>
-                                                                <select class="form-select" name="estados[{{ $ubicacion->id }}]">
-                                                    <option value="disponible" {{ ($ubicacion->estado == 'disponible') ? 'selected' : '' }}>Disponible</option>
-                                                    <option value="en uso" {{ ($ubicacion->estado == 'en uso') ? 'selected' : '' }}>En Uso</option>
-                                                    <option value="en mantenimiento" {{ ($ubicacion->estado == 'en mantenimiento') ? 'selected' : '' }}>En Mantenimiento</option>
-                                                    <option value="dado de baja" {{ ($ubicacion->estado == 'dado de baja') ? 'selected' : '' }}>Dado de Baja</option>
-                                                    <option value="robado" {{ ($ubicacion->estado == 'robado') ? 'selected' : '' }}>Robado</option>
+                                                                <select class="form-select" name="ubicaciones_existentes[{{ $ubicacion->id }}][estado]">
+                                                    <option value="disponible" {{ ($ubicacion->pivot->estado == 'disponible') ? 'selected' : '' }}>Disponible</option>
+                                                    <option value="en uso" {{ ($ubicacion->pivot->estado == 'en uso') ? 'selected' : '' }}>En Uso</option>
+                                                    <option value="en mantenimiento" {{ ($ubicacion->pivot->estado == 'en mantenimiento') ? 'selected' : '' }}>En Mantenimiento</option>
+                                                    <option value="dado de baja" {{ ($ubicacion->pivot->estado == 'dado de baja') ? 'selected' : '' }}>Dado de Baja</option>
+                                                    <option value="robado" {{ ($ubicacion->pivot->estado == 'robado') ? 'selected' : '' }}>Robado</option>
                                                 </select>
                                                             </div>
                                                             <div class="col-md-2 d-flex align-items-end">
@@ -633,7 +633,7 @@ function actualizarEventos() {
     document.querySelectorAll('.remove-ubicacion').forEach(btn => {
         btn.onclick = function() {
             const ubicacionItem = this.closest('.ubicacion-item');
-            const cantidadInput = ubicacionItem.querySelector('input[name^="cantidades["]');
+            const cantidadInput = ubicacionItem.querySelector('input[name^="ubicaciones_existentes["], input[name^="ubicaciones["]');
             
             if (cantidadInput) {
                 // Si es una ubicación existente, marcar cantidad como 0 para eliminarla

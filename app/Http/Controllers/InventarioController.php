@@ -1223,11 +1223,11 @@ class InventarioController extends Controller
 
             // Actualizar cantidades y estados existentes
             $cantidadTotal = 0;
-            if (isset($request->cantidades)) {
-                foreach ($request->cantidades as $relacionId => $cantidad) {
-                    $cantidad = max(0, intval($cantidad));
-                    $estado = $request->estados[$relacionId] ?? 'disponible';
-                    $ubicacionId = $request->cantidades_ubicacion[$relacionId] ?? null;
+            if (isset($request->ubicaciones_existentes)) {
+                foreach ($request->ubicaciones_existentes as $relacionId => $ubicacionData) {
+                    $cantidad = max(0, intval($ubicacionData['cantidad'] ?? 0));
+                    $estado = $ubicacionData['estado'] ?? 'disponible';
+                    $ubicacionId = $ubicacionData['ubicacion_id'] ?? null;
                     
                     // Verificar que tenemos el ID de ubicación
                     if (!$ubicacionId) {
