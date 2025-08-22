@@ -622,60 +622,104 @@
                 @php
                     $observacionesArray = [];
                     if($inventario->observaciones) {
-                        // Limpiar caracteres especiales y dividir por asteriscos o saltos de línea
-                        $texto = str_replace(['_x000D_', '\r', '\n'], ' ', $inventario->observaciones);
-                        $texto = preg_replace('/\s+/', ' ', $texto); // Normalizar espacios
+                        // Limpiar caracteres especiales pero preservar saltos de línea
+                        $texto = str_replace(['_x000D_'], '', $inventario->observaciones);
+                        $texto = str_replace(['\r\n', '\r', '\n'], '\n', $texto);
                         
-                        // Dividir por asteriscos (*) que preceden a fechas
-                        $observacionesArray = preg_split('/\*(?=\d{1,2}\/\d{1,2}\/\d{4})/', $texto);
+                        // Verificar si las observaciones tienen formato de fecha (bitácora histórica)
+                        $tieneFechas = preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $texto);
                         
-                        // Si no hay asteriscos, intentar dividir por fechas directamente
-                        if(count($observacionesArray) <= 1) {
-                            $observacionesArray = preg_split('/(\d{1,2}\/\d{1,2}\/\d{4})/', $texto, -1, PREG_SPLIT_DELIM_CAPTURE);
-                            // Reagrupar fechas con su contenido
-                            $temp = [];
-                            for($i = 1; $i < count($observacionesArray); $i += 2) {
-                                if(isset($observacionesArray[$i]) && isset($observacionesArray[$i+1])) {
-                                    $temp[] = $observacionesArray[$i] . ' ' . trim($observacionesArray[$i+1]);
+                        if($tieneFechas) {
+                            // Procesamiento para observaciones con formato de fecha
+                            $observacionesArray = preg_split('/[\n\r]*\*(?=\d{1,2}\/\d{1,2}\/\d{4})/', $texto);
+                            
+                            // Si no funciona, intentar dividir por saltos de línea y luego filtrar
+                            if(count($observacionesArray) <= 1) {
+                                $lineas = explode('\n', $texto);
+                                $observacionesArray = [];
+                                $observacionActual = '';
+                                
+                                foreach($lineas as $linea) {
+                                    $linea = trim($linea);
+                                    if(empty($linea)) continue;
+                                    
+                                    // Si la línea empieza con * y tiene fecha, es una nueva observación
+                                    if(preg_match('/^\*?\d{1,2}\/\d{1,2}\/\d{4}/', $linea)) {
+                                        if(!empty($observacionActual)) {
+                                            $observacionesArray[] = $observacionActual;
+                                        }
+                                        $observacionActual = ltrim($linea, '*');
+                                    } else {
+                                        // Continuar la observación actual
+                                        if(!empty($observacionActual)) {
+                                            $observacionActual .= ' ' . $linea;
+                                        }
+                                    }
+                                }
+                                
+                                // Agregar la última observación
+                                if(!empty($observacionActual)) {
+                                    $observacionesArray[] = $observacionActual;
                                 }
                             }
-                            $observacionesArray = $temp;
+                            
+                            // Limpiar y filtrar observaciones con fecha
+                            $observacionesArray = array_map(function($obs) {
+                                $obs = trim($obs);
+                                $obs = ltrim($obs, '*'); // Remover asterisco inicial si existe
+                                $obs = preg_replace('/\s+/', ' ', $obs); // Normalizar espacios
+                                return trim($obs);
+                            }, $observacionesArray);
+                            
+                            // Filtrar observaciones válidas (que tengan fecha y contenido)
+                            $observacionesArray = array_filter($observacionesArray, function($obs) {
+                                return !empty(trim($obs)) && preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $obs) && strlen(trim($obs)) > 10;
+                            });
+                            
+                            // Remover duplicados
+                            $observacionesArray = array_unique($observacionesArray);
+                            
+                            // Ordenar por fecha (más reciente primero)
+                            usort($observacionesArray, function($a, $b) {
+                                $fechaA = null;
+                                $fechaB = null;
+                                
+                                if(preg_match('/(\d{1,2}\/\d{1,2}\/\d{4})/', $a, $matchA)) {
+                                    $fechaA = $matchA[1];
+                                }
+                                if(preg_match('/(\d{1,2}\/\d{1,2}\/\d{4})/', $b, $matchB)) {
+                                    $fechaB = $matchB[1];
+                                }
+                                
+                                if($fechaA && $fechaB) {
+                                    try {
+                                        $dateA = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaA);
+                                        $dateB = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaB);
+                                        return $dateB->timestamp - $dateA->timestamp; // Más reciente primero
+                                    } catch (Exception $e) {
+                                        return 0;
+                                    }
+                                }
+                                return 0;
+                            });
+                        } else {
+                            // Procesamiento para observaciones simples (sin fechas)
+                            // Dividir por saltos de línea y limpiar
+                            $lineas = explode('\n', $texto);
+                            $observacionesArray = array_map(function($linea) {
+                                return trim($linea);
+                            }, $lineas);
+                            
+                            // Filtrar líneas vacías
+                            $observacionesArray = array_filter($observacionesArray, function($obs) {
+                                return !empty(trim($obs));
+                            });
+                            
+                            // Si solo hay una línea, tratarla como una observación única
+                            if(count($observacionesArray) <= 1 && !empty(trim($texto))) {
+                                $observacionesArray = [trim($texto)];
+                            }
                         }
-                        
-                        // Limpiar y filtrar observaciones
-                        $observacionesArray = array_map(function($obs) {
-                            $obs = trim($obs);
-                            $obs = ltrim($obs, '*'); // Remover asterisco inicial si existe
-                            return trim($obs);
-                        }, $observacionesArray);
-                        
-                        $observacionesArray = array_filter($observacionesArray, function($obs) {
-                            return !empty(trim($obs)) && preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $obs);
-                        });
-                        
-                        // Ordenar por fecha (más reciente primero)
-                        usort($observacionesArray, function($a, $b) {
-                            $fechaA = null;
-                            $fechaB = null;
-                            
-                            if(preg_match('/(\d{1,2}\/\d{1,2}\/\d{4})/', $a, $matchA)) {
-                                $fechaA = $matchA[1];
-                            }
-                            if(preg_match('/(\d{1,2}\/\d{1,2}\/\d{4})/', $b, $matchB)) {
-                                $fechaB = $matchB[1];
-                            }
-                            
-                            if($fechaA && $fechaB) {
-                                try {
-                                    $dateA = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaA);
-                                    $dateB = \Carbon\Carbon::createFromFormat('d/m/Y', $fechaB);
-                                    return $dateB->timestamp - $dateA->timestamp; // Más reciente primero
-                                } catch (Exception $e) {
-                                    return 0;
-                                }
-                            }
-                            return 0;
-                        });
                     }
                     $totalObservaciones = count($observacionesArray);
                 @endphp
